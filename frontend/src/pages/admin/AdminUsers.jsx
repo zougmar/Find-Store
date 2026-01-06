@@ -8,6 +8,14 @@ const AdminUsers = () => {
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(true)
   const [selectedUser, setSelectedUser] = useState(null)
+  const [showCreateModal, setShowCreateModal] = useState(false)
+  const [creating, setCreating] = useState(false)
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    password: '',
+    phone: ''
+  })
 
   useEffect(() => {
     fetchUsers()
@@ -47,6 +55,40 @@ const AdminUsers = () => {
     }
   }
 
+  const handleCreateAdmin = async (e) => {
+    e.preventDefault()
+    
+    if (!formData.name || !formData.email || !formData.password) {
+      toast.error('Please fill in all required fields')
+      return
+    }
+
+    if (formData.password.length < 6) {
+      toast.error('Password must be at least 6 characters')
+      return
+    }
+
+    setCreating(true)
+    try {
+      const res = await api.post('/admin/users', formData)
+      toast.success('Admin user created successfully!')
+      setShowCreateModal(false)
+      setFormData({ name: '', email: '', password: '', phone: '' })
+      fetchUsers() // Refresh users list
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to create admin user')
+    } finally {
+      setCreating(false)
+    }
+  }
+
+  const handleInputChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    })
+  }
+
   if (loading) {
     return (
       <AdminLayout>
@@ -62,9 +104,20 @@ const AdminUsers = () => {
     <AdminLayout>
       <div className="space-y-6">
         {/* Page Header */}
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">User Management</h1>
-          <p className="text-gray-600 mt-1">Manage all registered users and their accounts</p>
+        <div className="mb-6 flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">User Management</h1>
+            <p className="text-gray-600 mt-1">Manage all registered users and their accounts</p>
+          </div>
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="px-6 py-3 bg-[#FF385C] text-white font-semibold rounded-lg hover:bg-[#E61E4D] transition-colors flex items-center gap-2 shadow-lg hover:shadow-xl"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            Create Admin User
+          </button>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -268,6 +321,119 @@ const AdminUsers = () => {
           </div>
         </div>
       </div>
+
+      {/* Create Admin User Modal */}
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-200 flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-gray-900">Create Admin User</h2>
+              <button
+                onClick={() => {
+                  setShowCreateModal(false)
+                  setFormData({ name: '', email: '', password: '', phone: '' })
+                }}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateAdmin} className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Full Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleInputChange}
+                  required
+                  className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF385C] focus:border-[#FF385C] transition-all"
+                  placeholder="Enter full name"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Email Address <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  required
+                  className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF385C] focus:border-[#FF385C] transition-all"
+                  placeholder="Enter email address"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Password <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="password"
+                  name="password"
+                  value={formData.password}
+                  onChange={handleInputChange}
+                  required
+                  minLength={6}
+                  className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF385C] focus:border-[#FF385C] transition-all"
+                  placeholder="Enter password (min 6 characters)"
+                />
+                <p className="text-xs text-gray-500 mt-1">Password must be at least 6 characters long</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Phone Number <span className="text-gray-400">(Optional)</span>
+                </label>
+                <input
+                  type="tel"
+                  name="phone"
+                  value={formData.phone}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF385C] focus:border-[#FF385C] transition-all"
+                  placeholder="Enter phone number"
+                />
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowCreateModal(false)
+                    setFormData({ name: '', email: '', password: '', phone: '' })
+                  }}
+                  className="flex-1 px-4 py-2.5 border-2 border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-colors"
+                  disabled={creating}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={creating}
+                  className="flex-1 px-4 py-2.5 bg-[#FF385C] text-white font-semibold rounded-lg hover:bg-[#E61E4D] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {creating ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                      Creating...
+                    </>
+                  ) : (
+                    'Create Admin'
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </AdminLayout>
   )
 }

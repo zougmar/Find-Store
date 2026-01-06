@@ -245,6 +245,48 @@ router.get('/users', async (req, res, next) => {
   }
 });
 
+// @route   POST /api/admin/users
+// @desc    Create new admin user
+// @access  Private/Admin
+router.post('/users', async (req, res, next) => {
+  try {
+    const { name, email, password, phone } = req.body;
+
+    // Validate required fields
+    if (!name || !email || !password) {
+      return res.status(400).json({ message: 'Name, email, and password are required' });
+    }
+
+    // Check if user already exists
+    const userExists = await User.findOne({ email: email.toLowerCase().trim() });
+    if (userExists) {
+      return res.status(400).json({ message: 'User already exists with this email' });
+    }
+
+    // Validate password length
+    if (password.length < 6) {
+      return res.status(400).json({ message: 'Password must be at least 6 characters' });
+    }
+
+    // Create admin user
+    const user = await User.create({
+      name,
+      email: email.toLowerCase().trim(),
+      password,
+      phone,
+      role: 'admin'
+    });
+
+    // Return user without password
+    const userResponse = user.toObject();
+    delete userResponse.password;
+
+    res.status(201).json(userResponse);
+  } catch (error) {
+    next(error);
+  }
+});
+
 // @route   GET /api/admin/users/:id
 // @desc    Get single user with order history
 // @access  Private/Admin

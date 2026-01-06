@@ -34,7 +34,6 @@ NODE_ENV=production
 JWT_SECRET=your-secret-key
 FRONTEND_URL=https://your-app.vercel.app
 ```
-
 ### Step 4: Deploy!
 
 Click **"Deploy"** and wait for completion.
