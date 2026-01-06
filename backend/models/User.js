@@ -25,8 +25,17 @@ const userSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['user', 'admin'],
+    enum: ['user', 'admin', 'moderator'],
     default: 'user'
+  },
+  permissions: {
+    viewDashboard: { type: Boolean, default: false },
+    manageProducts: { type: Boolean, default: false },
+    manageOrders: { type: Boolean, default: false },
+    manageUsers: { type: Boolean, default: false },
+    managePages: { type: Boolean, default: false },
+    manageMessages: { type: Boolean, default: false },
+    manageSettings: { type: Boolean, default: false }
   },
   image: {
     type: String,

@@ -28,7 +28,6 @@ const Cart = () => {
     expiryDate: '',
     cvv: ''
   })
-  const [paypalEmail, setPaypalEmail] = useState('')
   const [cashOnDeliveryData, setCashOnDeliveryData] = useState({
     name: '',
     phone: '',
@@ -113,7 +112,6 @@ const Cart = () => {
     setPaymentMethod('')
     // Reset form data
     setCardData({ cardNumber: '', cardName: '', expiryDate: '', cvv: '' })
-    setPaypalEmail('')
     setCashOnDeliveryData({
       name: '',
       phone: '',
@@ -135,11 +133,6 @@ const Cart = () => {
       // Basic card number validation (should be 16 digits)
       if (cardData.cardNumber.replace(/\s/g, '').length < 16) {
         toast.error('Please enter a valid card number')
-        return
-      }
-    } else if (paymentMethod === 'paypal') {
-      if (!paypalEmail || !paypalEmail.includes('@')) {
-        toast.error('Please enter a valid PayPal email')
         return
       }
     } else if (paymentMethod === 'cash') {
@@ -174,8 +167,6 @@ const Cart = () => {
         paymentDetails: paymentMethod === 'card' ? {
           last4: cardData.cardNumber.slice(-4),
           cardName: cardData.cardName
-        } : paymentMethod === 'paypal' ? {
-          email: paypalEmail
         } : paymentMethod === 'cash' ? {
           customerName: cashOnDeliveryData.name,
           customerPhone: cashOnDeliveryData.phone,
@@ -223,7 +214,6 @@ const Cart = () => {
       setCheckoutStep(1)
       setPaymentMethod('')
       setCardData({ cardNumber: '', cardName: '', expiryDate: '', cvv: '' })
-      setPaypalEmail('')
       navigate('/products')
     } else {
       navigate('/products')
@@ -236,7 +226,6 @@ const Cart = () => {
       setCheckoutStep(1)
       setPaymentMethod('')
       setCardData({ cardNumber: '', cardName: '', expiryDate: '', cvv: '' })
-      setPaypalEmail('')
       setCashOnDeliveryData({
         name: '',
         phone: '',
@@ -480,75 +469,19 @@ const Cart = () => {
                     </div>
                   </div>
 
-                  {/* Payment Method Selection */}
+                  {/* Coming Soon Message */}
                   <div className="mb-4 md:mb-6">
-                    <h3 className="text-base md:text-lg font-semibold text-gray-900 mb-3 md:mb-4">{t('choosePaymentMethod') || 'Choose Payment Method'}</h3>
-                    <div className="space-y-3">
-                      <button
-                        onClick={() => handlePaymentMethodSelect('card')}
-                        className="w-full flex items-center p-4 border-2 border-gray-200 rounded-lg hover:border-[#FF385C] hover:bg-gray-50 transition-all cursor-pointer text-left"
-                      >
-                        <div className="flex items-center justify-between w-full">
-                          <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center">
-                              <svg className="w-8 h-5" viewBox="0 0 24 16">
-                                <rect width="24" height="16" rx="2" fill="#1A1F71"/>
-                                <circle cx="8" cy="8" r="3" fill="#EB001B"/>
-                                <circle cx="16" cy="8" r="3" fill="#F79E1B"/>
-                              </svg>
-                            </div>
-                            <div>
-                              <span className="font-semibold text-gray-900 block">Credit/Debit Card</span>
-                              <p className="text-sm text-gray-500 mt-1">Pay securely with your card</p>
-                            </div>
-                          </div>
-                          <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                          </svg>
-                        </div>
-                      </button>
-
-                      <button
-                        onClick={() => handlePaymentMethodSelect('paypal')}
-                        className="w-full flex items-center p-4 border-2 border-gray-200 rounded-lg hover:border-[#FF385C] hover:bg-gray-50 transition-all cursor-pointer text-left"
-                      >
-                        <div className="flex items-center justify-between w-full">
-                          <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center">
-                              <span className="text-blue-600 font-bold text-lg">PayPal</span>
-                            </div>
-                            <div>
-                              <span className="font-semibold text-gray-900 block">PayPal</span>
-                              <p className="text-sm text-gray-500 mt-1">Pay with your PayPal account</p>
-                            </div>
-                          </div>
-                          <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                          </svg>
-                        </div>
-                      </button>
-
-                      <button
-                        onClick={() => handlePaymentMethodSelect('cash')}
-                        className="w-full flex items-center p-4 border-2 border-gray-200 rounded-lg hover:border-[#FF385C] hover:bg-gray-50 transition-all cursor-pointer text-left"
-                      >
-                        <div className="flex items-center justify-between w-full">
-                          <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 bg-green-50 rounded-lg flex items-center justify-center">
-                              <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
-                              </svg>
-                            </div>
-                            <div>
-                              <span className="font-semibold text-gray-900 block">Cash on Delivery</span>
-                              <p className="text-sm text-gray-500 mt-1">Pay when you receive your order</p>
-                            </div>
-                          </div>
-                          <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                          </svg>
-                        </div>
-                      </button>
+                    <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-lg p-6 md:p-8 text-center">
+                      <div className="mb-4">
+                        <svg className="w-16 h-16 md:w-20 md:h-20 mx-auto text-blue-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </div>
+                      <h3 className="text-xl md:text-2xl font-bold text-gray-900 mb-2">Payment System</h3>
+                      <p className="text-base md:text-lg text-gray-700 font-medium mb-1">Coming Soon!</p>
+                      <p className="text-sm md:text-base text-gray-600 mt-2">
+                        We're working hard to bring you a seamless payment experience. Checkout functionality will be available shortly.
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -569,7 +502,7 @@ const Cart = () => {
                         </svg>
                       </button>
                       <h2 className="text-xl md:text-2xl font-bold text-gray-900">
-                        {paymentMethod === 'card' ? 'Card Payment' : paymentMethod === 'paypal' ? 'PayPal Payment' : 'Cash on Delivery'}
+                        {paymentMethod === 'card' ? 'Card Payment' : 'Cash on Delivery'}
                       </h2>
                     </div>
                     {!processing && (
@@ -653,23 +586,6 @@ const Cart = () => {
                             />
                           </div>
                         </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {paymentMethod === 'paypal' && (
-                    <div className="mb-4 md:mb-6">
-                      <h3 className="text-base md:text-lg font-semibold text-gray-900 mb-4">PayPal Email</h3>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">PayPal Email Address</label>
-                        <input
-                          type="email"
-                          placeholder="your.email@example.com"
-                          value={paypalEmail}
-                          onChange={(e) => setPaypalEmail(e.target.value)}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF385C] focus:border-transparent"
-                        />
-                        <p className="text-sm text-gray-500 mt-2">We'll redirect you to PayPal to complete the payment</p>
                       </div>
                     </div>
                   )}

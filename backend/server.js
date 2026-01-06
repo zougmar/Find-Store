@@ -57,6 +57,7 @@ app.use('/api/pages', require('./routes/pages'));
 app.use('/api/messages', require('./routes/messages'));
 app.use('/api/cart', require('./routes/cart'));
 app.use('/api/admin', require('./routes/admin'));
+app.use('/api/payments', require('./routes/payments'));
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -138,4 +139,3 @@ if (require.main === module) {
   };
   startServer();
 }
-

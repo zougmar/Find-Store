@@ -8,12 +8,28 @@ const Order = require('../models/Order');
 const Favorite = require('../models/Favorite');
 const Page = require('../models/Page');
 const Message = require('../models/Message');
-const { protect, admin } = require('../middleware/auth');
+const { protect, admin, hasPermission, hasAnyPermission } = require('../middleware/auth');
 
 const router = express.Router();
 
-// All routes require admin access
-router.use(protect, admin);
+// All routes require authentication and admin or moderator with permissions
+router.use(protect);
+router.use((req, res, next) => {
+  // Allow full admins
+  if (req.user && req.user.role === 'admin') {
+    return next();
+  }
+  
+  // Allow moderators with at least one permission
+  if (req.user && req.user.role === 'moderator' && req.user.permissions) {
+    const hasAnyPerm = Object.values(req.user.permissions).some(perm => perm === true);
+    if (hasAnyPerm) {
+      return next();
+    }
+  }
+  
+  return res.status(403).json({ message: 'Access denied. Admin or moderator with permissions required.' });
+});
 
 // Configure multer for file uploads
 const storage = multer.diskStorage({
@@ -48,8 +64,8 @@ const upload = multer({
 
 // @route   GET /api/admin/dashboard
 // @desc    Get dashboard statistics
-// @access  Private/Admin
-router.get('/dashboard', async (req, res, next) => {
+// @access  Private/Admin or Moderator with viewDashboard permission
+router.get('/dashboard', hasPermission('viewDashboard'), async (req, res, next) => {
   try {
     const totalUsers = await User.countDocuments({ role: 'user' });
     const totalProducts = await Product.countDocuments();
@@ -216,8 +232,8 @@ router.get('/favorites', async (req, res, next) => {
 
 // @route   GET /api/admin/users
 // @desc    Get all users
-// @access  Private/Admin
-router.get('/users', async (req, res, next) => {
+// @access  Private/Admin or Moderator with manageUsers permission
+router.get('/users', hasPermission('manageUsers'), async (req, res, next) => {
   try {
     const users = await User.find({ role: 'user' })
       .select('-password')
@@ -245,12 +261,43 @@ router.get('/users', async (req, res, next) => {
   }
 });
 
-// @route   POST /api/admin/users
-// @desc    Create new admin user
-// @access  Private/Admin
-router.post('/users', async (req, res, next) => {
+// @route   GET /api/admin/users/all
+// @desc    Get all users (including admins and moderators)
+// @access  Private/Admin or Moderator with manageUsers permission
+router.get('/users/all', hasPermission('manageUsers'), async (req, res, next) => {
   try {
-    const { name, email, password, phone } = req.body;
+    const users = await User.find()
+      .select('-password')
+      .sort({ createdAt: -1 });
+    
+    // Get order history for each user
+    const usersWithOrders = await Promise.all(
+      users.map(async (user) => {
+        const orders = await Order.find({ user: user._id })
+          .select('totalAmount orderStatus createdAt')
+          .sort({ createdAt: -1 });
+        
+        return {
+          ...user.toObject(),
+          orderHistory: orders,
+          totalOrders: orders.length,
+          totalSpent: orders.reduce((sum, order) => sum + order.totalAmount, 0)
+        };
+      })
+    );
+    
+    res.json(usersWithOrders);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// @route   POST /api/admin/users
+// @desc    Create new admin/moderator user
+// @access  Private/Admin or Moderator with manageUsers permission
+router.post('/users', hasPermission('manageUsers'), async (req, res, next) => {
+  try {
+    const { name, email, password, phone, role, permissions } = req.body;
 
     // Validate required fields
     if (!name || !email || !password) {
@@ -268,14 +315,24 @@ router.post('/users', async (req, res, next) => {
       return res.status(400).json({ message: 'Password must be at least 6 characters' });
     }
 
-    // Create admin user
-    const user = await User.create({
+    // Only admins can create admin users
+    const userRole = (req.user.role === 'admin' && role === 'admin') ? 'admin' : (role || 'moderator');
+
+    // Create user
+    const userData = {
       name,
       email: email.toLowerCase().trim(),
       password,
       phone,
-      role: 'admin'
-    });
+      role: userRole
+    };
+
+    // Add permissions if provided
+    if (permissions) {
+      userData.permissions = permissions;
+    }
+
+    const user = await User.create(userData);
 
     // Return user without password
     const userResponse = user.toObject();
@@ -312,10 +369,15 @@ router.get('/users/:id', async (req, res, next) => {
 });
 
 // @route   PUT /api/admin/users/:id
-// @desc    Update user
-// @access  Private/Admin
-router.put('/users/:id', async (req, res, next) => {
+// @desc    Update user (including permissions)
+// @access  Private/Admin or Moderator with manageUsers permission
+router.put('/users/:id', hasPermission('manageUsers'), async (req, res, next) => {
   try {
+    // Don't allow non-admins to change role to admin
+    if (req.user.role !== 'admin' && req.body.role === 'admin') {
+      return res.status(403).json({ message: 'Only admins can assign admin role' });
+    }
+    
     const user = await User.findByIdAndUpdate(
       req.params.id,
       req.body,
@@ -351,8 +413,8 @@ router.delete('/users/:id', async (req, res, next) => {
 
 // @route   GET /api/admin/orders
 // @desc    Get all orders
-// @access  Private/Admin
-router.get('/orders', async (req, res, next) => {
+// @access  Private/Admin or Moderator with manageOrders permission
+router.get('/orders', hasPermission('manageOrders'), async (req, res, next) => {
   try {
     const orders = await Order.find()
       .populate('user', 'name email phone')
@@ -367,8 +429,8 @@ router.get('/orders', async (req, res, next) => {
 
 // @route   PUT /api/admin/orders/:id
 // @desc    Update order status
-// @access  Private/Admin
-router.put('/orders/:id', async (req, res, next) => {
+// @access  Private/Admin or Moderator with manageOrders permission
+router.put('/orders/:id', hasPermission('manageOrders'), async (req, res, next) => {
   try {
     const { orderStatus, paymentStatus } = req.body;
     
@@ -394,8 +456,8 @@ router.put('/orders/:id', async (req, res, next) => {
 
 // @route   GET /api/admin/pages
 // @desc    Get all pages
-// @access  Private/Admin
-router.get('/pages', async (req, res, next) => {
+// @access  Private/Admin or Moderator with managePages permission
+router.get('/pages', hasPermission('managePages'), async (req, res, next) => {
   try {
     const pages = await Page.find().sort({ createdAt: -1 });
     res.json(pages);
@@ -421,8 +483,8 @@ router.get('/pages/:slug', async (req, res, next) => {
 
 // @route   POST /api/admin/pages
 // @desc    Create new page
-// @access  Private/Admin
-router.post('/pages', async (req, res, next) => {
+// @access  Private/Admin or Moderator with managePages permission
+router.post('/pages', hasPermission('managePages'), async (req, res, next) => {
   try {
     const page = new Page(req.body);
     await page.save();
@@ -437,8 +499,8 @@ router.post('/pages', async (req, res, next) => {
 
 // @route   PUT /api/admin/pages/:id
 // @desc    Update page
-// @access  Private/Admin
-router.put('/pages/:id', async (req, res, next) => {
+// @access  Private/Admin or Moderator with managePages permission
+router.put('/pages/:id', hasPermission('managePages'), async (req, res, next) => {
   try {
     const page = await Page.findByIdAndUpdate(
       req.params.id,
@@ -498,8 +560,8 @@ router.post('/upload', upload.single('image'), (req, res, next) => {
 
 // @route   GET /api/admin/messages
 // @desc    Get all messages
-// @access  Private/Admin
-router.get('/messages', async (req, res, next) => {
+// @access  Private/Admin or Moderator with manageMessages permission
+router.get('/messages', hasPermission('manageMessages'), async (req, res, next) => {
   try {
     const { read, sortBy } = req.query;
     let query = {};

@@ -40,3 +40,47 @@ exports.admin = (req, res, next) => {
   }
 };
 
+// Check if user has specific permission
+exports.hasPermission = (permission) => {
+  return (req, res, next) => {
+    // Full admins have all permissions
+    if (req.user && req.user.role === 'admin') {
+      return next();
+    }
+    
+    // Check if user has the specific permission
+    if (req.user && req.user.permissions && req.user.permissions[permission] === true) {
+      return next();
+    }
+    
+    return res.status(403).json({ 
+      message: `Access denied. Required permission: ${permission}` 
+    });
+  };
+};
+
+// Check if user has any of the specified permissions
+exports.hasAnyPermission = (...permissions) => {
+  return (req, res, next) => {
+    // Full admins have all permissions
+    if (req.user && req.user.role === 'admin') {
+      return next();
+    }
+    
+    // Check if user has any of the required permissions
+    if (req.user && req.user.permissions) {
+      const hasPermission = permissions.some(permission => 
+        req.user.permissions[permission] === true
+      );
+      
+      if (hasPermission) {
+        return next();
+      }
+    }
+    
+    return res.status(403).json({ 
+      message: `Access denied. Required one of: ${permissions.join(', ')}` 
+    });
+  };
+};
+

@@ -225,7 +225,7 @@ const Products = () => {
     
     searchTimeoutRef.current = setTimeout(() => {
       const newFilters = { ...filters, search: value }
-      setFilters(newFilters)
+    setFilters(newFilters)
       updateURLParams(newFilters)
     }, 500)
   }
@@ -258,7 +258,7 @@ const Products = () => {
     }
     setFilters(defaultFilters)
     setSearchInput('')
-    setSearchParams({})
+        setSearchParams({})
   }
 
   const getActiveFiltersCount = () => {
@@ -453,17 +453,17 @@ const Products = () => {
           <div className="flex flex-wrap gap-3 md:gap-4">
             {/* Category Filter */}
             <div className="flex-shrink-0">
-              <select
-                name="category"
-                value={filters.category}
-                onChange={handleFilterChange}
+            <select
+              name="category"
+              value={filters.category}
+              onChange={handleFilterChange}
                 className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF385C] focus:border-transparent text-sm font-medium text-gray-700 bg-white"
-              >
-                <option value="all">All Categories</option>
-                {categories.map(cat => (
-                  <option key={cat} value={cat}>{cat}</option>
-                ))}
-              </select>
+            >
+              <option value="all">All Categories</option>
+              {categories.map(cat => (
+                <option key={cat} value={cat}>{cat}</option>
+              ))}
+            </select>
             </div>
 
             {/* Subcategory Filter */}
@@ -538,20 +538,20 @@ const Products = () => {
 
             {/* Sort By */}
             <div className="flex-shrink-0 ml-auto">
-              <select
-                name="sortBy"
-                value={filters.sortBy}
-                onChange={handleFilterChange}
+            <select
+              name="sortBy"
+              value={filters.sortBy}
+              onChange={handleFilterChange}
                 className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF385C] focus:border-transparent text-sm font-medium text-gray-700 bg-white"
-              >
+            >
                 <option value="newest">Newest First</option>
-                <option value="price-low">Price: Low to High</option>
-                <option value="price-high">Price: High to Low</option>
-                <option value="rating">Highest Rated</option>
-              </select>
+              <option value="price-low">Price: Low to High</option>
+              <option value="price-high">Price: High to Low</option>
+              <option value="rating">Highest Rated</option>
+            </select>
+            </div>
             </div>
           </div>
-        </div>
       </section>
 
       {/* Products Section - Grouped by Category */}
@@ -636,12 +636,12 @@ const Products = () => {
                     <div className="p-4 sm:p-6">
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                         {paginatedProducts.map(product => {
-                          if (!product || !product._id) {
-                            console.warn('Invalid product:', product)
-                            return null
-                          }
-                          return (
-                            <ProductCard key={product._id} product={product} />
+                if (!product || !product._id) {
+                  console.warn('Invalid product:', product)
+                  return null
+                }
+                return (
+                  <ProductCard key={product._id} product={product} />
                           )
                         })}
                       </div>

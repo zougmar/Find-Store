@@ -166,21 +166,21 @@ const Home = () => {
             {/* Badge */}
             <div className="inline-flex items-center gap-2 px-4 py-2 mb-6 sm:mb-8 bg-white/10 backdrop-blur-md rounded-full border border-white/20">
               <span className="w-2 h-2 bg-[#FF385C] rounded-full animate-pulse"></span>
-              <span className="text-white/90 text-xs sm:text-sm font-medium">New Arrivals Every Week</span>
+              <span className="text-white/90 text-xs sm:text-sm font-medium">{t('newArrivals')}</span>
             </div>
             
             {/* Main Heading */}
             <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-black text-white mb-4 sm:mb-6 md:mb-8 leading-[1.1] tracking-tight">
-              Find Your Perfect
+              {t('findPerfectProduct')}
               <br />
               <span className="bg-gradient-to-r from-[#FF385C] via-pink-500 to-[#FF385C] bg-clip-text text-transparent animate-gradient">
-                Product
+                {t('product')}
               </span>
             </h1>
             
             {/* Subheading */}
             <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-white/90 mb-8 sm:mb-10 md:mb-12 max-w-2xl mx-auto leading-relaxed font-light">
-              Discover unique products from around the world. Quality guaranteed, style unmatched.
+              {t('discoverUnique')}
             </p>
             
             {/* CTA Buttons */}
@@ -190,8 +190,8 @@ const Home = () => {
                 className="group relative inline-flex items-center justify-center gap-3 bg-[#FF385C] hover:bg-[#E61E4D] text-white px-8 py-4 sm:px-10 sm:py-5 rounded-xl font-bold text-base sm:text-lg transition-all duration-300 shadow-2xl hover:shadow-[#FF385C]/50 hover:scale-105 active:scale-95 overflow-hidden"
               >
                 <span className="relative z-10 flex items-center gap-2">
-                  Shop Now
-                  <svg className="w-5 h-5 sm:w-6 sm:h-6 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  {t('shopNow')}
+                  <svg className={`w-5 h-5 sm:w-6 sm:h-6 transition-transform ${isRTL ? 'group-hover:-translate-x-1' : 'group-hover:translate-x-1'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                   </svg>
                 </span>
@@ -202,8 +202,8 @@ const Home = () => {
                 to="/products"
                 className="group inline-flex items-center justify-center gap-2 bg-white/10 hover:bg-white/20 backdrop-blur-md text-white border-2 border-white/30 hover:border-white/50 px-8 py-4 sm:px-10 sm:py-5 rounded-xl font-semibold text-base sm:text-lg transition-all duration-300"
               >
-                Explore Collection
-                <svg className="w-5 h-5 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                {t('exploreCollection')}
+                <svg className={`w-5 h-5 transition-transform ${isRTL ? 'group-hover:-translate-x-1' : 'group-hover:translate-x-1'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                 </svg>
               </Link>
@@ -215,20 +215,20 @@ const Home = () => {
                 <svg className="w-5 h-5 text-[#FF385C]" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                 </svg>
-                <span>Quality Guaranteed</span>
+                <span>{t('qualityGuaranteed')}</span>
               </div>
               <div className="flex items-center gap-2">
                 <svg className="w-5 h-5 text-[#FF385C]" fill="currentColor" viewBox="0 0 20 20">
                   <path d="M8 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM15 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" />
                   <path d="M3 4a1 1 0 00-1 1v10a1 1 0 001 1h1.05a2.5 2.5 0 014.9 0H10a1 1 0 001-1V5a1 1 0 00-1-1H3zM14 7a1 1 0 00-1 1v6.05A2.5 2.5 0 0115.95 16H17a1 1 0 001-1v-5a1 1 0 00-.293-.707l-2-2A1 1 0 0015 7h-1z" />
                 </svg>
-                <span>Free Shipping</span>
+                <span>{t('freeShipping')}</span>
               </div>
               <div className="flex items-center gap-2">
                 <svg className="w-5 h-5 text-[#FF385C]" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                 </svg>
-                <span>Secure Payment</span>
+                <span>{t('securePayment')}</span>
               </div>
             </div>
           </div>
@@ -240,7 +240,7 @@ const Home = () => {
             href="#products" 
             className="flex flex-col items-center gap-2 text-white/70 hover:text-white transition-all duration-300 group"
           >
-            <span className="text-xs font-medium uppercase tracking-wider">Scroll</span>
+            <span className="text-xs font-medium uppercase tracking-wider">{t('scroll')}</span>
             <div className="w-6 h-10 border-2 border-white/50 rounded-full flex items-start justify-center p-2 group-hover:border-white transition-colors">
               <div className="w-1.5 h-1.5 bg-white/70 rounded-full animate-bounce"></div>
             </div>
@@ -328,7 +328,7 @@ const Home = () => {
             </div>
           ) : Object.keys(productsByCategory).length === 0 ? (
             <div className="text-center py-12 sm:py-16 md:py-24">
-              <p className="text-gray-500 text-base sm:text-lg">No products found</p>
+              <p className="text-gray-500 text-base sm:text-lg">{t('noProductsFound')}</p>
             </div>
           ) : (
             <div className="space-y-12 sm:space-y-16 md:space-y-20">
@@ -355,14 +355,14 @@ const Home = () => {
                         {category}
                       </h2>
                       <p className="text-sm sm:text-base text-gray-600">
-                        {products.length} {products.length === 1 ? 'product' : 'products'} available
+                        {products.length} {products.length === 1 ? t('product') : t('products')} {t('available')}
                       </p>
                     </div>
                     <Link
                       to={`/products?category=${encodeURIComponent(category)}`}
                       className="hidden sm:flex items-center gap-2 text-[#FF385C] hover:text-[#E61E4D] font-semibold text-sm sm:text-base transition-colors"
                     >
-                      View All
+                      {t('viewAll')}
                       <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                       </svg>
@@ -383,7 +383,7 @@ const Home = () => {
                         to={`/products?category=${encodeURIComponent(category)}`}
                         className="inline-flex items-center gap-2 text-[#FF385C] hover:text-[#E61E4D] font-semibold text-sm transition-colors"
                       >
-                        View All {products.length} Products
+                        {t('viewAllProducts')} ({products.length})
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                         </svg>
@@ -398,7 +398,7 @@ const Home = () => {
                         to={`/products?category=${encodeURIComponent(category)}`}
                         className="inline-flex items-center gap-2 bg-white border-2 border-[#FF385C] text-[#FF385C] hover:bg-[#FF385C] hover:text-white px-6 py-3 rounded-full font-semibold text-sm transition-all shadow-md hover:shadow-lg"
                       >
-                        View All {products.length} Products
+                        {t('viewAllProducts')} ({products.length})
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                         </svg>

@@ -14,8 +14,21 @@ const AdminUsers = () => {
     name: '',
     email: '',
     password: '',
-    phone: ''
+    phone: '',
+    role: 'moderator',
+    permissions: {
+      viewDashboard: false,
+      manageProducts: false,
+      manageOrders: false,
+      manageUsers: false,
+      managePages: false,
+      manageMessages: false,
+      manageSettings: false
+    }
   })
+  const [showPermissionsModal, setShowPermissionsModal] = useState(false)
+  const [editingUser, setEditingUser] = useState(null)
+  const [updating, setUpdating] = useState(false)
 
   useEffect(() => {
     fetchUsers()
@@ -24,9 +37,17 @@ const AdminUsers = () => {
   const fetchUsers = async () => {
     try {
       const res = await api.get('/admin/users')
-      setUsers(res.data)
+      // Also fetch admin and moderator users
+      const allUsersRes = await api.get('/admin/users/all')
+      setUsers(allUsersRes.data || res.data)
     } catch (error) {
+      // Fallback to regular users if all users endpoint doesn't exist
+      try {
+        const res = await api.get('/admin/users')
+        setUsers(res.data)
+      } catch (err) {
       toast.error('Failed to fetch users')
+      }
     } finally {
       setLoading(false)
     }
@@ -71,9 +92,24 @@ const AdminUsers = () => {
     setCreating(true)
     try {
       const res = await api.post('/admin/users', formData)
-      toast.success('Admin user created successfully!')
+      toast.success('User created successfully!')
       setShowCreateModal(false)
-      setFormData({ name: '', email: '', password: '', phone: '' })
+      setFormData({ 
+        name: '', 
+        email: '', 
+        password: '', 
+        phone: '',
+        role: 'moderator',
+        permissions: {
+          viewDashboard: false,
+          manageProducts: false,
+          manageOrders: false,
+          manageUsers: false,
+          managePages: false,
+          manageMessages: false,
+          manageSettings: false
+        }
+      })
       fetchUsers() // Refresh users list
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to create admin user')
@@ -87,6 +123,58 @@ const AdminUsers = () => {
       ...formData,
       [e.target.name]: e.target.value
     })
+  }
+
+  const handlePermissionChange = (permission) => {
+    setFormData({
+      ...formData,
+      permissions: {
+        ...formData.permissions,
+        [permission]: !formData.permissions[permission]
+      }
+    })
+  }
+
+  const handleEditPermissions = (user) => {
+    setEditingUser(user)
+    setFormData({
+      name: user.name,
+      email: user.email,
+      phone: user.phone || '',
+      role: user.role || 'moderator',
+      permissions: user.permissions || {
+        viewDashboard: false,
+        manageProducts: false,
+        manageOrders: false,
+        manageUsers: false,
+        managePages: false,
+        manageMessages: false,
+        manageSettings: false
+      }
+    })
+    setShowPermissionsModal(true)
+  }
+
+  const handleUpdatePermissions = async (e) => {
+    e.preventDefault()
+    
+    if (!editingUser) return
+
+    setUpdating(true)
+    try {
+      await api.put(`/admin/users/${editingUser._id}`, {
+        role: formData.role,
+        permissions: formData.permissions
+      })
+      toast.success('User permissions updated successfully!')
+      setShowPermissionsModal(false)
+      setEditingUser(null)
+      fetchUsers()
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to update permissions')
+    } finally {
+      setUpdating(false)
+    }
   }
 
   if (loading) {
@@ -106,8 +194,8 @@ const AdminUsers = () => {
         {/* Page Header */}
         <div className="mb-6 flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">User Management</h1>
-            <p className="text-gray-600 mt-1">Manage all registered users and their accounts</p>
+          <h1 className="text-3xl font-bold text-gray-900">User Management</h1>
+          <p className="text-gray-600 mt-1">Manage all registered users and their accounts</p>
           </div>
           <button
             onClick={() => setShowCreateModal(true)}
@@ -116,7 +204,7 @@ const AdminUsers = () => {
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
             </svg>
-            Create Admin User
+            Create User
           </button>
         </div>
 
@@ -203,6 +291,14 @@ const AdminUsers = () => {
                             >
                               View
                             </button>
+                            {(user.role === 'admin' || user.role === 'moderator') && (
+                              <button
+                                onClick={() => handleEditPermissions(user)}
+                                className="text-blue-600 hover:text-blue-700 font-semibold transition-colors"
+                              >
+                                Permissions
+                              </button>
+                            )}
                             <button
                               onClick={() => handleDeleteUser(user._id)}
                               className="text-red-600 hover:text-red-700 font-semibold transition-colors"
@@ -327,7 +423,7 @@ const AdminUsers = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6 border-b border-gray-200 flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-gray-900">Create Admin User</h2>
+              <h2 className="text-2xl font-bold text-gray-900">Create User</h2>
               <button
                 onClick={() => {
                   setShowCreateModal(false)
@@ -403,12 +499,66 @@ const AdminUsers = () => {
                 />
               </div>
 
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Role <span className="text-red-500">*</span>
+                </label>
+                <select
+                  name="role"
+                  value={formData.role}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF385C] focus:border-[#FF385C] transition-all"
+                >
+                  <option value="moderator">Moderator</option>
+                  <option value="admin">Admin (Full Access)</option>
+                </select>
+                <p className="text-xs text-gray-500 mt-1">Moderators can have specific permissions assigned</p>
+              </div>
+
+              {formData.role === 'moderator' && (
+                <div className="border-t border-gray-200 pt-4">
+                  <label className="block text-sm font-semibold text-gray-700 mb-3">
+                    Permissions
+                  </label>
+                  <div className="space-y-2">
+                    {Object.keys(formData.permissions).map(permission => (
+                      <label key={permission} className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={formData.permissions[permission]}
+                          onChange={() => handlePermissionChange(permission)}
+                          className="w-4 h-4 text-[#FF385C] border-gray-300 rounded focus:ring-[#FF385C]"
+                        />
+                        <span className="text-sm text-gray-700 capitalize">
+                          {permission.replace(/([A-Z])/g, ' $1').trim()}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <div className="flex gap-3 pt-4">
                 <button
                   type="button"
                   onClick={() => {
                     setShowCreateModal(false)
-                    setFormData({ name: '', email: '', password: '', phone: '' })
+                    setFormData({ 
+                      name: '', 
+                      email: '', 
+                      password: '', 
+                      phone: '',
+                      role: 'moderator',
+                      permissions: {
+                        viewDashboard: false,
+                        manageProducts: false,
+                        manageOrders: false,
+                        manageUsers: false,
+                        managePages: false,
+                        manageMessages: false,
+                        manageSettings: false
+                      }
+                    })
                   }}
                   className="flex-1 px-4 py-2.5 border-2 border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-colors"
                   disabled={creating}
@@ -426,7 +576,7 @@ const AdminUsers = () => {
                       Creating...
                     </>
                   ) : (
-                    'Create Admin'
+                    'Create User'
                   )}
                 </button>
               </div>

@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import api from '../utils/api'
 import { useCart } from '../context/CartContext'
 import { useAuth } from '../context/AuthContext'
+import { useLanguage } from '../context/LanguageContext'
 import toast from 'react-hot-toast'
 import { formatCurrency } from '../utils/currency'
 
@@ -11,6 +12,7 @@ const ProductDetail = () => {
   const navigate = useNavigate()
   const { addToCart, getFinalPrice } = useCart()
   const { user } = useAuth()
+  const { t, isRTL } = useLanguage()
   const [product, setProduct] = useState(null)
   const [loading, setLoading] = useState(true)
   const [quantity, setQuantity] = useState(1)
@@ -34,7 +36,7 @@ const ProductDetail = () => {
       const res = await api.get(`/products/${id}`)
       setProduct(res.data)
     } catch (error) {
-      toast.error('Product not found')
+      toast.error(t('noProductsFound') || 'Product not found')
       navigate('/')
     } finally {
       setLoading(false)
@@ -43,11 +45,11 @@ const ProductDetail = () => {
 
   const handleAddToCart = () => {
     if (product.stock < quantity) {
-      toast.error('Insufficient stock')
+      toast.error(t('outOfStock') || 'Insufficient stock')
       return
     }
     addToCart(product, quantity)
-    toast.success('Added to cart!', {
+    toast.success(t('addedToCart') || 'Added to cart!', {
       icon: '✅',
       duration: 3000,
       style: {
@@ -69,13 +71,13 @@ const ProductDetail = () => {
   const handleSubmitReview = async (e) => {
     e.preventDefault()
     if (!user) {
-      toast.error('Please login to submit a review')
+      toast.error(t('pleaseLoginReview') || 'Please login to submit a review')
       return
     }
 
     try {
       await api.post(`/products/${id}/reviews`, review)
-      toast.success('Review submitted!')
+      toast.success(t('reviewSubmitted') || 'Review submitted!')
       setReview({ rating: 5, comment: '' })
       fetchProduct()
     } catch (error) {
@@ -162,7 +164,7 @@ const ProductDetail = () => {
                   <svg className="w-16 h-16 mx-auto mb-2 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
-                  <p className="text-sm font-medium">No Image Available</p>
+                  <p className="text-sm font-medium">{t('noProductsFound') || 'No Image Available'}</p>
                 </div>
               </div>
             )}
@@ -174,7 +176,7 @@ const ProductDetail = () => {
             <div className="flex items-center mb-3 md:mb-4">
               <span className="text-yellow-500 text-xl md:text-2xl">★</span>
               <span className="text-base md:text-xl text-gray-700 ml-2">
-                {product.averageRating || 0} ({product.numReviews || 0} reviews)
+                {product.averageRating || 0} ({product.numReviews || 0} {t('reviews') || 'reviews'})
               </span>
             </div>
             {/* Price with Discount */}
@@ -194,7 +196,7 @@ const ProductDetail = () => {
                       {formatCurrency(originalPrice)}
                     </span>
                     <span className="text-sm text-gray-600">
-                      You save {formatCurrency(originalPrice - discountedPrice)}
+                      {t('youSave') || 'You save'} {formatCurrency(originalPrice - discountedPrice)}
                     </span>
                   </div>
                 </div>
@@ -208,17 +210,17 @@ const ProductDetail = () => {
             
             <div className="mb-6">
               <p className="text-sm text-gray-600 mb-2">
-                <span className="font-semibold">Category:</span> {product.category}
+                <span className="font-semibold">{t('category')}:</span> {product.category}
               </p>
               <p className="text-sm text-gray-600">
-                <span className="font-semibold">Stock:</span> {product.stock} available
+                <span className="font-semibold">{t('stock')}:</span> {product.stock} {t('available')}
               </p>
             </div>
 
             {product.stock > 0 ? (
               <div className="mb-6">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Quantity
+                  {t('quantity')}
                 </label>
                 <div className="flex items-center space-x-4">
                   <button
@@ -237,7 +239,7 @@ const ProductDetail = () => {
                 </div>
               </div>
             ) : (
-              <p className="text-red-500 font-semibold mb-6">Out of Stock</p>
+              <p className="text-red-500 font-semibold mb-6">{t('outOfStockLabel') || 'Out of Stock'}</p>
             )}
 
             <div className="space-y-3">
@@ -246,7 +248,7 @@ const ProductDetail = () => {
               disabled={product.stock === 0}
               className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
             >
-              Add to Cart
+              {t('addToCartButton') || t('addToCart')}
             </button>
             </div>
           </div>
@@ -254,15 +256,15 @@ const ProductDetail = () => {
 
         {/* Reviews Section */}
         <div className="border-t p-4 md:p-8">
-          <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-4 md:mb-6">Reviews</h2>
+          <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-4 md:mb-6">{t('customerReviews') || t('reviews')}</h2>
           
           {/* Add Review Form */}
           {user && (
             <form onSubmit={handleSubmitReview} className="mb-8 p-4 bg-gray-50 rounded-lg">
-              <h3 className="text-lg font-semibold mb-4">Write a Review</h3>
+              <h3 className="text-lg font-semibold mb-4">{t('writeReview')}</h3>
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Rating
+                  {t('yourRating') || t('rating')}
                 </label>
                 <select
                   value={review.rating}
@@ -278,7 +280,7 @@ const ProductDetail = () => {
               </div>
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Comment
+                  {t('yourComment') || 'Comment'}
                 </label>
                 <textarea
                   value={review.comment}
@@ -292,7 +294,7 @@ const ProductDetail = () => {
                 type="submit"
                 className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md"
               >
-                Submit Review
+                {t('submitReview')}
               </button>
             </form>
           )}
@@ -312,7 +314,7 @@ const ProductDetail = () => {
                 </div>
               ))
             ) : (
-              <p className="text-gray-500">No reviews yet. Be the first to review!</p>
+              <p className="text-gray-500">{t('noReviews')}. {t('beFirstReview')}!</p>
             )}
           </div>
         </div>
@@ -322,4 +324,3 @@ const ProductDetail = () => {
 }
 
 export default ProductDetail
-
