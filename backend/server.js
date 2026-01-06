@@ -67,53 +67,75 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Connect to MongoDB
+// Connect to MongoDB (cache connection for serverless)
+let cachedDb = null;
+
 const connectDB = async () => {
+  // Return cached connection if available (for serverless)
+  if (cachedDb && mongoose.connection.readyState === 1) {
+    return cachedDb;
+  }
+
   const mongoURI = process.env.MONGODB_URI;
   
   if (!mongoURI) {
-    console.error('\n❌ MONGODB_URI is not set in .env file!');
-    console.error('\n📝 Please create a .env file in the backend folder with:');
-    console.error('   For MongoDB Atlas:');
-    console.error('   MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/findstore?retryWrites=true&w=majority');
-    console.error('\n   For Local MongoDB:');
-    console.error('   MONGODB_URI=mongodb://localhost:27017/findstore');
-    console.error('\n   See MONGODB_SETUP.md for detailed instructions.\n');
-    process.exit(1);
+    const errorMsg = '\n❌ MONGODB_URI is not set in environment variables!\n';
+    console.error(errorMsg);
+    if (require.main === module) {
+      console.error('\n📝 Please create a .env file in the backend folder with:');
+      console.error('   For MongoDB Atlas:');
+      console.error('   MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/findstore?retryWrites=true&w=majority');
+      console.error('\n   For Local MongoDB:');
+      console.error('   MONGODB_URI=mongodb://localhost:27017/findstore');
+      console.error('\n   See MONGODB_SETUP.md for detailed instructions.\n');
+      process.exit(1);
+    }
+    throw new Error('MONGODB_URI is not set');
   }
 
   try {
     const conn = await mongoose.connect(mongoURI);
     console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
-    return true;
+    cachedDb = conn;
+    return conn;
   } catch (error) {
     console.error('\n❌ MongoDB connection error:', error.message);
-    console.error('\n⚠️  Please check your MongoDB connection string in .env file');
-    console.error('\nFor MongoDB Atlas, ensure:');
-    console.error('  1. Your IP address is whitelisted (Network Access in Atlas)');
-    console.error('  2. Database user credentials are correct (Database Access in Atlas)');
-    console.error('  3. Connection string format is correct');
-    console.error('  4. Password is URL-encoded if it contains special characters');
-    console.error('\nExample connection string:');
-    console.error('   mongodb+srv://myuser:mypassword@cluster0.abc123.mongodb.net/findstore?retryWrites=true&w=majority');
-    console.error('\n📖 See MONGODB_SETUP.md for detailed troubleshooting guide.\n');
-    process.exit(1);
+    if (require.main === module) {
+      console.error('\n⚠️  Please check your MongoDB connection string in .env file');
+      console.error('\nFor MongoDB Atlas, ensure:');
+      console.error('  1. Your IP address is whitelisted (Network Access in Atlas)');
+      console.error('  2. Database user credentials are correct (Database Access in Atlas)');
+      console.error('  3. Connection string format is correct');
+      console.error('  4. Password is URL-encoded if it contains special characters');
+      console.error('\nExample connection string:');
+      console.error('   mongodb+srv://myuser:mypassword@cluster0.abc123.mongodb.net/findstore?retryWrites=true&w=majority');
+      console.error('\n📖 See MONGODB_SETUP.md for detailed troubleshooting guide.\n');
+      process.exit(1);
+    }
+    throw error;
   }
 };
 
-// Start server only after MongoDB connection
-const startServer = async () => {
-  try {
-    await connectDB();
-    const PORT = process.env.PORT || 5000;
-    app.listen(PORT, () => {
-      console.log(`✅ Server running on port ${PORT}`);
-    });
-  } catch (error) {
-    console.error('Failed to start server:', error);
-    process.exit(1);
-  }
-};
+// Initialize DB connection
+connectDB().catch(console.error);
 
-startServer();
+// Export app for Vercel serverless functions
+module.exports = app;
+
+// Start server only if not in serverless environment
+if (require.main === module) {
+  const startServer = async () => {
+    try {
+      await connectDB();
+      const PORT = process.env.PORT || 5000;
+      app.listen(PORT, () => {
+        console.log(`✅ Server running on port ${PORT}`);
+      });
+    } catch (error) {
+      console.error('Failed to start server:', error);
+      process.exit(1);
+    }
+  };
+  startServer();
+}
 
