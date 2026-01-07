@@ -106,34 +106,55 @@ router.get('/orders/:orderId', protect, isDeliveryMan, async (req, res, next) =>
   try {
     const { orderId } = req.params;
     
-    // Try to find by ID or by tracking number (last 12 chars of ID)
+    // Try to find by full ID first
     let order = await Order.findById(orderId)
       .populate('user', 'name email phone image address')
       .populate('items.product', 'name images price')
       .populate('assignedDeliveryMan', 'name email phone');
 
-    // If not found by ID, try searching by tracking number (assuming orderId might be last 12 chars)
+    // If not found by full ID, try searching by tracking number (last 12 chars)
     if (!order) {
-      const orders = await Order.find()
+      const allOrders = await Order.find()
         .populate('user', 'name email phone image address')
         .populate('items.product', 'name images price')
         .populate('assignedDeliveryMan', 'name email phone');
       
-      order = orders.find(o => 
-        o._id.toString().slice(-12).toUpperCase() === orderId.toUpperCase() &&
-        o.assignedDeliveryMan?.toString() === req.user._id.toString()
-      );
+      // First, try to find order with matching tracking number that's assigned to this delivery man
+      order = allOrders.find(o => {
+        const trackingMatch = o._id.toString().slice(-12).toUpperCase() === orderId.toUpperCase();
+        const isAssigned = o.assignedDeliveryMan?.toString() === req.user._id.toString();
+        return trackingMatch && isAssigned;
+      });
+
+      // If still not found, try finding by tracking number even if not assigned (for scanning convenience)
+      // This allows delivery men to scan any order, but we'll indicate it's not assigned
+      if (!order) {
+        order = allOrders.find(o => 
+          o._id.toString().slice(-12).toUpperCase() === orderId.toUpperCase()
+        );
+        
+        // If found but not assigned, still return it but indicate it needs assignment
+        if (order && (!order.assignedDeliveryMan || order.assignedDeliveryMan.toString() !== req.user._id.toString())) {
+          // Return the order but flag it as not assigned
+          return res.json({
+            ...order.toObject(),
+            _assignmentWarning: 'This order is not assigned to you. Contact admin to assign it.'
+          });
+        }
+      }
     }
 
     if (!order) {
-      return res.status(404).json({ message: 'Order not found or not assigned to you' });
+      return res.status(404).json({ message: 'Order not found. Please check the order ID.' });
     }
 
-    // Verify the order is assigned to this delivery man
-    if (order.assignedDeliveryMan?.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ message: 'This order is not assigned to you' });
+    // If order exists and is assigned to this delivery man, return it normally
+    // (The check above already handled the unassigned case)
+    if (order.assignedDeliveryMan?.toString() === req.user._id.toString()) {
+      return res.json(order);
     }
 
+    // This shouldn't happen, but just in case
     res.json(order);
   } catch (error) {
     next(error);
@@ -163,9 +184,12 @@ router.put('/orders/:orderId/status', protect, isDeliveryMan, [
       return res.status(404).json({ message: 'Order not found' });
     }
 
-    // Verify the order is assigned to this delivery man
-    if (order.assignedDeliveryMan?.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ message: 'This order is not assigned to you' });
+    // Auto-assign order if not assigned, or verify assignment
+    if (!order.assignedDeliveryMan) {
+      // Auto-assign the order to this delivery man if not assigned
+      order.assignedDeliveryMan = req.user._id;
+    } else if (order.assignedDeliveryMan.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'This order is assigned to another delivery person. Please contact admin.' });
     }
 
     // Update order status

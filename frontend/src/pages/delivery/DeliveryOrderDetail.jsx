@@ -36,13 +36,25 @@ const DeliveryOrderDetail = () => {
     try {
       setLoading(true)
       const res = await api.get(`/delivery/orders/${orderId}`)
-      setOrder(res.data)
-      setDeliveryStatus(res.data.deliveryStatus || 'pending')
-      setDeliveryNotes(res.data.deliveryNotes || '')
+      const orderData = res.data
+      
+      // Check if there's an assignment warning
+      if (orderData._assignmentWarning) {
+        toast.error(orderData._assignmentWarning, { duration: 5000 })
+        // Remove the warning flag from the order object
+        delete orderData._assignmentWarning
+      }
+      
+      setOrder(orderData)
+      setDeliveryStatus(orderData.deliveryStatus || 'pending')
+      setDeliveryNotes(orderData.deliveryNotes || '')
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to load order')
-      if (error.response?.status === 404) {
-        navigate('/delivery/dashboard')
+      const errorMessage = error.response?.data?.message || 'Failed to load order'
+      toast.error(errorMessage)
+      if (error.response?.status === 404 || error.response?.status === 403) {
+        setTimeout(() => {
+          navigate('/delivery/dashboard')
+        }, 2000)
       }
     } finally {
       setLoading(false)
