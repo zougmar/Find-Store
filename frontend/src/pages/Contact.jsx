@@ -27,7 +27,7 @@ const Contact = () => {
 
     try {
       await api.post('/messages', formData)
-      toast.success('Message sent successfully! We will get back to you soon.')
+      toast.success(t('messageSentSuccess') || 'Message sent successfully! We will get back to you soon.')
       setFormData({
         name: '',
         email: '',
@@ -63,10 +63,10 @@ const Contact = () => {
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12">
             {/* Contact Information */}
-            <div>
-              <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4 md:mb-6">Get in Touch</h2>
+            <div className={isRTL ? 'text-right' : 'text-left'}>
+              <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4 md:mb-6">{t('getInTouch')}</h2>
               <p className="text-sm md:text-base text-gray-600 mb-6 md:mb-8">
-                Have questions or need help? We're here to assist you. Reach out to us through any of the following channels.
+                {t('contactHelp')}
               </p>
 
               <div className="space-y-6">
@@ -79,7 +79,7 @@ const Contact = () => {
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900 mb-1">Email</h3>
                     <p className="text-gray-600">support@findstore.com</p>
-                    <p className="text-gray-600">info@findstore.com</p>
+                    <p className="text-gray-600">o.zouglah03@gmail.com</p>
                   </div>
                 </div>
 
@@ -91,7 +91,7 @@ const Contact = () => {
                   </div>
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900 mb-1">Phone</h3>
-                    <p className="text-gray-600">+1 (555) 123-4567</p>
+                    <p className="text-gray-600">+212 707625535</p>
                     <p className="text-gray-600">Mon-Fri: 9am - 6pm EST</p>
                   </div>
                 </div>
@@ -105,9 +105,9 @@ const Contact = () => {
                   </div>
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900 mb-1">Address</h3>
-                    <p className="text-gray-600">123 Store Street</p>
-                    <p className="text-gray-600">New York, NY 10001</p>
-                    <p className="text-gray-600">United States</p>
+                    <p className="text-gray-600">Csablanca, Morocco</p>
+                    <p className="text-gray-600">Errahma, Morocco</p>
+                    <p className="text-gray-600">Morocco</p>
                   </div>
                 </div>
               </div>
@@ -129,7 +129,7 @@ const Contact = () => {
                     onChange={handleChange}
                     required
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF385C] focus:border-transparent"
-                    placeholder="Your name"
+                    placeholder={t('placeholderYourName') || 'Your name'}
                   />
                 </div>
                 <div>
@@ -144,7 +144,7 @@ const Contact = () => {
                     onChange={handleChange}
                     required
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF385C] focus:border-transparent"
-                    placeholder="your.email@example.com"
+                    placeholder={t('placeholderYourEmail') || 'your.email@example.com'}
                   />
                 </div>
                 <div>
@@ -159,7 +159,7 @@ const Contact = () => {
                     onChange={handleChange}
                     required
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF385C] focus:border-transparent"
-                    placeholder="What's this about?"
+                    placeholder={t('placeholderSubject') || "What's this about?"}
                   />
                 </div>
                 <div>
@@ -174,7 +174,7 @@ const Contact = () => {
                     onChange={handleChange}
                     required
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF385C] focus:border-transparent"
-                    placeholder="Your message here..."
+                    placeholder={t('placeholderMessage') || 'Your message here...'}
                   />
                 </div>
                 <button

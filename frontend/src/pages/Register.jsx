@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { useLanguage } from '../context/LanguageContext'
 import logoImage from '../images/logo.png'
 
 const Register = () => {
@@ -12,6 +13,7 @@ const Register = () => {
   })
   const [loading, setLoading] = useState(false)
   const { register } = useAuth()
+  const { t, isRTL } = useLanguage()
   const navigate = useNavigate()
 
   const handleChange = (e) => {
@@ -50,19 +52,19 @@ const Register = () => {
             </div>
             
             <div className="px-8 md:px-10 pb-8 md:pb-10">
-              <div className="text-center mb-8">
+              <div className={`text-center mb-8 ${isRTL ? 'text-right' : 'text-left'}`}>
                 <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2 tracking-tight">
-                  Create your account
+                  {t('createAccount')}
                 </h2>
                 <p className="text-sm md:text-base text-gray-500 font-medium">
-                  Join us and start shopping today
+                  {t('joinUs')}
                 </p>
               </div>
               
               <form className="space-y-5" onSubmit={handleSubmit}>
               <div>
-                <label htmlFor="name" className="block text-sm font-semibold text-gray-700 mb-2.5">
-                  Full Name
+                <label htmlFor="name" className={`block text-sm font-semibold text-gray-700 mb-2.5 ${isRTL ? 'text-right' : 'text-left'}`}>
+                  {t('fullNameLabel')}
                 </label>
                 <input
                   id="name"
@@ -71,14 +73,14 @@ const Register = () => {
                   required
                   value={formData.name}
                   onChange={handleChange}
-                  className="w-full px-4 py-3.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#FF385C] focus:border-[#FF385C] transition-all text-sm md:text-base bg-gray-50 focus:bg-white"
-                  placeholder="John Doe"
+                  className={`w-full px-4 py-3.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#FF385C] focus:border-[#FF385C] transition-all text-sm md:text-base bg-gray-50 focus:bg-white ${isRTL ? 'text-right' : 'text-left'}`}
+                  placeholder={t('placeholderName') || 'John Doe'}
                 />
               </div>
               
               <div>
-                <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2.5">
-                  Email address
+                <label htmlFor="email" className={`block text-sm font-semibold text-gray-700 mb-2.5 ${isRTL ? 'text-right' : 'text-left'}`}>
+                  {t('emailAddress')}
                 </label>
                 <input
                   id="email"
@@ -87,14 +89,15 @@ const Register = () => {
                   required
                   value={formData.email}
                   onChange={handleChange}
-                  className="w-full px-4 py-3.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#FF385C] focus:border-[#FF385C] transition-all text-sm md:text-base bg-gray-50 focus:bg-white"
-                  placeholder="you@example.com"
+                  className={`w-full px-4 py-3.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#FF385C] focus:border-[#FF385C] transition-all text-sm md:text-base bg-gray-50 focus:bg-white ${isRTL ? 'text-right' : 'text-left'}`}
+                  placeholder={t('placeholderEmail') || 'you@example.com'}
+                  dir="ltr"
                 />
               </div>
               
               <div>
-                <label htmlFor="phone" className="block text-sm font-semibold text-gray-700 mb-2.5">
-                  Phone <span className="text-gray-500 font-normal text-xs">(Optional)</span>
+                <label htmlFor="phone" className={`block text-sm font-semibold text-gray-700 mb-2.5 ${isRTL ? 'text-right' : 'text-left'}`}>
+                  {t('phoneOptional')} <span className="text-gray-500 font-normal text-xs">{t('phoneOptionalNote')}</span>
                 </label>
                 <input
                   id="phone"
@@ -103,13 +106,13 @@ const Register = () => {
                   value={formData.phone}
                   onChange={handleChange}
                   className="w-full px-4 py-3.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#FF385C] focus:border-[#FF385C] transition-all text-sm md:text-base bg-gray-50 focus:bg-white"
-                  placeholder="+1 (555) 123-4567"
+                  placeholder={t('placeholderPhone') || '+1 (555) 123-4567'}
                 />
               </div>
               
               <div>
-                <label htmlFor="password" className="block text-sm font-semibold text-gray-700 mb-2.5">
-                  Password
+                <label htmlFor="password" className={`block text-sm font-semibold text-gray-700 mb-2.5 ${isRTL ? 'text-right' : 'text-left'}`}>
+                  {t('password')}
                 </label>
                 <input
                   id="password"
@@ -119,9 +122,9 @@ const Register = () => {
                   value={formData.password}
                   onChange={handleChange}
                   className="w-full px-4 py-3.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#FF385C] focus:border-[#FF385C] transition-all text-sm md:text-base bg-gray-50 focus:bg-white"
-                  placeholder="Minimum 6 characters"
+                  placeholder={t('minimumCharacters') || 'Minimum 6 characters'}
                 />
-                <p className="mt-2 text-xs text-gray-500 font-medium">Must be at least 6 characters long</p>
+                <p className={`mt-2 text-xs text-gray-500 font-medium ${isRTL ? 'text-right' : 'text-left'}`}>{t('minimumCharacters')}</p>
               </div>
 
               <div className="pt-1">
@@ -136,19 +139,19 @@ const Register = () => {
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                       </svg>
-                      Creating Account...
+                      {t('creatingAccount')}
                     </span>
                   ) : (
-                    'Create Account'
+                    t('createAccountButton')
                   )}
                 </button>
               </div>
 
-              <div className="text-center pt-2">
+              <div className={`text-center pt-2 ${isRTL ? 'text-right' : 'text-left'}`}>
                 <p className="text-sm text-gray-600">
-                  Already have an account?{' '}
+                  {t('alreadyHaveAccount')}{' '}
                   <Link to="/login" className="font-semibold text-[#FF385C] hover:text-[#E61E4D] transition-colors underline-offset-2 hover:underline">
-                    Sign in
+                    {t('signInLink')}
                   </Link>
                 </p>
               </div>

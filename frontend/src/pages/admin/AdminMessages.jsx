@@ -8,6 +8,7 @@ const AdminMessages = () => {
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('all') // all, read, unread
   const [selectedMessage, setSelectedMessage] = useState(null)
+  const [searchQuery, setSearchQuery] = useState('')
 
   useEffect(() => {
     fetchMessages()
@@ -86,6 +87,23 @@ const AdminMessages = () => {
 
   const unreadCount = messages.filter(msg => !msg.read).length
 
+  // Filter messages based on search query and read status
+  const filteredMessages = messages.filter(message => {
+    const matchesSearch = !searchQuery || 
+      message.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      message.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      message.subject?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      message.message?.toLowerCase().includes(searchQuery.toLowerCase())
+
+    const matchesFilter = filter === 'all' ||
+      (filter === 'read' && message.read) ||
+      (filter === 'unread' && !message.read)
+
+    return matchesSearch && matchesFilter
+  })
+
+  const filteredUnreadCount = filteredMessages.filter(msg => !msg.read).length
+
   if (loading) {
     return (
       <AdminLayout>
@@ -113,6 +131,40 @@ const AdminMessages = () => {
           )}
         </div>
 
+        {/* Search Bar */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <label className="block text-sm font-semibold text-gray-700 mb-2">Search Messages</label>
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search by Name, Email, Subject, Message..."
+              className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute inset-y-0 right-0 pr-3 flex items-center"
+              >
+                <svg className="h-5 w-5 text-gray-400 hover:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            )}
+          </div>
+          {searchQuery && (
+            <div className="mt-3 text-sm text-gray-600">
+              Showing <span className="font-semibold text-gray-900">{filteredMessages.length}</span> results
+            </div>
+          )}
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Messages List */}
           <div className="lg:col-span-1">
@@ -127,7 +179,7 @@ const AdminMessages = () => {
                       : 'text-gray-600 hover:bg-gray-50'
                   }`}
                 >
-                  All ({messages.length})
+                  All ({filteredMessages.length})
                 </button>
                 <button
                   onClick={() => setFilter('unread')}
@@ -137,7 +189,7 @@ const AdminMessages = () => {
                       : 'text-gray-600 hover:bg-gray-50'
                   }`}
                 >
-                  Unread ({unreadCount})
+                  Unread ({filteredUnreadCount})
                 </button>
                 <button
                   onClick={() => setFilter('read')}
@@ -147,21 +199,21 @@ const AdminMessages = () => {
                       : 'text-gray-600 hover:bg-gray-50'
                   }`}
                 >
-                  Read ({messages.length - unreadCount})
+                  Read ({filteredMessages.length - filteredUnreadCount})
                 </button>
               </div>
 
               {/* Messages List */}
               <div className="max-h-[calc(100vh-300px)] overflow-y-auto">
-                {messages.length === 0 ? (
+                {filteredMessages.length === 0 ? (
                   <div className="p-8 text-center text-gray-500">
                     <svg className="w-12 h-12 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                     </svg>
-                    <p>No messages found</p>
+                    <p>{messages.length === 0 ? 'No messages found' : 'No messages match your search'}</p>
                   </div>
                 ) : (
-                  messages.map((message) => (
+                  filteredMessages.map((message) => (
                     <div
                       key={message._id}
                       onClick={() => handleViewMessage(message)}

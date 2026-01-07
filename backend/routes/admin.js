@@ -417,7 +417,7 @@ router.delete('/users/:id', async (req, res, next) => {
 router.get('/orders', hasPermission('manageOrders'), async (req, res, next) => {
   try {
     const orders = await Order.find()
-      .populate('user', 'name email phone')
+      .populate('user', 'name email phone image address')
       .populate('items.product', 'name images')
       .sort({ createdAt: -1 });
     

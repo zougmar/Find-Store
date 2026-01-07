@@ -271,16 +271,16 @@ const ProductDetail = () => {
                   onChange={(e) => setReview({ ...review, rating: Number(e.target.value) })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md"
                 >
-                  <option value={5}>5 - Excellent</option>
-                  <option value={4}>4 - Very Good</option>
-                  <option value={3}>3 - Good</option>
-                  <option value={2}>2 - Fair</option>
-                  <option value={1}>1 - Poor</option>
+                  <option value={5}>{t('ratingExcellent') || '5 - Excellent'}</option>
+                  <option value={4}>{t('ratingVeryGood') || '4 - Very Good'}</option>
+                  <option value={3}>{t('ratingGood') || '3 - Good'}</option>
+                  <option value={2}>{t('ratingFair') || '2 - Fair'}</option>
+                  <option value={1}>{t('ratingPoor') || '1 - Poor'}</option>
                 </select>
               </div>
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {t('yourComment') || 'Comment'}
+                  {t('yourComment') || t('comment') || 'Comment'}
                 </label>
                 <textarea
                   value={review.comment}

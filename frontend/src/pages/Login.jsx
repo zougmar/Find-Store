@@ -1,11 +1,13 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { useLanguage } from '../context/LanguageContext'
 import logoImage from '../images/logo.png'
 
 const Login = () => {
   const [formData, setFormData] = useState({ email: '', password: '' })
   const { login } = useAuth()
+  const { t, isRTL } = useLanguage()
   const navigate = useNavigate()
 
   const handleChange = (e) => {
@@ -40,19 +42,19 @@ const Login = () => {
             </div>
             
             <div className="px-8 md:px-10 pb-8 md:pb-10">
-              <div className="text-center mb-8">
+              <div className={`text-center mb-8 ${isRTL ? 'text-right' : 'text-left'}`}>
                 <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2 tracking-tight">
-                  Welcome back
+                  {t('welcomeBack')}
                 </h2>
                 <p className="text-sm md:text-base text-gray-500 font-medium">
-                  Sign in to your account to continue
+                  {t('signInContinue')}
                 </p>
               </div>
               
               <form className="space-y-6" onSubmit={handleSubmit}>
                 <div>
-                  <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2.5">
-                    Email address
+                  <label htmlFor="email" className={`block text-sm font-semibold text-gray-700 mb-2.5 ${isRTL ? 'text-right' : 'text-left'}`}>
+                    {t('emailAddress')}
                   </label>
                   <input
                     id="email"
@@ -61,14 +63,15 @@ const Login = () => {
                     required
                     value={formData.email}
                     onChange={handleChange}
-                    className="w-full px-4 py-3.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#FF385C] focus:border-[#FF385C] transition-all text-sm md:text-base bg-gray-50 focus:bg-white"
-                    placeholder="you@example.com"
+                    className={`w-full px-4 py-3.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#FF385C] focus:border-[#FF385C] transition-all text-sm md:text-base bg-gray-50 focus:bg-white ${isRTL ? 'text-right' : 'text-left'}`}
+                    placeholder={t('placeholderEmail') || 'you@example.com'}
+                    dir="ltr"
                   />
                 </div>
                 
                 <div>
-                  <label htmlFor="password" className="block text-sm font-semibold text-gray-700 mb-2.5">
-                    Password
+                  <label htmlFor="password" className={`block text-sm font-semibold text-gray-700 mb-2.5 ${isRTL ? 'text-right' : 'text-left'}`}>
+                    {t('password')}
                   </label>
                   <input
                     id="password"
@@ -78,7 +81,7 @@ const Login = () => {
                     value={formData.password}
                     onChange={handleChange}
                     className="w-full px-4 py-3.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#FF385C] focus:border-[#FF385C] transition-all text-sm md:text-base bg-gray-50 focus:bg-white"
-                    placeholder="Enter your password"
+                    placeholder={t('placeholderPassword') || 'Enter your password'}
                   />
                 </div>
 
@@ -87,15 +90,15 @@ const Login = () => {
                     type="submit"
                     className="w-full bg-gradient-to-r from-[#FF385C] to-[#E61E4D] hover:from-[#E61E4D] hover:to-[#D91A47] text-white font-semibold py-3.5 px-4 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-[1.01] text-sm md:text-base"
                   >
-                    Sign in
+                    {t('signIn')}
                   </button>
                 </div>
 
-                <div className="text-center pt-2">
+                <div className={`text-center pt-2 ${isRTL ? 'text-right' : 'text-left'}`}>
                   <p className="text-sm text-gray-600">
-                    Don't have an account?{' '}
+                    {t('dontHaveAccount')}{' '}
                     <Link to="/register" className="font-semibold text-[#FF385C] hover:text-[#E61E4D] transition-colors underline-offset-2 hover:underline">
-                      Create one
+                      {t('createOne')}
                     </Link>
                   </p>
                 </div>

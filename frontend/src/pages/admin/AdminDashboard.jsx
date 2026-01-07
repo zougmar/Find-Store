@@ -144,19 +144,19 @@ const AdminDashboard = () => {
     <AdminLayout>
       <div className="space-y-6 pb-8">
         {/* Page Header */}
-        <div className="bg-gradient-to-r from-[#FF385C] to-[#E61E4D] rounded-2xl shadow-xl p-8 text-white mb-8">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+        <div className="bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-800 rounded-xl shadow-lg p-6 md:p-8 text-white">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
-              <h1 className="text-4xl font-bold mb-2">Dashboard Overview</h1>
-              <p className="text-white/90 text-lg">{currentDate}</p>
-              <p className="text-white/80 mt-2">Welcome back! Here's what's happening with your store today.</p>
+              <h1 className="text-3xl md:text-4xl font-bold mb-2">Dashboard Overview</h1>
+              <p className="text-white/90 text-base md:text-lg">{currentDate}</p>
+              <p className="text-white/80 mt-2 text-sm md:text-base">Welcome back! Here's what's happening with your store today.</p>
             </div>
-            <div className="mt-4 md:mt-0 flex gap-3">
+            <div className="mt-4 md:mt-0 flex flex-wrap gap-3">
               <Link
                 to="/admin/messages"
-                className="bg-white/20 hover:bg-white/30 backdrop-blur-sm px-6 py-3 rounded-xl font-semibold transition-all flex items-center gap-2"
+                className="bg-white/20 hover:bg-white/30 backdrop-blur-sm px-4 md:px-6 py-2.5 md:py-3 rounded-lg font-semibold transition-all flex items-center gap-2 text-sm md:text-base border border-white/20"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                 </svg>
                 View Messages
@@ -168,9 +168,9 @@ const AdminDashboard = () => {
               </Link>
               <Link
                 to="/admin/orders"
-                className="bg-white/20 hover:bg-white/30 backdrop-blur-sm px-6 py-3 rounded-xl font-semibold transition-all flex items-center gap-2"
+                className="bg-white/20 hover:bg-white/30 backdrop-blur-sm px-4 md:px-6 py-2.5 md:py-3 rounded-lg font-semibold transition-all flex items-center gap-2 text-sm md:text-base border border-white/20"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                 </svg>
                 View Orders
@@ -180,10 +180,10 @@ const AdminDashboard = () => {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 md:gap-6">
           {/* Total Users Card */}
-          <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 relative overflow-hidden group">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-100 rounded-full -mr-16 -mt-16 opacity-20 group-hover:opacity-30 transition-opacity"></div>
+          <div className="bg-white rounded-xl shadow-sm p-5 md:p-6 border border-gray-200 hover:shadow-md transition-all duration-200 relative overflow-hidden group">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-blue-50 rounded-full -mr-12 -mt-12 opacity-40 group-hover:opacity-50 transition-opacity"></div>
             <div className="relative">
               <div className="flex items-center justify-between mb-4">
                 <div className="p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg">
@@ -290,8 +290,8 @@ const AdminDashboard = () => {
           </div>
 
           {/* Total Revenue Card */}
-          <div className="bg-gradient-to-br from-[#FF385C] to-[#E61E4D] rounded-2xl shadow-xl p-6 text-white hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 relative overflow-hidden group">
-            <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -mr-20 -mt-20"></div>
+          <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-xl shadow-md p-5 md:p-6 text-white hover:shadow-lg transition-all duration-200 relative overflow-hidden group border border-blue-500">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16"></div>
             <div className="relative">
               <div className="flex items-center justify-between mb-4">
                 <div className="p-3 bg-white/20 backdrop-blur-sm rounded-xl shadow-lg">
@@ -314,59 +314,74 @@ const AdminDashboard = () => {
         </div>
 
         {/* Sales Over Time Line Chart */}
-        <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 md:p-8">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
             <div>
-              <h2 className="text-3xl font-bold text-gray-900 mb-2">Sales Trend</h2>
-              <p className="text-gray-600">Last 12 months performance overview</p>
+              <h2 className="text-2xl font-bold text-gray-900 mb-1">Sales Trend</h2>
+              <p className="text-sm text-gray-600">Last 12 months performance overview</p>
             </div>
-            <div className="flex items-center gap-6 mt-4 md:mt-0">
-              <div className="flex items-center gap-3 bg-blue-50 px-4 py-2 rounded-lg border border-blue-100">
-                <div className="w-4 h-4 rounded-full bg-blue-500 shadow-sm"></div>
-                <span className="text-sm text-gray-700 font-semibold">Orders</span>
+            <div className="flex items-center gap-4 mt-4 md:mt-0">
+              <div className="flex items-center gap-2 bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-200">
+                <div className="w-3 h-3 rounded-full bg-blue-600"></div>
+                <span className="text-xs font-semibold text-gray-700">Orders</span>
               </div>
-              <div className="flex items-center gap-3 bg-green-50 px-4 py-2 rounded-lg border border-green-100">
-                <div className="w-4 h-4 rounded-full bg-green-500 shadow-sm"></div>
-                <span className="text-sm text-gray-700 font-semibold">Revenue</span>
+              <div className="flex items-center gap-2 bg-green-50 px-3 py-1.5 rounded-lg border border-green-200">
+                <div className="w-3 h-3 rounded-full bg-green-600"></div>
+                <span className="text-xs font-semibold text-gray-700">Revenue</span>
               </div>
             </div>
           </div>
           {sortedChartData && sortedChartData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={450}>
-              <LineChart data={sortedChartData} margin={{ top: 10, right: 30, left: 20, bottom: 60 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" opacity={0.5} />
+            <ResponsiveContainer width="100%" height={400}>
+              <LineChart data={sortedChartData} margin={{ top: 15, right: 20, left: 0, bottom: 50 }}>
+              <defs>
+                <linearGradient id="ordersGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
+                  <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                </linearGradient>
+                <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
+                  <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" opacity={0.3} vertical={false} />
               <XAxis 
                 dataKey="month" 
-                stroke="#6b7280"
-                style={{ fontSize: '13px', fontWeight: '500' }}
+                stroke="#9ca3af"
+                style={{ fontSize: '12px', fontWeight: '500', fontFamily: 'system-ui' }}
                 angle={-45}
                 textAnchor="end"
-                height={80}
+                height={70}
                 tick={{ fill: '#6b7280' }}
+                tickLine={{ stroke: '#d1d5db' }}
               />
               <YAxis 
                 yAxisId="left"
                 stroke="#3b82f6"
-                style={{ fontSize: '13px', fontWeight: '500' }}
+                style={{ fontSize: '12px', fontWeight: '600', fontFamily: 'system-ui' }}
                 tick={{ fill: '#3b82f6' }}
-                label={{ value: 'Orders', angle: -90, position: 'insideLeft', style: { textAnchor: 'middle', fill: '#3b82f6', fontWeight: '600' } }}
+                tickLine={{ stroke: '#93c5fd' }}
+                width={60}
               />
               <YAxis 
                 yAxisId="right"
                 orientation="right"
                 stroke="#10b981"
-                style={{ fontSize: '13px', fontWeight: '500' }}
+                style={{ fontSize: '12px', fontWeight: '600', fontFamily: 'system-ui' }}
                 tick={{ fill: '#10b981' }}
-                label={{ value: 'Revenue (MAD)', angle: 90, position: 'insideRight', style: { textAnchor: 'middle', fill: '#10b981', fontWeight: '600' } }}
+                tickLine={{ stroke: '#86efac' }}
+                width={80}
               />
               <Tooltip 
                 contentStyle={{ 
-                  backgroundColor: '#fff', 
-                  border: '2px solid #e5e7eb', 
-                  borderRadius: '12px',
-                  boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
-                  padding: '12px'
+                  backgroundColor: '#ffffff', 
+                  border: '1px solid #e5e7eb', 
+                  borderRadius: '8px',
+                  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                  padding: '10px 12px',
+                  fontSize: '13px'
                 }}
+                labelStyle={{ fontWeight: '600', marginBottom: '4px', color: '#374151' }}
                 formatter={(value, name) => {
                   if (name === 'revenue') {
                     return [formatCurrency(value), 'Revenue'];
@@ -375,18 +390,18 @@ const AdminDashboard = () => {
                 }}
               />
               <Legend 
-                wrapperStyle={{ paddingTop: '30px' }}
+                wrapperStyle={{ paddingTop: '20px', fontSize: '13px' }}
                 iconType="line"
-                iconSize={16}
+                iconSize={14}
               />
               <Line 
                 yAxisId="left"
                 type="monotone" 
                 dataKey="orders" 
                 stroke="#3b82f6" 
-                strokeWidth={4}
-                dot={{ fill: '#3b82f6', r: 5, strokeWidth: 2, stroke: '#fff' }}
-                activeDot={{ r: 8, strokeWidth: 2, stroke: '#fff' }}
+                strokeWidth={3}
+                dot={{ fill: '#3b82f6', r: 4, strokeWidth: 2, stroke: '#fff' }}
+                activeDot={{ r: 6, strokeWidth: 2, stroke: '#fff', fill: '#3b82f6' }}
                 name="Orders"
               />
               <Line 
@@ -394,15 +409,15 @@ const AdminDashboard = () => {
                 type="monotone" 
                 dataKey="revenue" 
                 stroke="#10b981" 
-                strokeWidth={4}
-                dot={{ fill: '#10b981', r: 5, strokeWidth: 2, stroke: '#fff' }}
-                activeDot={{ r: 8, strokeWidth: 2, stroke: '#fff' }}
+                strokeWidth={3}
+                dot={{ fill: '#10b981', r: 4, strokeWidth: 2, stroke: '#fff' }}
+                activeDot={{ r: 6, strokeWidth: 2, stroke: '#fff', fill: '#10b981' }}
                 name="Revenue"
               />
             </LineChart>
           </ResponsiveContainer>
           ) : (
-            <div className="flex flex-col items-center justify-center h-[450px] text-gray-400">
+            <div className="flex flex-col items-center justify-center h-[400px] text-gray-400">
               <div className="p-4 bg-gray-100 rounded-full mb-4">
                 <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
@@ -415,46 +430,61 @@ const AdminDashboard = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Best Selling Products */}
-          <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
-            <div className="flex items-center gap-4 mb-8">
-              <div className="p-3 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-xl shadow-lg">
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-2.5 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-lg shadow-md">
+                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
                 </svg>
               </div>
               <div>
-                <h2 className="text-2xl font-bold text-gray-900">Best Selling Products</h2>
-                <p className="text-sm text-gray-500 mt-1">Top performing items</p>
+                <h2 className="text-xl font-bold text-gray-900">Best Selling Products</h2>
+                <p className="text-xs text-gray-500 mt-0.5">Top performing items</p>
               </div>
             </div>
             {stats.bestSellingProducts && stats.bestSellingProducts.length > 0 ? (
-              <ResponsiveContainer width="100%" height={350}>
-                <BarChart data={stats.bestSellingProducts} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" opacity={0.5} />
+              <ResponsiveContainer width="100%" height={320}>
+                <BarChart data={stats.bestSellingProducts} margin={{ top: 15, right: 20, left: 0, bottom: 60 }}>
+                  <defs>
+                    <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#6366f1" stopOpacity={0.9}/>
+                      <stop offset="95%" stopColor="#6366f1" stopOpacity={0.6}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" opacity={0.3} vertical={false} />
                   <XAxis 
                     dataKey="_id.name" 
-                    stroke="#6b7280"
-                    style={{ fontSize: '13px', fontWeight: '500' }}
+                    stroke="#9ca3af"
+                    style={{ fontSize: '11px', fontWeight: '500', fontFamily: 'system-ui' }}
                     angle={-45}
                     textAnchor="end"
-                    height={80}
+                    height={70}
                     tick={{ fill: '#6b7280' }}
+                    tickLine={{ stroke: '#d1d5db' }}
                   />
-                  <YAxis stroke="#6b7280" style={{ fontSize: '13px', fontWeight: '500' }} tick={{ fill: '#6b7280' }} />
+                  <YAxis 
+                    stroke="#6b7280" 
+                    style={{ fontSize: '12px', fontWeight: '600', fontFamily: 'system-ui' }} 
+                    tick={{ fill: '#6b7280' }}
+                    tickLine={{ stroke: '#d1d5db' }}
+                    width={50}
+                  />
                   <Tooltip 
                     contentStyle={{ 
-                      backgroundColor: '#fff', 
-                      border: '2px solid #e5e7eb', 
-                      borderRadius: '12px',
-                      boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
-                      padding: '12px'
+                      backgroundColor: '#ffffff', 
+                      border: '1px solid #e5e7eb', 
+                      borderRadius: '8px',
+                      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                      padding: '10px 12px',
+                      fontSize: '13px'
                     }}
+                    labelStyle={{ fontWeight: '600', marginBottom: '4px', color: '#374151' }}
                   />
-                  <Bar dataKey="totalSold" fill="#6366f1" radius={[12, 12, 0, 0]} name="Units Sold" />
+                  <Bar dataKey="totalSold" fill="url(#barGradient)" radius={[8, 8, 0, 0]} name="Units Sold" />
                 </BarChart>
               </ResponsiveContainer>
             ) : (
-              <div className="flex flex-col items-center justify-center h-[350px] text-gray-400">
+              <div className="flex flex-col items-center justify-center h-[320px] text-gray-400">
                 <div className="p-4 bg-gray-100 rounded-full mb-4">
                   <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
@@ -466,44 +496,48 @@ const AdminDashboard = () => {
         </div>
 
           {/* Orders by Status */}
-          <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
-            <div className="flex items-center gap-4 mb-8">
-              <div className="p-3 bg-gradient-to-br from-pink-500 to-pink-600 rounded-xl shadow-lg">
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-2.5 bg-gradient-to-br from-pink-500 to-pink-600 rounded-lg shadow-md">
+                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                 </svg>
               </div>
               <div>
-                <h2 className="text-2xl font-bold text-gray-900">Orders by Status</h2>
-                <p className="text-sm text-gray-500 mt-1">Order distribution overview</p>
+                <h2 className="text-xl font-bold text-gray-900">Orders by Status</h2>
+                <p className="text-xs text-gray-500 mt-0.5">Order distribution overview</p>
               </div>
             </div>
             {orderStatusData.length > 0 ? (
               <div className="flex flex-col items-center">
-                <ResponsiveContainer width="100%" height={350}>
+                <ResponsiveContainer width="100%" height={320}>
                   <PieChart>
                     <Pie
                       data={orderStatusData}
                       cx="50%"
                       cy="50%"
                       labelLine={false}
-                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                      outerRadius={120}
+                      label={({ name, percent }) => `${(percent * 100).toFixed(0)}%`}
+                      outerRadius={100}
+                      innerRadius={40}
                       fill="#8884d8"
                       dataKey="value"
+                      paddingAngle={2}
                     >
                       {orderStatusData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={getStatusColor(entry.status)} stroke="#fff" strokeWidth={2} />
+                        <Cell key={`cell-${index}`} fill={getStatusColor(entry.status)} stroke="#fff" strokeWidth={2.5} />
                       ))}
                     </Pie>
                     <Tooltip 
                       contentStyle={{ 
-                        backgroundColor: '#fff', 
-                        border: '2px solid #e5e7eb', 
-                        borderRadius: '12px',
-                        boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
-                        padding: '12px'
+                        backgroundColor: '#ffffff', 
+                        border: '1px solid #e5e7eb', 
+                        borderRadius: '8px',
+                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                        padding: '10px 12px',
+                        fontSize: '13px'
                       }}
+                      labelStyle={{ fontWeight: '600', marginBottom: '4px', color: '#374151' }}
                     />
                   </PieChart>
                 </ResponsiveContainer>
@@ -517,7 +551,7 @@ const AdminDashboard = () => {
                 </div>
               </div>
             ) : (
-              <div className="flex flex-col items-center justify-center h-[350px] text-gray-400">
+              <div className="flex flex-col items-center justify-center h-[320px] text-gray-400">
                 <div className="p-4 bg-gray-100 rounded-full mb-4">
                   <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />

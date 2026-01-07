@@ -83,77 +83,110 @@ const AdminSidebar = ({ isOpen = true, onClose }) => {
   }
 
   return (
-    <div className={`bg-gray-900 text-white w-64 min-h-screen fixed left-0 top-0 flex flex-col z-50 transform transition-transform duration-300 ease-in-out lg:translate-x-0 ${
+    <div className={`bg-gradient-to-b from-[#1e293b] to-[#0f172a] text-white w-64 min-h-screen fixed left-0 top-0 flex flex-col z-50 transform transition-transform duration-300 ease-in-out lg:translate-x-0 shadow-2xl ${
       isOpen ? 'translate-x-0' : '-translate-x-full'
     }`}>
-      <div className="p-4 border-b border-gray-800 flex justify-center items-center relative">
+      {/* Logo Header */}
+      <div className="p-6 border-b border-gray-700/50 flex justify-center items-center relative bg-[#1e293b]/50">
         <div className="flex flex-col items-center gap-3">
           <div className="relative">
-            <div className="w-20 h-20 md:w-24 md:h-24 lg:w-28 lg:h-28 rounded-full bg-white p-2 shadow-lg border-2 border-gray-700 flex items-center justify-center">
+            <div className="w-16 h-16 rounded-xl bg-white p-2 shadow-xl border-2 border-blue-500/30 flex items-center justify-center ring-2 ring-blue-500/20">
               <img 
                 src={logoAdminImage} 
                 alt="Find Store Admin Logo" 
-                className="w-full h-full rounded-full object-cover"
+                className="w-full h-full rounded-lg object-cover"
               />
             </div>
           </div>
-          <p className="text-xs md:text-sm text-gray-400 font-medium">Admin Panel</p>
+          <div className="text-center">
+            <p className="text-sm font-bold text-white">Find Store</p>
+            <p className="text-xs text-gray-400 font-medium">Control Panel</p>
+          </div>
         </div>
         <button
           onClick={onClose}
-          className="lg:hidden absolute right-4 p-2 rounded-md hover:bg-gray-800 transition-colors"
+          className="lg:hidden absolute right-4 top-4 p-2 rounded-lg hover:bg-gray-700/50 transition-colors text-gray-300"
+          aria-label="Close menu"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
       </div>
-      <div className="p-4 flex-1 flex flex-col">
-        <nav className="space-y-1">
+      
+      {/* Navigation Menu */}
+      <div className="p-4 flex-1 flex flex-col overflow-y-auto">
+        <nav className="space-y-2">
+          <div className="px-2 py-2 mb-2">
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Main Menu</p>
+          </div>
           {menuItems.map((item) => (
             <Link
               key={item.path}
               to={item.path}
-              className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
+              onClick={() => onClose && window.innerWidth < 1024 && onClose()}
+              className={`group flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 relative ${
                 isActive(item.path)
-                  ? 'bg-blue-600 text-white'
-                  : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+                  ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg shadow-blue-500/30'
+                  : 'text-gray-300 hover:bg-gray-700/50 hover:text-white'
               }`}
             >
-              {item.icon}
-              <span className="font-medium">{item.name}</span>
+              <div className={`flex-shrink-0 ${isActive(item.path) ? 'text-white' : 'text-gray-400 group-hover:text-white'}`}>
+                {item.icon}
+              </div>
+              <span className="font-medium text-sm">{item.name}</span>
+              {isActive(item.path) && (
+                <div className="absolute right-3 w-2 h-2 rounded-full bg-white"></div>
+              )}
             </Link>
           ))}
         </nav>
         
-        {/* User Info at Bottom */}
-        <div className="mt-auto pt-4 border-t border-gray-800">
-          <Link to="/profile" className="block px-4 hover:bg-gray-800 rounded-lg transition-colors">
-            <div className="flex items-center gap-3 mb-2 cursor-pointer">
-              {user?.image ? (
-                <img
-                  key={`${user.image}-${imageKey}`}
-                  src={user.image}
-                  alt={user.name}
-                  className="w-12 h-12 rounded-full object-cover border-2 border-gray-700"
-                  onError={(e) => {
-                    console.error('Image load error in sidebar:', user.image, e)
-                    e.target.style.display = 'none'
-                    e.target.nextSibling.style.display = 'flex'
-                  }}
-                  onLoad={() => console.log('Sidebar image loaded:', user.image)}
-                />
-              ) : null}
-              <div 
-                className={`w-12 h-12 rounded-full bg-gray-700 flex items-center justify-center ${user?.image ? 'hidden' : ''}`}
-              >
-                <svg className="w-6 h-6 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
-              </div>
+        {/* Quick Stats or Info Section */}
+        <div className="mt-6 px-4">
+          <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-700/50">
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">System Status</p>
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+              <span className="text-xs text-gray-300">All systems operational</span>
             </div>
-            <p className="text-xs md:text-sm text-gray-400">Logged in as</p>
-            <p className="text-white font-semibold mt-1 text-sm md:text-base">{user?.name || 'Admin'}</p>
+          </div>
+        </div>
+        
+        {/* User Info at Bottom */}
+        <div className="mt-auto pt-4 border-t border-gray-700/50">
+          <Link 
+            to="/profile" 
+            className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-gray-700/50 transition-all duration-200 group"
+          >
+            {user?.image ? (
+              <img
+                key={`${user.image}-${imageKey}`}
+                src={user.image}
+                alt={user.name}
+                className="w-10 h-10 rounded-lg object-cover border-2 border-gray-600 group-hover:border-blue-500 transition-colors"
+                onError={(e) => {
+                  console.error('Image load error in sidebar:', user.image, e)
+                  e.target.style.display = 'none'
+                  e.target.nextSibling.style.display = 'flex'
+                }}
+                onLoad={() => console.log('Sidebar image loaded:', user.image)}
+              />
+            ) : null}
+            <div 
+              className={`w-10 h-10 rounded-lg bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center border-2 border-gray-600 group-hover:border-blue-500 transition-colors ${user?.image ? 'hidden' : ''}`}
+            >
+              <span className="text-white font-semibold text-sm">
+                {(user?.name || 'A').charAt(0).toUpperCase()}
+              </span>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-white truncate">{user?.name || 'Admin'}</p>
+              <p className="text-xs text-gray-400 truncate">Administrator</p>
+            </div>
+            <svg className="w-4 h-4 text-gray-400 group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
           </Link>
         </div>
       </div>

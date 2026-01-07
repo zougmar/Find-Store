@@ -5,19 +5,22 @@
   "type": "module",
   "private": true,
   "dependencies": {
+    "axios": "^1.5.1",
+    "jsbarcode": "^3.12.1",
+    "jspdf": "^4.0.0",
+    "qrcode": "^1.5.4",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-hot-toast": "^2.4.1",
     "react-router-dom": "^6.16.0",
-    "axios": "^1.5.1",
-    "recharts": "^2.8.0",
-    "react-hot-toast": "^2.4.1"
+    "recharts": "^2.8.0"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.1.1",
-    "vite": "^4.5.0",
     "autoprefixer": "^10.4.16",
     "postcss": "^8.4.31",
-    "tailwindcss": "^3.3.5"
+    "tailwindcss": "^3.3.5",
+    "vite": "^4.5.0"
   },
   "scripts": {
     "dev": "vite",
@@ -26,4 +29,3 @@
     "vercel-build": "vite build"
   }
 }
-

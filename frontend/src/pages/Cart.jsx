@@ -469,19 +469,31 @@ const Cart = () => {
                     </div>
                   </div>
 
-                  {/* Coming Soon Message */}
+                  {/* Payment Method Selection - Cash on Delivery Only */}
                   <div className="mb-4 md:mb-6">
-                    <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-lg p-6 md:p-8 text-center">
-                      <div className="mb-4">
-                        <svg className="w-16 h-16 md:w-20 md:h-20 mx-auto text-blue-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                      </div>
-                      <h3 className="text-xl md:text-2xl font-bold text-gray-900 mb-2">Payment System</h3>
-                      <p className="text-base md:text-lg text-gray-700 font-medium mb-1">Coming Soon!</p>
-                      <p className="text-sm md:text-base text-gray-600 mt-2">
-                        We're working hard to bring you a seamless payment experience. Checkout functionality will be available shortly.
-                      </p>
+                    <h3 className="text-base md:text-lg font-semibold text-gray-900 mb-3 md:mb-4">{t('choosePaymentMethod') || 'Choose Payment Method'}</h3>
+                    <div className="space-y-3">
+                      <button
+                        onClick={() => handlePaymentMethodSelect('cash')}
+                        className="w-full flex items-center p-4 border-2 border-gray-200 rounded-lg hover:border-[#FF385C] hover:bg-gray-50 transition-all cursor-pointer text-left"
+                      >
+                        <div className="flex items-center justify-between w-full">
+                          <div className="flex items-center gap-3">
+                            <div className="w-12 h-12 bg-green-50 rounded-lg flex items-center justify-center">
+                              <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                              </svg>
+                            </div>
+                            <div>
+                              <span className="font-semibold text-gray-900 block">{t('cashOnDelivery') || 'Cash on Delivery'}</span>
+                              <p className="text-sm text-gray-500 mt-1">{t('codInfo') || 'Pay when you receive your order'}</p>
+                            </div>
+                          </div>
+                          <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                          </svg>
+                        </div>
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -502,7 +514,7 @@ const Cart = () => {
                         </svg>
                       </button>
                       <h2 className="text-xl md:text-2xl font-bold text-gray-900">
-                        {paymentMethod === 'card' ? 'Card Payment' : 'Cash on Delivery'}
+                        {t('cashOnDelivery') || 'Cash on Delivery'}
                       </h2>
                     </div>
                     {!processing && (
@@ -745,12 +757,10 @@ const Cart = () => {
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
-                        {paymentMethod === 'cash' ? 'Placing Order...' : 'Processing Payment...'}
+                        {t('placingOrder') || 'Placing Order...'}
                       </span>
                     ) : (
-                      paymentMethod === 'cash' 
-                        ? `Complete Order - ${formatCurrency(getCartTotal())}`
-                        : `Pay ${formatCurrency(getCartTotal())}`
+                      `${t('completeOrder') || 'Complete Order'} - ${formatCurrency(getCartTotal())}`
                     )}
                   </button>
                 </div>
