@@ -18,6 +18,20 @@ const DeliveryDashboard = () => {
       return
     }
 
+    // Verify token is still valid by checking if user data exists
+    const storedUser = localStorage.getItem('delivery_user')
+    if (storedUser) {
+      try {
+        const userData = JSON.parse(storedUser)
+        if (userData.role !== 'delivery') {
+          toast.error('Your account does not have delivery man role. Please contact admin.', { duration: 7000 })
+          return
+        }
+      } catch (e) {
+        console.error('Error parsing stored user:', e)
+      }
+    }
+
     fetchProfile()
     fetchOrders()
   }, [navigate])
@@ -34,18 +48,27 @@ const DeliveryDashboard = () => {
       const errorMessage = error.response?.data?.message || 'Failed to load profile'
       const debugInfo = error.response?.data?.debug
       
-      if (debugInfo) {
-        console.error('Debug info:', debugInfo)
-        if (debugInfo.includes('role')) {
-          toast.error('Your account does not have delivery man role. Please contact admin.', { duration: 5000 })
-        }
+      // Check if it's a role issue specifically
+      if (error.response?.status === 403 && debugInfo && debugInfo.includes('role')) {
+        console.error('Role error:', debugInfo)
+        toast.error('Your account does not have delivery man role. Please contact admin to update your role.', { 
+          duration: 7000,
+          icon: '⚠️'
+        })
+        // Don't logout immediately - let them see the error and contact admin
+        // They might need to wait for admin to update their role
+        return
       }
       
-      if (error.response?.status === 401 || error.response?.status === 403) {
+      // Only logout for actual authentication errors (401) or token failures
+      if (error.response?.status === 401) {
         localStorage.removeItem('delivery_token')
         localStorage.removeItem('delivery_user')
-        toast.error(errorMessage || 'Access denied. Please log in again.')
+        toast.error('Session expired. Please log in again.')
         navigate('/delivery/login')
+      } else if (error.response?.status === 403 && !debugInfo?.includes('role')) {
+        // Other 403 errors (not role-related)
+        toast.error(errorMessage || 'Access denied.')
       }
     }
   }
@@ -71,11 +94,23 @@ const DeliveryDashboard = () => {
         toast.error(errorMessage)
       }
       
-      if (error.response?.status === 401 || error.response?.status === 403) {
+      // Only logout for authentication errors (401), not role errors
+      if (error.response?.status === 401) {
         localStorage.removeItem('delivery_token')
         localStorage.removeItem('delivery_user')
-        if (!debugInfo || !debugInfo.includes('role')) {
-          navigate('/delivery/login')
+        toast.error('Session expired. Please log in again.')
+        navigate('/delivery/login')
+      } else if (error.response?.status === 403) {
+        // For role errors, show error but don't logout - they need to contact admin
+        if (debugInfo && debugInfo.includes('role')) {
+          // Role error - don't logout, let them see the error
+          toast.error('Your account does not have delivery man role. Please contact admin to update your role.', {
+            duration: 7000,
+            icon: '⚠️'
+          })
+        } else {
+          // Other 403 errors
+          toast.error(errorMessage)
         }
       }
     } finally {

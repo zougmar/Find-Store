@@ -30,7 +30,7 @@ api.interceptors.request.use(
   }
 )
 
-// Response interceptor for debugging
+// Response interceptor for debugging and error handling
 api.interceptors.response.use(
   (response) => {
     console.log('API Response:', response.config.url, response.status, response.data)
@@ -38,6 +38,14 @@ api.interceptors.response.use(
   },
   (error) => {
     console.error('API Error:', error.config?.url, error.response?.status, error.response?.data || error.message)
+    
+    // For 401 errors on delivery routes, clear delivery tokens
+    if (error.response?.status === 401 && error.config?.url?.includes('/delivery/')) {
+      localStorage.removeItem('delivery_token')
+      localStorage.removeItem('delivery_user')
+      delete api.defaults.headers.common['Authorization']
+    }
+    
     return Promise.reject(error)
   }
 )

@@ -40,8 +40,18 @@ const DeliveryLogin = () => {
       }
 
       const res = await api.post('/delivery/login', loginData)
+      
+      // Verify the user has delivery role before storing token
+      if (res.data.role !== 'delivery') {
+        toast.error('This account does not have delivery man role. Please contact admin.', { duration: 5000 })
+        return
+      }
+      
       localStorage.setItem('delivery_token', res.data.token)
       localStorage.setItem('delivery_user', JSON.stringify(res.data))
+      
+      // Also set token in api defaults immediately
+      api.defaults.headers.common['Authorization'] = `Bearer ${res.data.token}`
       
       toast.success('Login successful!')
       navigate('/delivery/dashboard')
