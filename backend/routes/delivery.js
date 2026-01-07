@@ -16,11 +16,28 @@ const generateToken = (id) => {
 
 // Middleware to check if user is a delivery man
 const isDeliveryMan = (req, res, next) => {
-  if (req.user && req.user.role === 'delivery') {
-    next();
-  } else {
-    return res.status(403).json({ message: 'Access denied. Delivery man only.' });
+  // Debug logging for production
+  if (!req.user) {
+    console.error('Delivery route access denied: No user found in request');
+    return res.status(403).json({ 
+      message: 'Access denied. Delivery man only. Please log in again.',
+      debug: 'No user found'
+    });
   }
+  
+  if (req.user.role !== 'delivery') {
+    console.error(`Delivery route access denied: User role is '${req.user.role}', expected 'delivery'`, {
+      userId: req.user._id,
+      userEmail: req.user.email,
+      userRole: req.user.role
+    });
+    return res.status(403).json({ 
+      message: 'Access denied. Delivery man only.',
+      debug: `User role is '${req.user.role}', expected 'delivery'`
+    });
+  }
+  
+  next();
 };
 
 // @route   POST /api/delivery/login

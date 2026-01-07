@@ -31,9 +31,20 @@ const DeliveryDashboard = () => {
       }
     } catch (error) {
       console.error('Error fetching profile:', error)
+      const errorMessage = error.response?.data?.message || 'Failed to load profile'
+      const debugInfo = error.response?.data?.debug
+      
+      if (debugInfo) {
+        console.error('Debug info:', debugInfo)
+        if (debugInfo.includes('role')) {
+          toast.error('Your account does not have delivery man role. Please contact admin.', { duration: 5000 })
+        }
+      }
+      
       if (error.response?.status === 401 || error.response?.status === 403) {
         localStorage.removeItem('delivery_token')
         localStorage.removeItem('delivery_user')
+        toast.error(errorMessage || 'Access denied. Please log in again.')
         navigate('/delivery/login')
       }
     }
@@ -46,12 +57,26 @@ const DeliveryDashboard = () => {
       setOrders(res.data || [])
     } catch (error) {
       const errorMessage = error.response?.data?.message || 'Failed to load orders'
+      const debugInfo = error.response?.data?.debug
+      
       console.error('Error fetching orders:', error)
-      toast.error(errorMessage)
+      if (debugInfo) {
+        console.error('Debug info:', debugInfo)
+        if (debugInfo.includes('role')) {
+          toast.error('Your account does not have delivery man role. Please contact admin to update your role.', { duration: 5000 })
+        } else {
+          toast.error(errorMessage, { duration: 5000 })
+        }
+      } else {
+        toast.error(errorMessage)
+      }
+      
       if (error.response?.status === 401 || error.response?.status === 403) {
         localStorage.removeItem('delivery_token')
         localStorage.removeItem('delivery_user')
-        navigate('/delivery/login')
+        if (!debugInfo || !debugInfo.includes('role')) {
+          navigate('/delivery/login')
+        }
       }
     } finally {
       setLoading(false)

@@ -15,16 +15,29 @@ exports.protect = async (req, res, next) => {
     }
 
     try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your_jwt_secret_key_here');
+      const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key_here';
+      const decoded = jwt.verify(token, JWT_SECRET);
       req.user = await User.findById(decoded.id).select('-password');
       
       if (!req.user) {
+        console.error('User not found in database for token:', decoded.id);
         return res.status(401).json({ message: 'User not found' });
       }
       
+      // Log user info for debugging (without sensitive data)
+      console.log('User authenticated:', {
+        id: req.user._id,
+        email: req.user.email,
+        role: req.user.role
+      });
+      
       next();
     } catch (error) {
-      return res.status(401).json({ message: 'Not authorized, token failed' });
+      console.error('Token verification failed:', error.message);
+      return res.status(401).json({ 
+        message: 'Not authorized, token failed',
+        error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      });
     }
   } catch (error) {
     next(error);
