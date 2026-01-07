@@ -3,6 +3,7 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import api from '../../utils/api'
 import toast from 'react-hot-toast'
 import { formatCurrency } from '../../utils/currency'
+import { useLanguage } from '../../context/LanguageContext'
 
 const DeliveryOrderDetail = () => {
   const { orderId } = useParams()
@@ -13,6 +14,9 @@ const DeliveryOrderDetail = () => {
   const [updating, setUpdating] = useState(false)
   const [deliveryStatus, setDeliveryStatus] = useState('')
   const [deliveryNotes, setDeliveryNotes] = useState('')
+  const [deliveryMan, setDeliveryMan] = useState(null)
+  const [showWhatsAppLanguage, setShowWhatsAppLanguage] = useState(false)
+  const { language, changeLanguage } = useLanguage()
 
   useEffect(() => {
     const token = localStorage.getItem('delivery_token')
@@ -22,7 +26,17 @@ const DeliveryOrderDetail = () => {
     }
 
     fetchOrder()
+    fetchDeliveryManProfile()
   }, [orderId, navigate])
+
+  const fetchDeliveryManProfile = async () => {
+    try {
+      const res = await api.get('/delivery/me')
+      setDeliveryMan(res.data)
+    } catch (error) {
+      console.error('Failed to fetch delivery man profile:', error)
+    }
+  }
 
   useEffect(() => {
     // Check if opened from QR scan
@@ -31,6 +45,19 @@ const DeliveryOrderDetail = () => {
       toast.success('Order found via QR scan!')
     }
   }, [location])
+
+  // Close WhatsApp language dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showWhatsAppLanguage && !event.target.closest('.relative')) {
+        setShowWhatsAppLanguage(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [showWhatsAppLanguage])
 
   const fetchOrder = async () => {
     try {
@@ -107,6 +134,84 @@ const DeliveryOrderDetail = () => {
   const formatPhoneNumber = (phone) => {
     if (!phone) return 'N/A'
     return phone
+  }
+
+  const getWhatsAppMessage = (lang) => {
+    const customerName = order?.user?.name || order?.paymentDetails?.customerName || 'Customer'
+    const deliveryPhone = deliveryMan?.phone || 'N/A'
+    const orderIdShort = order?._id?.slice(-8).toUpperCase() || 'N/A'
+
+    const messages = {
+      en: `Hello ${customerName}! 👋
+
+✅ Your order #${orderIdShort} has been received and is ready for delivery.
+
+📦 Our delivery person will contact you soon to arrange delivery.
+
+📞 For any questions, you can contact the delivery person directly at:
+${deliveryPhone}
+
+Thank you for your order!
+Find Store Team 🛍️`,
+      ar: `مرحبا ${customerName}! 👋
+
+✅ تم استلام طلبك رقم #${orderIdShort} وهو جاهز للتسليم.
+
+📦 سيتواصل معك الشخص المسؤول عن التسليم قريباً لترتيب عملية التسليم.
+
+📞 لأي استفسارات، يمكنك الاتصال بالشخص المسؤول عن التسليم مباشرة على:
+${deliveryPhone}
+
+شكراً لطلبك!
+فريق Find Store 🛍️`,
+      fr: `Bonjour ${customerName}! 👋
+
+✅ Votre commande #${orderIdShort} a été reçue et est prête à être livrée.
+
+📦 Notre livreur vous contactera bientôt pour organiser la livraison.
+
+📞 Pour toute question, vous pouvez contacter le livreur directement au:
+${deliveryPhone}
+
+Merci pour votre commande!
+Équipe Find Store 🛍️`
+    }
+    return messages[lang] || messages.en
+  }
+
+  const handleCall = () => {
+    const phone = order?.user?.phone || order?.paymentDetails?.customerPhone
+    if (phone) {
+      window.location.href = `tel:${phone}`
+    } else {
+      toast.error('Phone number not available')
+    }
+  }
+
+  const handleSMS = () => {
+    const phone = order?.user?.phone || order?.paymentDetails?.customerPhone
+    if (phone) {
+      window.location.href = `sms:${phone}`
+    } else {
+      toast.error('Phone number not available')
+    }
+  }
+
+  const handleWhatsApp = (selectedLang = language) => {
+    const phone = order?.user?.phone || order?.paymentDetails?.customerPhone
+    if (!phone) {
+      toast.error('Phone number not available')
+      return
+    }
+
+    const message = getWhatsAppMessage(selectedLang)
+    const cleanPhone = phone.replace(/[^0-9]/g, '')
+    const encodedMessage = encodeURIComponent(message)
+    const whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodedMessage}`
+    
+    window.open(whatsappUrl, '_blank')
+    setShowWhatsAppLanguage(false)
+    toast.success('Opening WhatsApp...')
   }
 
   if (loading) {
@@ -200,11 +305,76 @@ const DeliveryOrderDetail = () => {
               </div>
             </div>
             <div className="pt-3 border-t border-gray-200">
-              <div className="flex items-center gap-2 text-sm text-gray-700 mb-2">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                </svg>
-                <span className="font-medium">{formatPhoneNumber(order.user?.phone || order.paymentDetails?.customerPhone)}</span>
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2 text-sm text-gray-700">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                  </svg>
+                  <span className="font-medium">{formatPhoneNumber(order.user?.phone || order.paymentDetails?.customerPhone)}</span>
+                </div>
+                
+                {/* Communication Buttons */}
+                <div className="flex items-center gap-2">
+                  {/* Call Button */}
+                  <button
+                    onClick={handleCall}
+                    className="p-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-all duration-200 shadow-sm hover:shadow-md"
+                    title="Call Customer"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                    </svg>
+                  </button>
+
+                  {/* WhatsApp Button with Language Selector */}
+                  <div className="relative">
+                    <button
+                      onClick={() => setShowWhatsAppLanguage(!showWhatsAppLanguage)}
+                      className="p-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-all duration-200 shadow-sm hover:shadow-md"
+                      title="Send WhatsApp Message"
+                    >
+                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+                      </svg>
+                    </button>
+                    
+                    {/* Language Dropdown */}
+                    {showWhatsAppLanguage && (
+                      <div className="absolute right-0 top-full mt-2 bg-white rounded-lg shadow-lg border border-gray-200 p-2 z-50 min-w-[200px]">
+                        <div className="text-xs font-semibold text-gray-600 mb-2 px-2">Select Language:</div>
+                        <button
+                          onClick={() => handleWhatsApp('en')}
+                          className="w-full text-left px-3 py-2 hover:bg-gray-100 rounded-lg text-sm flex items-center gap-2"
+                        >
+                          <span className="text-base">🇬🇧</span> English
+                        </button>
+                        <button
+                          onClick={() => handleWhatsApp('ar')}
+                          className="w-full text-left px-3 py-2 hover:bg-gray-100 rounded-lg text-sm flex items-center gap-2"
+                        >
+                          <span className="text-base">🇸🇦</span> العربية
+                        </button>
+                        <button
+                          onClick={() => handleWhatsApp('fr')}
+                          className="w-full text-left px-3 py-2 hover:bg-gray-100 rounded-lg text-sm flex items-center gap-2"
+                        >
+                          <span className="text-base">🇫🇷</span> Français
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* SMS Button */}
+                  <button
+                    onClick={handleSMS}
+                    className="p-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg transition-all duration-200 shadow-sm hover:shadow-md"
+                    title="Send SMS"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                    </svg>
+                  </button>
+                </div>
               </div>
               <div className="flex items-start gap-2 text-sm text-gray-700">
                 <svg className="w-4 h-4 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
