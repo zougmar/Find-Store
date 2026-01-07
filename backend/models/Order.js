@@ -50,8 +50,25 @@ const orderSchema = new mongoose.Schema({
   },
   orderStatus: {
     type: String,
-    enum: ['pending', 'processing', 'shipped', 'delivered', 'cancelled'],
-    default: 'pending'
+    enum: ['new', 'confirmed', 'pending', 'processing', 'shipped', 'delivered', 'cancelled'],
+    default: 'new'
+  },
+  verified: {
+    type: Boolean,
+    default: false
+  },
+  verifiedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: null
+  },
+  verifiedAt: {
+    type: Date,
+    default: null
+  },
+  internalNotes: {
+    type: String,
+    default: ''
   },
   assignedDeliveryMan: {
     type: mongoose.Schema.Types.ObjectId,

@@ -13,8 +13,8 @@ const api = axios.create({
 // Add token to requests if available
 api.interceptors.request.use(
   (config) => {
-    // Check for regular token first, then delivery token
-    const token = localStorage.getItem('token') || localStorage.getItem('delivery_token')
+    // Check for regular token, moderator token, or delivery token
+    const token = localStorage.getItem('token') || localStorage.getItem('moderator_token') || localStorage.getItem('delivery_token')
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
@@ -43,6 +43,13 @@ api.interceptors.response.use(
     if (error.response?.status === 401 && error.config?.url?.includes('/delivery/')) {
       localStorage.removeItem('delivery_token')
       localStorage.removeItem('delivery_user')
+      delete api.defaults.headers.common['Authorization']
+    }
+    
+    // For 401 errors on moderator routes, clear moderator tokens
+    if (error.response?.status === 401 && error.config?.url?.includes('/moderator/')) {
+      localStorage.removeItem('moderator_token')
+      localStorage.removeItem('moderator_user')
       delete api.defaults.headers.common['Authorization']
     }
     

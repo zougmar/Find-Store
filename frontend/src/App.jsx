@@ -24,6 +24,9 @@ import DeliveryLogin from './pages/delivery/DeliveryLogin'
 import DeliveryDashboard from './pages/delivery/DeliveryDashboard'
 import DeliveryOrderDetail from './pages/delivery/DeliveryOrderDetail'
 import DeliveryScan from './pages/delivery/DeliveryScan'
+import ModeratorLogin from './pages/moderator/ModeratorLogin'
+import ModeratorDashboard from './pages/moderator/ModeratorDashboard'
+import ModeratorOrders from './pages/moderator/ModeratorOrders'
 import ProtectedRoute from './components/ProtectedRoute'
 
 function App() {
@@ -141,6 +144,25 @@ function App() {
               <Route path="/delivery/dashboard" element={<DeliveryDashboard />} />
               <Route path="/delivery/orders/:orderId" element={<DeliveryOrderDetail />} />
               <Route path="/delivery/scan" element={<DeliveryScan />} />
+
+              {/* Moderator routes */}
+              <Route path="/moderator/login" element={<ModeratorLogin />} />
+              <Route
+                path="/moderator/dashboard"
+                element={
+                  <ProtectedRoute moderatorOnly>
+                    <ModeratorDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/moderator/orders"
+                element={
+                  <ProtectedRoute moderatorOnly>
+                    <ModeratorOrders />
+                  </ProtectedRoute>
+                }
+              />
             </Routes>
             <Toaster position="top-right" />
           </div>
