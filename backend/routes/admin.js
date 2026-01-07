@@ -419,6 +419,7 @@ router.get('/orders', hasPermission('manageOrders'), async (req, res, next) => {
     const orders = await Order.find()
       .populate('user', 'name email phone image address')
       .populate('items.product', 'name images')
+      .populate('assignedDeliveryMan', 'name email phone')
       .sort({ createdAt: -1 });
     
     res.json(orders);
@@ -427,20 +428,47 @@ router.get('/orders', hasPermission('manageOrders'), async (req, res, next) => {
   }
 });
 
+// @route   GET /api/admin/delivery-men
+// @desc    Get all delivery men
+// @access  Private/Admin or Moderator with manageOrders permission
+router.get('/delivery-men', hasPermission('manageOrders'), async (req, res, next) => {
+  try {
+    const deliveryMen = await User.find({ role: 'delivery' })
+      .select('name email phone image')
+      .sort({ name: 1 });
+    
+    res.json(deliveryMen);
+  } catch (error) {
+    next(error);
+  }
+});
+
 // @route   PUT /api/admin/orders/:id
-// @desc    Update order status
+// @desc    Update order status and assign delivery man
 // @access  Private/Admin or Moderator with manageOrders permission
 router.put('/orders/:id', hasPermission('manageOrders'), async (req, res, next) => {
   try {
-    const { orderStatus, paymentStatus } = req.body;
+    const { orderStatus, paymentStatus, assignedDeliveryMan } = req.body;
+    
+    const updateData = {};
+    if (orderStatus) updateData.orderStatus = orderStatus;
+    if (paymentStatus) updateData.paymentStatus = paymentStatus;
+    if (assignedDeliveryMan !== undefined) {
+      updateData.assignedDeliveryMan = assignedDeliveryMan || null;
+      // If assigning a delivery man, set initial delivery status
+      if (assignedDeliveryMan && !updateData.deliveryStatus) {
+        updateData.deliveryStatus = 'pending';
+      }
+    }
     
     const order = await Order.findByIdAndUpdate(
       req.params.id,
-      { orderStatus, paymentStatus },
+      updateData,
       { new: true, runValidators: true }
     )
-      .populate('user', 'name email')
-      .populate('items.product', 'name');
+      .populate('user', 'name email phone image address')
+      .populate('items.product', 'name images')
+      .populate('assignedDeliveryMan', 'name email phone');
     
     if (!order) {
       return res.status(404).json({ message: 'Order not found' });

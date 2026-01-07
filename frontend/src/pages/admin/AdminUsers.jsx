@@ -380,14 +380,12 @@ const AdminUsers = () => {
                             >
                               View
                             </button>
-                            {(user.role === 'admin' || user.role === 'moderator') && (
-                              <button
-                                onClick={() => handleEditPermissions(user)}
-                                className="text-blue-600 hover:text-blue-700 font-semibold transition-colors"
-                              >
-                                Permissions
-                              </button>
-                            )}
+                            <button
+                              onClick={() => handleEditPermissions(user)}
+                              className="text-blue-600 hover:text-blue-700 font-semibold transition-colors"
+                            >
+                              {user.role === 'admin' || user.role === 'moderator' ? 'Permissions' : 'Edit Role'}
+                            </button>
                             <button
                               onClick={() => handleDeleteUser(user._id)}
                               className="text-red-600 hover:text-red-700 font-semibold transition-colors"
@@ -598,10 +596,18 @@ const AdminUsers = () => {
                   onChange={handleInputChange}
                   className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF385C] focus:border-[#FF385C] transition-all"
                 >
+                  <option value="user">User</option>
                   <option value="moderator">Moderator</option>
                   <option value="admin">Admin (Full Access)</option>
+                  <option value="delivery">Delivery Man</option>
                 </select>
-                <p className="text-xs text-gray-500 mt-1">Moderators can have specific permissions assigned</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  {formData.role === 'delivery' 
+                    ? 'Delivery men can access the delivery portal and view assigned orders'
+                    : formData.role === 'moderator'
+                    ? 'Moderators can have specific permissions assigned'
+                    : 'Role permissions vary by type'}
+                </p>
               </div>
 
               {formData.role === 'moderator' && (
@@ -666,6 +672,107 @@ const AdminUsers = () => {
                     </>
                   ) : (
                     'Create User'
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Permissions/Role Modal */}
+      {showPermissionsModal && editingUser && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-200 flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-gray-900">
+                {editingUser.role === 'admin' || editingUser.role === 'moderator' ? 'Edit Permissions' : 'Edit Role'}
+              </h2>
+              <button
+                onClick={() => {
+                  setShowPermissionsModal(false)
+                  setEditingUser(null)
+                }}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <form onSubmit={handleUpdatePermissions} className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Role <span className="text-red-500">*</span>
+                </label>
+                <select
+                  name="role"
+                  value={formData.role}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF385C] focus:border-[#FF385C] transition-all"
+                >
+                  <option value="user">User</option>
+                  <option value="moderator">Moderator</option>
+                  <option value="admin">Admin (Full Access)</option>
+                  <option value="delivery">Delivery Man</option>
+                </select>
+                <p className="text-xs text-gray-500 mt-1">
+                  {formData.role === 'delivery' 
+                    ? 'Delivery men can access the delivery portal and view assigned orders'
+                    : formData.role === 'moderator'
+                    ? 'Moderators can have specific permissions assigned'
+                    : 'Role permissions vary by type'}
+                </p>
+              </div>
+
+              {formData.role === 'moderator' && (
+                <div className="border-t border-gray-200 pt-4">
+                  <label className="block text-sm font-semibold text-gray-700 mb-3">
+                    Permissions
+                  </label>
+                  <div className="space-y-2">
+                    {Object.keys(formData.permissions).map(permission => (
+                      <label key={permission} className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={formData.permissions[permission]}
+                          onChange={() => handlePermissionChange(permission)}
+                          className="w-4 h-4 text-[#FF385C] border-gray-300 rounded focus:ring-[#FF385C]"
+                        />
+                        <span className="text-sm text-gray-700 capitalize">
+                          {permission.replace(/([A-Z])/g, ' $1').trim()}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowPermissionsModal(false)
+                    setEditingUser(null)
+                  }}
+                  className="flex-1 px-4 py-2.5 border-2 border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-colors"
+                  disabled={updating}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={updating}
+                  className="flex-1 px-4 py-2.5 bg-[#FF385C] text-white font-semibold rounded-lg hover:bg-[#E61E4D] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {updating ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                      Updating...
+                    </>
+                  ) : (
+                    'Update User'
                   )}
                 </button>
               </div>

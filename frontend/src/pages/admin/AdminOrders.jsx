@@ -20,6 +20,7 @@ const copyToClipboard = async (text, successMessage = 'Copied to clipboard!') =>
 
 const AdminOrders = () => {
   const [orders, setOrders] = useState([])
+  const [deliveryMen, setDeliveryMen] = useState([])
   const [loading, setLoading] = useState(true)
   const [expandedOrders, setExpandedOrders] = useState(new Set())
   const [selectedOrders, setSelectedOrders] = useState(new Set())
@@ -29,6 +30,7 @@ const AdminOrders = () => {
 
   useEffect(() => {
     fetchOrders()
+    fetchDeliveryMen()
   }, [])
 
   const fetchOrders = async () => {
@@ -42,16 +44,26 @@ const AdminOrders = () => {
     }
   }
 
-  const handleUpdateStatus = async (orderId, orderStatus, paymentStatus) => {
+  const fetchDeliveryMen = async () => {
     try {
-      await api.put(`/admin/orders/${orderId}`, {
-        orderStatus,
-        paymentStatus
-      })
-      toast.success('Order status updated')
+      const res = await api.get('/admin/delivery-men')
+      setDeliveryMen(res.data)
+    } catch (error) {
+      console.error('Failed to fetch delivery men:', error)
+    }
+  }
+
+  const handleUpdateStatus = async (orderId, orderStatus, paymentStatus, assignedDeliveryMan = undefined) => {
+    try {
+      const updateData = { orderStatus, paymentStatus }
+      if (assignedDeliveryMan !== undefined) {
+        updateData.assignedDeliveryMan = assignedDeliveryMan || null
+      }
+      await api.put(`/admin/orders/${orderId}`, updateData)
+      toast.success('Order updated successfully')
       fetchOrders()
     } catch (error) {
-      toast.error('Failed to update order status')
+      toast.error('Failed to update order')
     }
   }
 
@@ -86,10 +98,11 @@ const AdminOrders = () => {
         // Will use fallback circle if logo fails to load
       }
       
-      // Generate QR Code
+      // Generate QR Code with full order ID for delivery scanning
       let qrDataUrl
       try {
-        qrDataUrl = await QRCode.toDataURL(trackingNumber, {
+        // Use full order ID for QR code so delivery scanner can directly access the order
+        qrDataUrl = await QRCode.toDataURL(order._id, {
           width: 200,
           margin: 1
         })
@@ -1171,6 +1184,28 @@ const AdminOrders = () => {
                       <option value="paid">Paid</option>
                       <option value="failed">Failed</option>
                     </select>
+                </div>
+                                    <div className="md:col-span-2">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Assign Delivery Man
+                    </label>
+                    <select
+                                        value={order.assignedDeliveryMan?._id || ''}
+                                        onChange={(e) => handleUpdateStatus(order._id, order.orderStatus, order.paymentStatus, e.target.value || null)}
+                      className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF385C] focus:border-[#FF385C] transition-all"
+                    >
+                      <option value="">None (Unassigned)</option>
+                      {deliveryMen.map((deliveryMan) => (
+                        <option key={deliveryMan._id} value={deliveryMan._id}>
+                          {deliveryMan.name} {deliveryMan.phone ? `(${deliveryMan.phone})` : ''}
+                        </option>
+                      ))}
+                    </select>
+                    {order.assignedDeliveryMan && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        Currently assigned to: <span className="font-semibold">{order.assignedDeliveryMan.name}</span>
+                      </p>
+                    )}
                 </div>
 
                                     {/* Shipping Address */}

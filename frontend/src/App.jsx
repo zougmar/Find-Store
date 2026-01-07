@@ -20,6 +20,10 @@ import AdminProducts from './pages/admin/AdminProducts'
 import AdminOrders from './pages/admin/AdminOrders'
 import AdminPages from './pages/admin/AdminPages'
 import AdminMessages from './pages/admin/AdminMessages'
+import DeliveryLogin from './pages/delivery/DeliveryLogin'
+import DeliveryDashboard from './pages/delivery/DeliveryDashboard'
+import DeliveryOrderDetail from './pages/delivery/DeliveryOrderDetail'
+import DeliveryScan from './pages/delivery/DeliveryScan'
 import ProtectedRoute from './components/ProtectedRoute'
 
 function App() {
@@ -131,6 +135,12 @@ function App() {
                   </ProtectedRoute>
                 }
               />
+
+              {/* Delivery routes */}
+              <Route path="/delivery/login" element={<DeliveryLogin />} />
+              <Route path="/delivery/dashboard" element={<DeliveryDashboard />} />
+              <Route path="/delivery/orders/:orderId" element={<DeliveryOrderDetail />} />
+              <Route path="/delivery/scan" element={<DeliveryScan />} />
             </Routes>
             <Toaster position="top-right" />
           </div>

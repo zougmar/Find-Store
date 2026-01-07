@@ -52,6 +52,20 @@ const orderSchema = new mongoose.Schema({
     type: String,
     enum: ['pending', 'processing', 'shipped', 'delivered', 'cancelled'],
     default: 'pending'
+  },
+  assignedDeliveryMan: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: null
+  },
+  deliveryStatus: {
+    type: String,
+    enum: ['pending', 'picked_up', 'on_the_way', 'delivered', 'failed'],
+    default: 'pending'
+  },
+  deliveryNotes: {
+    type: String,
+    default: ''
   }
 }, {
   timestamps: true
