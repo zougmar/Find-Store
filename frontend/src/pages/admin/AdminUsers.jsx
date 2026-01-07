@@ -266,6 +266,7 @@ const AdminUsers = () => {
                 <option value="user">Users</option>
                 <option value="moderator">Moderators</option>
                 <option value="admin">Admins</option>
+                <option value="delivery">Delivery Men</option>
               </select>
             </div>
           </div>
@@ -384,7 +385,7 @@ const AdminUsers = () => {
                               onClick={() => handleEditPermissions(user)}
                               className="text-blue-600 hover:text-blue-700 font-semibold transition-colors"
                             >
-                              {user.role === 'admin' || user.role === 'moderator' ? 'Permissions' : 'Edit Role'}
+                              {user.role === 'admin' || user.role === 'moderator' ? 'Permissions' : user.role === 'delivery' ? 'Edit Role' : 'Edit Role'}
                             </button>
                             <button
                               onClick={() => handleDeleteUser(user._id)}

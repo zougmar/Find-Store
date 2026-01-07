@@ -59,11 +59,11 @@ const DeliveryLogin = () => {
         
         // Show clear error with instructions
         const errorMsg = res.data.role 
-          ? `✅ Password is correct! But your account role is '${res.data.role}'. You need 'delivery' role to access delivery portal.\n\n📋 How to fix:\n1. Go to Admin Panel: /admin\n2. Go to Users page\n3. Find this user (${res.data.email || res.data.phone})\n4. Click "Edit Role"\n5. Select "Delivery Man"\n6. Click "Update User"\n7. Login again here.`
-          : `Login failed: Account found but role is missing. Please contact admin.`
+          ? `Your account role is '${res.data.role}'. You need 'delivery' role. Contact admin or go to Admin Panel → Users → Edit Role → Select "Delivery Man"`
+          : `Account found but role is missing. Please contact admin.`
         
         toast.error(errorMsg, { 
-          duration: 10000,
+          duration: 8000,
           icon: '⚠️'
         })
         return
@@ -71,9 +71,6 @@ const DeliveryLogin = () => {
       
       localStorage.setItem('delivery_token', res.data.token)
       localStorage.setItem('delivery_user', JSON.stringify(res.data))
-      
-      // Also set token in api defaults immediately
-      api.defaults.headers.common['Authorization'] = `Bearer ${res.data.token}`
       
       toast.success('Login successful!')
       navigate('/delivery/dashboard')
@@ -186,8 +183,21 @@ const DeliveryLogin = () => {
               </button>
             </form>
 
-            <div className="mt-6 text-center text-sm text-gray-500">
-              <p>For delivery personnel only</p>
+            <div className="mt-6 space-y-3">
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="flex items-start gap-2">
+                  <svg className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <div className="text-sm text-blue-800">
+                    <p className="font-semibold mb-1">Need Delivery Role Access?</p>
+                    <p className="text-blue-700">If you see a role error, ask an admin to update your role to "Delivery Man" in the Admin Panel → Users section.</p>
+                  </div>
+                </div>
+              </div>
+              <div className="text-center text-sm text-gray-500">
+                <p>For delivery personnel only</p>
+              </div>
             </div>
           </div>
         </div>

@@ -1252,6 +1252,50 @@ const AdminOrders = () => {
                                         )}
                                       </div>
                                     </div>
+
+                                    {/* Internal Notes */}
+                                    <div className="md:col-span-2 p-4 bg-indigo-50 rounded-lg border border-indigo-200">
+                                      <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2 text-sm">
+                                        <svg className="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                        </svg>
+                                        Internal Notes
+                                        {order.assignedDeliveryMan && (
+                                          <span className="text-xs font-normal text-gray-600 ml-2">
+                                            (Visible to Admin, Moderator & Delivery)
+                                          </span>
+                                        )}
+                                      </h4>
+                                      <div className="text-sm text-gray-700">
+                                        {order.internalNotes ? (
+                                          <p className="whitespace-pre-wrap bg-white p-3 rounded border border-indigo-200">{order.internalNotes}</p>
+                                        ) : (
+                                          <p className="text-gray-500 italic">No internal notes</p>
+                                        )}
+                                      </div>
+                                      {order.changeHistory && order.changeHistory.length > 0 && (
+                                        <div className="mt-4 pt-4 border-t border-indigo-200">
+                                          <h5 className="text-xs font-semibold text-gray-700 mb-2">Recent Changes:</h5>
+                                          <div className="space-y-2">
+                                            {order.changeHistory.slice(-3).reverse().map((change, idx) => (
+                                              <div key={idx} className="text-xs bg-white p-2 rounded border border-indigo-100">
+                                                <div className="flex items-center justify-between">
+                                                  <span className="font-medium text-gray-900">
+                                                    {change.changedBy?.name || 'System'}
+                                                  </span>
+                                                  <span className="text-gray-500">
+                                                    {new Date(change.changedAt).toLocaleString()}
+                                                  </span>
+                                                </div>
+                                                <div className="text-gray-600 mt-1">
+                                                  {change.action.replace('_', ' ')}: {change.notes || 'No details'}
+                                                </div>
+                                              </div>
+                                            ))}
+                                          </div>
+                                        </div>
+                                      )}
+                                    </div>
                                   </div>
                                 </div>
                               </div>

@@ -116,8 +116,9 @@ router.get('/orders', protect, isModerator, async (req, res, next) => {
     const orders = await Order.find()
       .populate('user', 'name email phone image address')
       .populate('items.product', 'name images')
-      .populate('assignedDeliveryMan', 'name email phone')
+      .populate('assignedDeliveryMan', 'name email phone image')
       .populate('verifiedBy', 'name email')
+      .populate('changeHistory.changedBy', 'name email role')
       .sort({ createdAt: -1 });
 
     res.json(orders);
@@ -134,8 +135,9 @@ router.get('/orders/:id', protect, isModerator, async (req, res, next) => {
     const order = await Order.findById(req.params.id)
       .populate('user', 'name email phone image address')
       .populate('items.product', 'name images price')
-      .populate('assignedDeliveryMan', 'name email phone')
-      .populate('verifiedBy', 'name email');
+      .populate('assignedDeliveryMan', 'name email phone image')
+      .populate('verifiedBy', 'name email')
+      .populate('changeHistory.changedBy', 'name email role');
 
     if (!order) {
       return res.status(404).json({ message: 'Order not found' });
@@ -146,6 +148,20 @@ router.get('/orders/:id', protect, isModerator, async (req, res, next) => {
     next(error);
   }
 });
+
+// Helper function to record changes
+const recordChange = (order, user, action, changes = {}, notes = '') => {
+  if (!order.changeHistory) {
+    order.changeHistory = [];
+  }
+  order.changeHistory.push({
+    changedBy: user._id,
+    changedAt: new Date(),
+    action,
+    changes,
+    notes
+  });
+};
 
 // @route   PUT /api/moderator/orders/:id/verify
 // @desc    Verify and confirm order
@@ -168,6 +184,9 @@ router.put('/orders/:id/verify', protect, isModerator, [
       return res.status(404).json({ message: 'Order not found' });
     }
 
+    const oldStatus = order.orderStatus;
+    const oldNotes = order.internalNotes;
+
     // Update order
     order.verified = orderStatus === 'confirmed';
     order.verifiedBy = req.user._id;
@@ -183,13 +202,24 @@ router.put('/orders/:id/verify', protect, isModerator, [
       order.internalNotes = internalNotes;
     }
 
+    // Record change
+    const changes = {
+      orderStatus: { from: oldStatus, to: orderStatus },
+      verified: { from: order.verified, to: orderStatus === 'confirmed' }
+    };
+    if (internalNotes !== undefined && internalNotes !== oldNotes) {
+      changes.internalNotes = { from: oldNotes, to: internalNotes };
+    }
+    recordChange(order, req.user, 'verify_order', changes, `Order ${orderStatus} by moderator`);
+
     await order.save();
 
     const updatedOrder = await Order.findById(id)
       .populate('user', 'name email phone image address')
       .populate('items.product', 'name images price')
-      .populate('assignedDeliveryMan', 'name email phone')
-      .populate('verifiedBy', 'name email');
+      .populate('assignedDeliveryMan', 'name email phone image')
+      .populate('verifiedBy', 'name email')
+      .populate('changeHistory.changedBy', 'name email role');
 
     res.json({
       message: orderStatus === 'confirmed' ? 'Order verified and confirmed successfully' : 'Order cancelled',
@@ -221,6 +251,9 @@ router.put('/orders/:id/status', protect, isModerator, [
       return res.status(404).json({ message: 'Order not found' });
     }
 
+    const oldStatus = order.orderStatus;
+    const oldNotes = order.internalNotes;
+
     // Update order status
     order.orderStatus = orderStatus;
     
@@ -235,13 +268,23 @@ router.put('/orders/:id/status', protect, isModerator, [
       order.internalNotes = internalNotes;
     }
 
+    // Record change
+    const changes = {
+      orderStatus: { from: oldStatus, to: orderStatus }
+    };
+    if (internalNotes !== undefined && internalNotes !== oldNotes) {
+      changes.internalNotes = { from: oldNotes, to: internalNotes };
+    }
+    recordChange(order, req.user, 'update_status', changes, `Order status changed to ${orderStatus}`);
+
     await order.save();
 
     const updatedOrder = await Order.findById(id)
       .populate('user', 'name email phone image address')
       .populate('items.product', 'name images price')
-      .populate('assignedDeliveryMan', 'name email phone')
-      .populate('verifiedBy', 'name email');
+      .populate('assignedDeliveryMan', 'name email phone image')
+      .populate('verifiedBy', 'name email')
+      .populate('changeHistory.changedBy', 'name email role');
 
     res.json({
       message: 'Order status updated successfully',
@@ -279,6 +322,9 @@ router.put('/orders/:id/assign', protect, isModerator, [
       return res.status(404).json({ message: 'Order not found' });
     }
 
+    const oldDeliveryMan = order.assignedDeliveryMan;
+    const oldNotes = order.internalNotes;
+
     // Update order
     order.assignedDeliveryMan = assignedDeliveryMan;
     order.deliveryStatus = 'pending';
@@ -287,13 +333,27 @@ router.put('/orders/:id/assign', protect, isModerator, [
       order.internalNotes = internalNotes;
     }
 
+    // Record change
+    const changes = {
+      assignedDeliveryMan: { 
+        from: oldDeliveryMan ? oldDeliveryMan.toString() : 'none', 
+        to: assignedDeliveryMan.toString() 
+      },
+      deliveryStatus: { from: order.deliveryStatus, to: 'pending' }
+    };
+    if (internalNotes !== undefined && internalNotes !== oldNotes) {
+      changes.internalNotes = { from: oldNotes, to: internalNotes };
+    }
+    recordChange(order, req.user, 'assign_delivery', changes, `Order assigned to ${deliveryMan.name}`);
+
     await order.save();
 
     const updatedOrder = await Order.findById(id)
       .populate('user', 'name email phone image address')
       .populate('items.product', 'name images price')
-      .populate('assignedDeliveryMan', 'name email phone')
-      .populate('verifiedBy', 'name email');
+      .populate('assignedDeliveryMan', 'name email phone image')
+      .populate('verifiedBy', 'name email')
+      .populate('changeHistory.changedBy', 'name email role');
 
     res.json({
       message: 'Order assigned to delivery man successfully',
@@ -325,16 +385,26 @@ router.put('/orders/:id/notes', protect, isModerator, [
       return res.status(404).json({ message: 'Order not found' });
     }
 
+    const oldNotes = order.internalNotes;
+
     // Update internal notes
     order.internalNotes = internalNotes || '';
+
+    // Record change
+    if (internalNotes !== oldNotes) {
+      recordChange(order, req.user, 'update_notes', {
+        internalNotes: { from: oldNotes, to: internalNotes || '' }
+      }, 'Internal notes updated');
+    }
 
     await order.save();
 
     const updatedOrder = await Order.findById(id)
       .populate('user', 'name email phone image address')
       .populate('items.product', 'name images price')
-      .populate('assignedDeliveryMan', 'name email phone')
-      .populate('verifiedBy', 'name email');
+      .populate('assignedDeliveryMan', 'name email phone image')
+      .populate('verifiedBy', 'name email')
+      .populate('changeHistory.changedBy', 'name email role');
 
     res.json({
       message: 'Internal notes updated successfully',

@@ -132,6 +132,8 @@ router.get('/orders', protect, isDeliveryMan, async (req, res, next) => {
     })
       .populate('user', 'name email phone image')
       .populate('items.product', 'name images')
+      .populate('assignedDeliveryMan', 'name email phone')
+      .populate('changeHistory.changedBy', 'name email role')
       .sort({ createdAt: -1 });
 
     res.json(orders);
@@ -151,14 +153,16 @@ router.get('/orders/:orderId', protect, isDeliveryMan, async (req, res, next) =>
     let order = await Order.findById(orderId)
       .populate('user', 'name email phone image address')
       .populate('items.product', 'name images price')
-      .populate('assignedDeliveryMan', 'name email phone');
+      .populate('assignedDeliveryMan', 'name email phone')
+      .populate('changeHistory.changedBy', 'name email role');
 
     // If not found by full ID, try searching by tracking number (last 12 chars)
     if (!order) {
       const allOrders = await Order.find()
         .populate('user', 'name email phone image address')
         .populate('items.product', 'name images price')
-        .populate('assignedDeliveryMan', 'name email phone');
+        .populate('assignedDeliveryMan', 'name email phone')
+        .populate('changeHistory.changedBy', 'name email role');
       
       // First, try to find order with matching tracking number that's assigned to this delivery man
       order = allOrders.find(o => {
@@ -252,7 +256,8 @@ router.put('/orders/:orderId/status', protect, isDeliveryMan, [
     const updatedOrder = await Order.findById(orderId)
       .populate('user', 'name email phone image address')
       .populate('items.product', 'name images price')
-      .populate('assignedDeliveryMan', 'name email phone');
+      .populate('assignedDeliveryMan', 'name email phone')
+      .populate('changeHistory.changedBy', 'name email role');
 
     res.json({
       message: 'Delivery status updated successfully',

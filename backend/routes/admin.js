@@ -420,6 +420,7 @@ router.get('/orders', hasPermission('manageOrders'), async (req, res, next) => {
       .populate('user', 'name email phone image address')
       .populate('items.product', 'name images')
       .populate('assignedDeliveryMan', 'name email phone')
+      .populate('changeHistory.changedBy', 'name email role')
       .sort({ createdAt: -1 });
     
     res.json(orders);

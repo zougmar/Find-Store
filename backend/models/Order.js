@@ -83,7 +83,30 @@ const orderSchema = new mongoose.Schema({
   deliveryNotes: {
     type: String,
     default: ''
-  }
+  },
+  changeHistory: [{
+    changedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true
+    },
+    changedAt: {
+      type: Date,
+      default: Date.now
+    },
+    action: {
+      type: String,
+      required: true
+    },
+    changes: {
+      type: mongoose.Schema.Types.Mixed,
+      default: {}
+    },
+    notes: {
+      type: String,
+      default: ''
+    }
+  }]
 }, {
   timestamps: true
 });

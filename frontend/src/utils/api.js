@@ -13,8 +13,27 @@ const api = axios.create({
 // Add token to requests if available
 api.interceptors.request.use(
   (config) => {
-    // Check for regular token, moderator token, or delivery token
-    const token = localStorage.getItem('token') || localStorage.getItem('moderator_token') || localStorage.getItem('delivery_token')
+    // Determine which token to use based on the route being accessed
+    let token = null
+    const url = config.url || ''
+    
+    // For delivery routes, prioritize delivery_token
+    if (url.includes('/delivery/')) {
+      token = localStorage.getItem('delivery_token')
+    }
+    // For moderator routes, prioritize moderator_token
+    else if (url.includes('/moderator/')) {
+      token = localStorage.getItem('moderator_token')
+    }
+    // For admin routes, try moderator_token first (admins can login as moderators), then regular token
+    else if (url.includes('/admin/')) {
+      token = localStorage.getItem('moderator_token') || localStorage.getItem('token')
+    }
+    // For all other routes, use regular token, then moderator token, then delivery token
+    else {
+      token = localStorage.getItem('token') || localStorage.getItem('moderator_token') || localStorage.getItem('delivery_token')
+    }
+    
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
@@ -22,7 +41,7 @@ api.interceptors.request.use(
     if (config.data instanceof FormData) {
       delete config.headers['Content-Type']
     }
-    console.log('API Request:', config.method?.toUpperCase(), config.url)
+    console.log('API Request:', config.method?.toUpperCase(), config.url, 'Token type:', url.includes('/delivery/') ? 'delivery' : url.includes('/moderator/') ? 'moderator' : 'regular')
     return config
   },
   (error) => {
@@ -39,18 +58,31 @@ api.interceptors.response.use(
   (error) => {
     console.error('API Error:', error.config?.url, error.response?.status, error.response?.data || error.message)
     
-    // For 401 errors on delivery routes, clear delivery tokens
-    if (error.response?.status === 401 && error.config?.url?.includes('/delivery/')) {
-      localStorage.removeItem('delivery_token')
-      localStorage.removeItem('delivery_user')
-      delete api.defaults.headers.common['Authorization']
-    }
+    const url = error.config?.url || ''
     
-    // For 401 errors on moderator routes, clear moderator tokens
-    if (error.response?.status === 401 && error.config?.url?.includes('/moderator/')) {
-      localStorage.removeItem('moderator_token')
-      localStorage.removeItem('moderator_user')
-      delete api.defaults.headers.common['Authorization']
+    // Only clear tokens for the specific route that failed (don't affect other role tokens)
+    if (error.response?.status === 401) {
+      // For 401 errors on delivery routes, only clear delivery tokens
+      if (url.includes('/delivery/')) {
+        localStorage.removeItem('delivery_token')
+        localStorage.removeItem('delivery_user')
+        // Don't delete api.defaults.headers - let the interceptor handle it dynamically
+      }
+      // For 401 errors on moderator routes, only clear moderator tokens
+      else if (url.includes('/moderator/')) {
+        localStorage.removeItem('moderator_token')
+        localStorage.removeItem('moderator_user')
+        // Don't delete api.defaults.headers - let the interceptor handle it dynamically
+      }
+      // For 401 errors on admin routes, clear moderator token (admins use moderator_token)
+      else if (url.includes('/admin/')) {
+        // Only clear if it's a moderator token issue, not if it's a regular user token
+        const moderatorToken = localStorage.getItem('moderator_token')
+        if (moderatorToken) {
+          localStorage.removeItem('moderator_token')
+          localStorage.removeItem('moderator_user')
+        }
+      }
     }
     
     return Promise.reject(error)
