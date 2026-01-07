@@ -61,24 +61,6 @@ const DeliveryScan = () => {
       })
       html5QrCodeRef.current = html5QrCode
 
-      // Try to get available cameras
-      let cameraId = null
-      try {
-        const devices = await Html5Qrcode.getCameras()
-        if (devices && devices.length > 0) {
-          // Try to find back camera first (environment)
-          const backCamera = devices.find(device => 
-            device.label.toLowerCase().includes('back') || 
-            device.label.toLowerCase().includes('rear') ||
-            device.label.toLowerCase().includes('environment')
-          )
-          // Otherwise use the first available camera
-          cameraId = backCamera ? backCamera.id : devices[0].id
-        }
-      } catch (err) {
-        console.log('Could not enumerate cameras, using default:', err)
-      }
-
       // Configuration based on available space
       const qrboxSize = Math.min(250, window.innerWidth - 40)
       
@@ -89,11 +71,40 @@ const DeliveryScan = () => {
         disableFlip: false
       }
 
-      // Try to start with specific camera or fallback to facingMode
+      // Try to get available cameras and find back camera
+      let backCameraId = null
       try {
-        if (cameraId) {
+        const devices = await Html5Qrcode.getCameras()
+        if (devices && devices.length > 0) {
+          // Look for back camera (environment/rear camera)
+          const backCamera = devices.find(device => {
+            const label = device.label.toLowerCase()
+            return label.includes('back') || 
+                   label.includes('rear') ||
+                   label.includes('environment') ||
+                   label.includes('facing back') ||
+                   label.includes('facing: back')
+          })
+          
+          if (backCamera) {
+            backCameraId = backCamera.id
+            console.log('Found back camera:', backCamera.label, backCamera.id)
+          } else {
+            console.warn('Back camera not found in device list. Available cameras:', devices.map(d => d.label))
+            // If we can't find back camera by label, we'll use facingMode: 'environment'
+          }
+        }
+      } catch (err) {
+        console.log('Could not enumerate cameras, will use facingMode: environment', err)
+      }
+
+      // Always prioritize back (environment) camera
+      try {
+        if (backCameraId) {
+          // Use specific back camera ID if found
+          console.log('Starting QR scanner with back camera ID:', backCameraId)
           await html5QrCode.start(
-            cameraId,
+            backCameraId,
             config,
             (decodedText) => {
               handleScanSuccess(decodedText, html5QrCode)
@@ -103,7 +114,8 @@ const DeliveryScan = () => {
             }
           )
         } else {
-          // Fallback to facingMode
+          // Use facingMode: 'environment' to force back camera
+          console.log('Starting QR scanner with facingMode: environment (back camera)')
           await html5QrCode.start(
             { facingMode: 'environment' },
             config,
@@ -116,22 +128,12 @@ const DeliveryScan = () => {
           )
         }
       } catch (cameraError) {
-        // If back camera fails, try front camera
-        if (cameraError.name === 'NotAllowedError' || cameraError.name === 'NotFoundError') {
-          try {
-            await html5QrCode.start(
-              { facingMode: 'user' },
-              config,
-              (decodedText) => {
-                handleScanSuccess(decodedText, html5QrCode)
-              },
-              (errorMessage) => {
-                // Error callback
-              }
-            )
-          } catch (frontCameraError) {
-            throw cameraError // Throw original error
-          }
+        // If environment camera fails, check if it's because back camera doesn't exist
+        if (cameraError.name === 'NotFoundError') {
+          toast.error('Back camera not found. This device may not have a rear camera. Please use manual entry.', { duration: 5000 })
+          setScanning(false)
+          setShowManualEntry(true)
+          throw cameraError
         } else {
           throw cameraError
         }
