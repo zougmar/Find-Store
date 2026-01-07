@@ -41,9 +41,25 @@ const DeliveryLogin = () => {
 
       const res = await api.post('/delivery/login', loginData)
       
+      // Debug: Log the response to see what we got
+      console.log('Login response:', {
+        userId: res.data._id,
+        email: res.data.email,
+        role: res.data.role,
+        hasToken: !!res.data.token
+      })
+      
       // Verify the user has delivery role before storing token
       if (res.data.role !== 'delivery') {
-        toast.error('This account does not have delivery man role. Please contact admin.', { duration: 5000 })
+        console.error('Login failed - wrong role:', {
+          expected: 'delivery',
+          actual: res.data.role,
+          email: res.data.email
+        })
+        toast.error(`Login failed: Your account role is '${res.data.role || 'unknown'}', but 'delivery' is required. Please contact admin to update your role.`, { 
+          duration: 8000,
+          icon: '⚠️'
+        })
         return
       }
       

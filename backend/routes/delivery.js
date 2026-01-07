@@ -60,22 +60,36 @@ router.post('/login', [
       return res.status(400).json({ message: 'Email or phone number is required' });
     }
 
-    // Find user by email or phone with delivery role
+    // Find user by email or phone (check all roles first)
     let user;
     if (email) {
       user = await User.findOne({ 
-        email: email.toLowerCase().trim(),
-        role: 'delivery'
+        email: email.toLowerCase().trim()
       });
     } else if (phone) {
       user = await User.findOne({ 
-        phone: phone.trim(),
-        role: 'delivery'
+        phone: phone.trim()
       });
     }
 
     if (!user) {
-      return res.status(401).json({ message: 'Invalid credentials or not authorized as delivery man' });
+      return res.status(401).json({ message: 'Invalid credentials. User not found.' });
+    }
+
+    // Check if user has delivery role
+    if (user.role !== 'delivery') {
+      console.error('Delivery login attempt with wrong role:', {
+        userId: user._id,
+        email: user.email,
+        phone: user.phone,
+        currentRole: user.role,
+        expectedRole: 'delivery'
+      });
+      return res.status(403).json({ 
+        message: `Access denied. Your account role is '${user.role}', but 'delivery' role is required. Please contact admin to update your role.`,
+        currentRole: user.role,
+        userId: user._id.toString()
+      });
     }
 
     // Check password
@@ -83,6 +97,14 @@ router.post('/login', [
     if (!isMatch) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
+
+    // Log successful login for debugging
+    console.log('Delivery man login successful:', {
+      userId: user._id,
+      email: user.email,
+      phone: user.phone,
+      role: user.role
+    });
 
     res.json({
       _id: user._id,
