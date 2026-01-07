@@ -76,9 +76,15 @@ router.post('/login', [
       return res.status(401).json({ message: 'Invalid credentials. User not found.' });
     }
 
-    // Check if user has delivery role
+    // Check password first (before role check)
+    const isMatch = await user.comparePassword(password);
+    if (!isMatch) {
+      return res.status(401).json({ message: 'Invalid credentials. Wrong password.' });
+    }
+
+    // Now check if user has delivery role (only if password is correct)
     if (user.role !== 'delivery') {
-      console.error('Delivery login attempt with wrong role:', {
+      console.error('Delivery login attempt with wrong role (password correct):', {
         userId: user._id,
         email: user.email,
         phone: user.phone,
@@ -86,16 +92,12 @@ router.post('/login', [
         expectedRole: 'delivery'
       });
       return res.status(403).json({ 
-        message: `Access denied. Your account role is '${user.role}', but 'delivery' role is required. Please contact admin to update your role.`,
-        currentRole: user.role,
-        userId: user._id.toString()
+        message: `✅ Password correct! But your account role is '${user.role || 'user'}'. You need 'delivery' role to access delivery portal. Please contact admin to update your role.`,
+        currentRole: user.role || 'user',
+        userId: user._id.toString(),
+        email: user.email,
+        phone: user.phone
       });
-    }
-
-    // Check password
-    const isMatch = await user.comparePassword(password);
-    if (!isMatch) {
-      return res.status(401).json({ message: 'Invalid credentials' });
     }
 
     // Log successful login for debugging

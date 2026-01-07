@@ -56,8 +56,14 @@ const DeliveryLogin = () => {
           actual: res.data.role,
           email: res.data.email
         })
-        toast.error(`Login failed: Your account role is '${res.data.role || 'unknown'}', but 'delivery' is required. Please contact admin to update your role.`, { 
-          duration: 8000,
+        
+        // Show clear error with instructions
+        const errorMsg = res.data.role 
+          ? `✅ Password is correct! But your account role is '${res.data.role}'. You need 'delivery' role to access delivery portal.\n\n📋 How to fix:\n1. Go to Admin Panel: /admin\n2. Go to Users page\n3. Find this user (${res.data.email || res.data.phone})\n4. Click "Edit Role"\n5. Select "Delivery Man"\n6. Click "Update User"\n7. Login again here.`
+          : `Login failed: Account found but role is missing. Please contact admin.`
+        
+        toast.error(errorMsg, { 
+          duration: 10000,
           icon: '⚠️'
         })
         return
