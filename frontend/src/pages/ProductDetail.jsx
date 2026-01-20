@@ -85,6 +85,48 @@ const ProductDetail = () => {
     }
   }
 
+  const handleWhatsApp = () => {
+    // WhatsApp phone number - you can change this to your store's WhatsApp number
+    // Format: country code + number (without + or spaces)
+    const whatsappPhone = '212707625535' // Default from Contact page, can be made configurable
+    
+    // Get current page URL for product link
+    const productUrl = window.location.href
+    
+    // Build the message with product information
+    const message = `Hello! 👋
+
+I'm interested in this product:
+
+📦 *${product.name}*
+
+💰 Price: ${hasDiscount ? formatCurrency(discountedPrice) : formatCurrency(originalPrice)}${hasDiscount ? ` (Was ${formatCurrency(originalPrice)}, Save ${discountPercentage}%!)` : ''}
+
+📝 Description: ${product.description || 'No description available'}
+
+🏷️ Category: ${product.category || 'N/A'}
+${product.subcategory ? `📂 Subcategory: ${product.subcategory}\n` : ''}
+📊 Stock: ${product.stock > 0 ? `${product.stock} available` : 'Out of stock'}
+
+🔗 Product Link: ${productUrl}
+
+I would like to know more about this product. Can you help me?`
+
+    // Encode the message for URL
+    const encodedMessage = encodeURIComponent(message)
+    
+    // Create WhatsApp URL
+    const whatsappUrl = `https://wa.me/${whatsappPhone}?text=${encodedMessage}`
+    
+    // Open WhatsApp in a new tab/window
+    window.open(whatsappUrl, '_blank')
+    
+    toast.success('Opening WhatsApp...', {
+      icon: '💬',
+      duration: 2000
+    })
+  }
+
 
   if (loading) {
     return (
@@ -102,14 +144,44 @@ const ProductDetail = () => {
     <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8">
       <div className="bg-white rounded-lg shadow-lg overflow-hidden">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-8 p-4 md:p-8">
-          {/* Product Images */}
-          <div>
-            {product.images && product.images.length > 0 ? (
-              <div>
-                {/* Main Image - Professional Styling */}
-                <div className="mb-6 relative group">
-                  <div className="relative overflow-hidden rounded-2xl bg-white shadow-2xl border border-gray-100">
-                    <div className="aspect-square w-full">
+          {/* Product Images Section */}
+          <div className="flex flex-col sm:flex-row gap-4">
+            {/* Thumbnail Images Column - Left Side (only on larger screens if multiple images) */}
+            {product.images && product.images.length > 1 && (
+              <div className="flex-shrink-0 hidden sm:block">
+                <div className="flex flex-col gap-3 max-h-[600px] overflow-y-auto pr-2 scrollbar-hide">
+                  {product.images.map((image, index) => (
+                    <button
+                      key={index}
+                      type="button"
+                      onClick={() => setSelectedImageIndex(index)}
+                      className={`flex-shrink-0 w-20 h-20 md:w-24 md:h-24 rounded-xl overflow-hidden border-2 transition-all duration-200 shadow-md hover:shadow-lg ${
+                        selectedImageIndex === index
+                          ? 'border-[#FF385C] ring-2 ring-[#FF385C]/30 scale-105'
+                          : 'border-gray-200 hover:border-[#FF385C]/50'
+                      }`}
+                    >
+                      <img
+                        src={image}
+                        alt={`${product.name} ${index + 1}`}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.target.src = 'https://via.placeholder.com/96?text=Error'
+                        }}
+                      />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Main Image Area - Smaller and responsive */}
+            <div className="flex-1 w-full">
+              {product.images && product.images.length > 0 ? (
+                <div className="relative group">
+                  <div className="relative overflow-hidden rounded-2xl bg-white shadow-xl border border-gray-100">
+                    {/* Smaller main image - constrained width */}
+                    <div className="aspect-square w-full max-w-md mx-auto">
                       <img
                         src={product.images[selectedImageIndex]}
                         alt={product.name}
@@ -130,18 +202,29 @@ const ProductDetail = () => {
                     </div>
                   )}
                 </div>
-                
-                {/* Thumbnail Images - Enhanced Styling */}
-                {product.images.length > 1 && (
+              ) : (
+                <div className="w-full max-w-md mx-auto aspect-square bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl flex items-center justify-center text-gray-400 shadow-inner border border-gray-200">
+                  <div className="text-center">
+                    <svg className="w-16 h-16 mx-auto mb-2 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <p className="text-sm font-medium">{t('noProductsFound') || 'No Image Available'}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Mobile Thumbnails - Horizontal scroll below main image */}
+              {product.images && product.images.length > 1 && (
+                <div className="mt-4 sm:hidden">
                   <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
                     {product.images.map((image, index) => (
                       <button
                         key={index}
                         type="button"
                         onClick={() => setSelectedImageIndex(index)}
-                        className={`flex-shrink-0 w-24 h-24 rounded-xl overflow-hidden border-2 transition-all duration-200 shadow-md hover:shadow-lg ${
+                        className={`flex-shrink-0 w-20 h-20 rounded-xl overflow-hidden border-2 transition-all duration-200 shadow-md hover:shadow-lg ${
                           selectedImageIndex === index
-                            ? 'border-[#FF385C] ring-4 ring-[#FF385C]/30 scale-105'
+                            ? 'border-[#FF385C] ring-2 ring-[#FF385C]/30 scale-105'
                             : 'border-gray-200 hover:border-[#FF385C]/50'
                         }`}
                       >
@@ -156,18 +239,9 @@ const ProductDetail = () => {
                       </button>
                     ))}
                   </div>
-                )}
-              </div>
-            ) : (
-              <div className="w-full aspect-square bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl flex items-center justify-center text-gray-400 shadow-inner border border-gray-200">
-                <div className="text-center">
-                  <svg className="w-16 h-16 mx-auto mb-2 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                  <p className="text-sm font-medium">{t('noProductsFound') || 'No Image Available'}</p>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
 
           {/* Product Info */}
@@ -249,6 +323,17 @@ const ProductDetail = () => {
               className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
             >
               {t('addToCartButton') || t('addToCart')}
+            </button>
+            
+            {/* WhatsApp Button */}
+            <button
+              onClick={handleWhatsApp}
+              className="w-full bg-[#25D366] hover:bg-[#20BA5A] text-white font-semibold py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2 shadow-md hover:shadow-lg"
+            >
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+              </svg>
+              <span>Contact via WhatsApp</span>
             </button>
             </div>
           </div>
