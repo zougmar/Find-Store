@@ -67,6 +67,74 @@ const AdminOrders = () => {
     }
   }
 
+  const handleDeleteOrder = async (orderId) => {
+    if (!window.confirm('Are you sure you want to delete this order? This action cannot be undone.')) {
+      return
+    }
+
+    try {
+      await api.delete(`/admin/orders/${orderId}`)
+      toast.success('Order deleted successfully')
+      fetchOrders()
+      // Remove from expanded and selected sets
+      setExpandedOrders(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(orderId)
+        return newSet
+      })
+      setSelectedOrders(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(orderId)
+        return newSet
+      })
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to delete order')
+    }
+  }
+
+  const handleDeleteSelectedOrders = async () => {
+    if (selectedOrders.size === 0) {
+      toast.error('Please select orders to delete')
+      return
+    }
+
+    if (!window.confirm(`Are you sure you want to delete ${selectedOrders.size} selected order(s)? This action cannot be undone.`)) {
+      return
+    }
+
+    try {
+      await api.delete('/admin/orders', {
+        data: { orderIds: Array.from(selectedOrders) }
+      })
+      toast.success(`${selectedOrders.size} order(s) deleted successfully`)
+      setSelectedOrders(new Set())
+      fetchOrders()
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to delete orders')
+    }
+  }
+
+  const handleDeleteAllOrders = async () => {
+    if (!window.confirm('⚠️ WARNING: Are you sure you want to delete ALL orders? This action cannot be undone and will restore product stock. Type "DELETE ALL" to confirm.')) {
+      return
+    }
+
+    const confirmation = window.prompt('Type "DELETE ALL" to confirm deletion of all orders:')
+    if (confirmation !== 'DELETE ALL') {
+      toast.error('Deletion cancelled. Confirmation text did not match.')
+      return
+    }
+
+    try {
+      await api.delete('/admin/orders')
+      toast.success('All orders deleted successfully')
+      setSelectedOrders(new Set())
+      fetchOrders()
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to delete all orders')
+    }
+  }
+
   const generateTicket = async (order) => {
     try {
       // Generate tracking number (using last 12 chars of order ID)
@@ -439,26 +507,51 @@ const AdminOrders = () => {
             </div>
           </div>
           
-          {/* Results Count */}
-          <div className="mt-4 flex items-center justify-between text-sm text-gray-600">
-            <span>
-              Showing <span className="font-semibold text-gray-900">{filteredOrders.length}</span> of <span className="font-semibold text-gray-900">{orders.length}</span> orders
-            </span>
-            {(searchQuery || orderStatusFilter !== 'all' || paymentStatusFilter !== 'all') && (
-              <button
-                onClick={() => {
-                  setSearchQuery('')
-                  setOrderStatusFilter('all')
-                  setPaymentStatusFilter('all')
-                }}
-                className="text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-                Clear Filters
-              </button>
-            )}
+          {/* Results Count and Action Buttons */}
+          <div className="mt-4 space-y-4">
+            <div className="flex items-center justify-between text-sm text-gray-600">
+              <span>
+                Showing <span className="font-semibold text-gray-900">{filteredOrders.length}</span> of <span className="font-semibold text-gray-900">{orders.length}</span> orders
+              </span>
+              {(searchQuery || orderStatusFilter !== 'all' || paymentStatusFilter !== 'all') && (
+                <button
+                  onClick={() => {
+                    setSearchQuery('')
+                    setOrderStatusFilter('all')
+                    setPaymentStatusFilter('all')
+                  }}
+                  className="text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                  Clear Filters
+                </button>
+              )}
+            </div>
+            
+            {/* Delete Action Buttons */}
+            <div className="flex items-center gap-3 flex-wrap pt-2 border-t border-gray-200">
+              {/* Delete Selected Orders Button */}
+              {selectedOrders.size > 0 && (
+                <button
+                  onClick={handleDeleteSelectedOrders}
+                  className="flex items-center gap-2 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition-all shadow-md hover:shadow-lg"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                  Delete Selected ({selectedOrders.size})
+                </button>
+              )}
+              
+              {/* Info message when no orders selected */}
+              {selectedOrders.size === 0 && orders.length > 0 && (
+                <p className="text-sm text-gray-500 italic">
+                  Select orders using checkboxes to delete multiple orders
+                </p>
+              )}
+            </div>
           </div>
         </div>
 
@@ -1295,6 +1388,19 @@ const AdminOrders = () => {
                                           </div>
                                         </div>
                                       )}
+                                    </div>
+
+                                    {/* Delete Order Button */}
+                                    <div className="md:col-span-2 pt-4 border-t border-gray-200">
+                                      <button
+                                        onClick={() => handleDeleteOrder(order._id)}
+                                        className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition-all duration-200 shadow-md hover:shadow-lg"
+                                      >
+                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                        </svg>
+                                        Delete This Order
+                                      </button>
                                     </div>
                                   </div>
                                 </div>

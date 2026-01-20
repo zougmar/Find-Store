@@ -481,6 +481,92 @@ router.put('/orders/:id', hasPermission('manageOrders'), async (req, res, next) 
   }
 });
 
+// @route   DELETE /api/admin/orders/:id
+// @desc    Delete a single order
+// @access  Private/Admin or Moderator with manageOrders permission
+router.delete('/orders/:id', hasPermission('manageOrders'), async (req, res, next) => {
+  try {
+    const order = await Order.findByIdAndDelete(req.params.id);
+    
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+    
+    // Restore product stock if order was not cancelled
+    if (order.orderStatus !== 'cancelled') {
+      for (const item of order.items) {
+        const product = await Product.findById(item.product);
+        if (product) {
+          product.stock += item.quantity;
+          await product.save();
+        }
+      }
+    }
+    
+    res.json({ message: 'Order deleted successfully' });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// @route   DELETE /api/admin/orders
+// @desc    Delete all orders or selected orders
+// @access  Private/Admin or Moderator with manageOrders permission
+router.delete('/orders', hasPermission('manageOrders'), async (req, res, next) => {
+  try {
+    const { orderIds } = req.body;
+    
+    let deletedCount = 0;
+    
+    if (orderIds && Array.isArray(orderIds) && orderIds.length > 0) {
+      // Delete selected orders
+      const ordersToDelete = await Order.find({ _id: { $in: orderIds } });
+      
+      // Restore product stock for non-cancelled orders
+      for (const order of ordersToDelete) {
+        if (order.orderStatus !== 'cancelled') {
+          for (const item of order.items) {
+            const product = await Product.findById(item.product);
+            if (product) {
+              product.stock += item.quantity;
+              await product.save();
+            }
+          }
+        }
+      }
+      
+      const result = await Order.deleteMany({ _id: { $in: orderIds } });
+      deletedCount = result.deletedCount;
+    } else {
+      // Delete all orders
+      const allOrders = await Order.find();
+      
+      // Restore product stock for non-cancelled orders
+      for (const order of allOrders) {
+        if (order.orderStatus !== 'cancelled') {
+          for (const item of order.items) {
+            const product = await Product.findById(item.product);
+            if (product) {
+              product.stock += item.quantity;
+              await product.save();
+            }
+          }
+        }
+      }
+      
+      const result = await Order.deleteMany({});
+      deletedCount = result.deletedCount;
+    }
+    
+    res.json({ 
+      message: `${deletedCount} order(s) deleted successfully`,
+      deletedCount 
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 // ==================== PAGE MANAGEMENT ROUTES ====================
 
 // @route   GET /api/admin/pages
