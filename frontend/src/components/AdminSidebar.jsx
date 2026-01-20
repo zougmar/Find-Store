@@ -83,7 +83,7 @@ const AdminSidebar = ({ isOpen = true, onClose }) => {
   }
 
   return (
-    <div className={`bg-gradient-to-b from-[#1e293b] to-[#0f172a] text-white w-64 min-h-screen fixed left-0 top-0 flex flex-col z-50 transform transition-transform duration-300 ease-in-out lg:translate-x-0 shadow-2xl ${
+    <div className={`bg-gradient-to-b from-[#1e293b] to-[#0f172a] text-white w-44 min-h-screen fixed left-0 top-0 flex flex-col z-50 transform transition-transform duration-300 ease-in-out lg:translate-x-0 shadow-2xl ${
       isOpen ? 'translate-x-0' : '-translate-x-full'
     }`}>
       {/* Logo Header */}

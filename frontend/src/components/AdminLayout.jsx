@@ -34,7 +34,7 @@ const AdminLayout = ({ children, title }) => {
       
       <AdminSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       
-      <div className="flex-1 lg:ml-64 flex flex-col">
+      <div className="flex-1 lg:ml-44 flex flex-col">
         {/* Top Bar - cPanel Style */}
         <div className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-30">
           <div className="px-4 md:px-6 lg:px-8 py-3 md:py-4">
