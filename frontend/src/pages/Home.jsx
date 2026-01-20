@@ -4,6 +4,7 @@ import { useLanguage } from '../context/LanguageContext'
 import api from '../utils/api'
 import ProductCard from '../components/ProductCard'
 import Footer from '../components/Footer'
+import Chatbot from '../components/Chatbot'
 import toast from 'react-hot-toast'
 
 const Home = () => {
@@ -440,6 +441,9 @@ const Home = () => {
       </section>
 
       <Footer />
+
+      {/* Chatbot Component */}
+      <Chatbot />
 
       {/* Floating WhatsApp Button - Fixed at bottom left */}
       <button
