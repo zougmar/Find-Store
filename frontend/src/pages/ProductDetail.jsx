@@ -93,24 +93,24 @@ const ProductDetail = () => {
     // Get current page URL for product link
     const productUrl = window.location.href
     
-    // Build the message with product information
-    const message = `Hello! 👋
+    // Build the message with product information in Arabic
+    const message = `مرحبا! 👋
 
-I'm interested in this product:
+أنا مهتم بهذا المنتج:
 
 📦 *${product.name}*
 
-💰 Price: ${hasDiscount ? formatCurrency(discountedPrice) : formatCurrency(originalPrice)}${hasDiscount ? ` (Was ${formatCurrency(originalPrice)}, Save ${discountPercentage}%!)` : ''}
+💰 السعر: ${hasDiscount ? formatCurrency(discountedPrice) : formatCurrency(originalPrice)}${hasDiscount ? ` (كان ${formatCurrency(originalPrice)}، وفر ${discountPercentage}%!)` : ''}
 
-📝 Description: ${product.description || 'No description available'}
+📝 الوصف: ${product.description || 'لا يوجد وصف متاح'}
 
-🏷️ Category: ${product.category || 'N/A'}
-${product.subcategory ? `📂 Subcategory: ${product.subcategory}\n` : ''}
-📊 Stock: ${product.stock > 0 ? `${product.stock} available` : 'Out of stock'}
+🏷️ الفئة: ${product.category || 'غير محدد'}
+${product.subcategory ? `📂 الفئة الفرعية: ${product.subcategory}\n` : ''}
+📊 المخزون: ${product.stock > 0 ? `${product.stock} متوفر` : 'نفد المخزون'}
 
-🔗 Product Link: ${productUrl}
+🔗 رابط المنتج: ${productUrl}
 
-I would like to know more about this product. Can you help me?`
+أود معرفة المزيد عن هذا المنتج. هل يمكنك مساعدتي؟`
 
     // Encode the message for URL
     const encodedMessage = encodeURIComponent(message)
@@ -121,7 +121,7 @@ I would like to know more about this product. Can you help me?`
     // Open WhatsApp in a new tab/window
     window.open(whatsappUrl, '_blank')
     
-    toast.success('Opening WhatsApp...', {
+    toast.success('جاري فتح واتساب...', {
       icon: '💬',
       duration: 2000
     })

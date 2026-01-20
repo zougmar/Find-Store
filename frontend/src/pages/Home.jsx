@@ -139,12 +139,12 @@ const Home = () => {
     // WhatsApp phone number - same as in ProductDetail
     const whatsappPhone = '212707625535'
     
-    // General contact message
-    const message = `Hello! 👋
+    // General contact message in Arabic
+    const message = `مرحبا! 👋
 
-I'm interested in your products and would like to know more.
+أنا مهتم بمنتجاتكم وأود معرفة المزيد.
 
-Can you help me?`
+هل يمكنك مساعدتي؟`
 
     // Encode the message for URL
     const encodedMessage = encodeURIComponent(message)
@@ -155,7 +155,7 @@ Can you help me?`
     // Open WhatsApp in a new tab/window
     window.open(whatsappUrl, '_blank')
     
-    toast.success('Opening WhatsApp...', {
+    toast.success('جاري فتح واتساب...', {
       icon: '💬',
       duration: 2000
     })
