@@ -3,7 +3,7 @@ import { Toaster } from 'react-hot-toast'
 import { AuthProvider } from './context/AuthContext'
 import { CartProvider } from './context/CartContext'
 import { FavoritesProvider } from './context/FavoritesContext'
-import { LanguageProvider } from './context/LanguageContext'
+import { LanguageProvider, useLanguage } from './context/LanguageContext'
 import Navbar from './components/Navbar'
 import Home from './pages/Home'
 import Products from './pages/Products'
@@ -29,15 +29,13 @@ import ModeratorDashboard from './pages/moderator/ModeratorDashboard'
 import ModeratorOrders from './pages/moderator/ModeratorOrders'
 import ProtectedRoute from './components/ProtectedRoute'
 
-function App() {
+const AppContent = () => {
+  const { isRTL } = useLanguage()
+  
   return (
-    <LanguageProvider>
-      <AuthProvider>
-        <CartProvider>
-          <FavoritesProvider>
-            <Router>
-          <div className="min-h-screen bg-gray-50">
-            <Routes>
+    <Router>
+      <div className="min-h-screen bg-gray-50">
+        <Routes>
               {/* Public routes with Navbar */}
               <Route path="/" element={
                 <>
@@ -163,13 +161,23 @@ function App() {
                   </ProtectedRoute>
                 }
               />
-            </Routes>
-            <Toaster position="top-right" />
-          </div>
-        </Router>
-        </FavoritesProvider>
-      </CartProvider>
-    </AuthProvider>
+        </Routes>
+        <Toaster position={isRTL ? 'top-left' : 'top-right'} />
+      </div>
+    </Router>
+  )
+}
+
+function App() {
+  return (
+    <LanguageProvider>
+      <AuthProvider>
+        <CartProvider>
+          <FavoritesProvider>
+            <AppContent />
+          </FavoritesProvider>
+        </CartProvider>
+      </AuthProvider>
     </LanguageProvider>
   )
 }

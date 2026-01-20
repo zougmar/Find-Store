@@ -83,6 +83,26 @@ code {
   text-align: left;
 }
 
+/* Ensure body respects direction */
+body[dir="rtl"] {
+  direction: rtl;
+  text-align: right;
+}
+
+body[dir="ltr"] {
+  direction: ltr;
+  text-align: left;
+}
+
+/* Root element direction */
+html[dir="rtl"] {
+  direction: rtl;
+}
+
+html[dir="ltr"] {
+  direction: ltr;
+}
+
 /* RTL-specific adjustments */
 [dir="rtl"] .flex-row-reverse {
   flex-direction: row-reverse;

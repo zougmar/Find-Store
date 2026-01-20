@@ -171,6 +171,24 @@ const translations = {
     beFirstReview: 'Be the first to review this product!',
     youSave: 'You save',
     noImageAvailable: 'No Image Available',
+    loadingProduct: 'Loading product details...',
+    productOverview: 'Product Overview',
+    whyChooseThisProduct: 'Why Choose This Product?',
+    premiumFeatures: 'Premium features that set us apart',
+    premiumQuality: 'Premium Quality',
+    premiumQualityDesc: 'High-quality materials and craftsmanship ensure durability and long-lasting satisfaction.',
+    fastDelivery: 'Fast Delivery',
+    fastDeliveryDesc: 'Quick and reliable shipping to get your product to you as soon as possible.',
+    securePurchase: 'Secure Purchase',
+    securePurchaseDesc: 'Safe and secure payment options with comprehensive buyer protection guarantee.',
+    seeWhatCustomersSaying: 'See what our customers are saying',
+    shareYourExperience: 'Share your experience with this product...',
+    readyToMakePurchase: 'Ready to Make a Purchase?',
+    dontMissOut: 'Don\'t miss out on this exceptional product. Add it to your cart now or contact us directly for personalized assistance.',
+    contactViaWhatsApp: 'Contact via WhatsApp',
+    save: 'Save',
+    youSaveAmount: 'You save',
+    anonymousUser: 'Anonymous User',
     // About page
     aboutFindStore: 'About Find Store',
     trustedMarketplace: 'Your trusted marketplace for quality products from around the world',
@@ -456,6 +474,24 @@ const translations = {
     beFirstReview: 'كن أول من يقيم هذا المنتج!',
     youSave: 'توفر',
     noImageAvailable: 'لا توجد صورة متاحة',
+    loadingProduct: 'جاري تحميل تفاصيل المنتج...',
+    productOverview: 'نظرة عامة على المنتج',
+    whyChooseThisProduct: 'لماذا تختار هذا المنتج؟',
+    premiumFeatures: 'ميزات مميزة تميزنا عن الآخرين',
+    premiumQuality: 'جودة عالية',
+    premiumQualityDesc: 'مواد عالية الجودة وحرفية متميزة تضمن المتانة والرضا طويل الأمد.',
+    fastDelivery: 'توصيل سريع',
+    fastDeliveryDesc: 'شحن سريع وموثوق لتوصيل منتجك إليك في أقرب وقت ممكن.',
+    securePurchase: 'شراء آمن',
+    securePurchaseDesc: 'خيارات دفع آمنة ومأمونة مع ضمان حماية المشتري الشامل.',
+    seeWhatCustomersSaying: 'شاهد ما يقوله عملاؤنا',
+    shareYourExperience: 'شارك تجربتك مع هذا المنتج...',
+    readyToMakePurchase: 'هل أنت مستعد لإجراء عملية شراء؟',
+    dontMissOut: 'لا تفوت هذا المنتج الاستثنائي. أضفه إلى سلة التسوق الآن أو اتصل بنا مباشرة للحصول على مساعدة مخصصة.',
+    contactViaWhatsApp: 'التواصل عبر واتساب',
+    save: 'وفر',
+    youSaveAmount: 'توفر',
+    anonymousUser: 'مستخدم مجهول',
     // About page
     aboutFindStore: 'حول Find Store',
     trustedMarketplace: 'سوقك الموثوق للمنتجات عالية الجودة من جميع أنحاء العالم',
@@ -741,6 +777,24 @@ const translations = {
     beFirstReview: 'Soyez le premier à noter ce produit!',
     youSave: 'Vous économisez',
     noImageAvailable: 'Aucune image disponible',
+    loadingProduct: 'Chargement des détails du produit...',
+    productOverview: 'Aperçu du produit',
+    whyChooseThisProduct: 'Pourquoi choisir ce produit?',
+    premiumFeatures: 'Fonctionnalités premium qui nous distinguent',
+    premiumQuality: 'Qualité premium',
+    premiumQualityDesc: 'Des matériaux de haute qualité et un savoir-faire artisanal garantissent durabilité et satisfaction durable.',
+    fastDelivery: 'Livraison rapide',
+    fastDeliveryDesc: 'Expédition rapide et fiable pour vous livrer votre produit au plus vite.',
+    securePurchase: 'Achat sécurisé',
+    securePurchaseDesc: 'Options de paiement sûres et sécurisées avec garantie complète de protection de l\'acheteur.',
+    seeWhatCustomersSaying: 'Découvrez ce que disent nos clients',
+    shareYourExperience: 'Partagez votre expérience avec ce produit...',
+    readyToMakePurchase: 'Prêt à faire un achat?',
+    dontMissOut: 'Ne manquez pas ce produit exceptionnel. Ajoutez-le à votre panier maintenant ou contactez-nous directement pour une assistance personnalisée.',
+    contactViaWhatsApp: 'Contacter via WhatsApp',
+    save: 'Économiser',
+    youSaveAmount: 'Vous économisez',
+    anonymousUser: 'Utilisateur anonyme',
     // About page
     aboutFindStore: 'À propos de Find Store',
     trustedMarketplace: 'Votre marché de confiance pour des produits de qualité du monde entier',
@@ -880,9 +934,11 @@ export const LanguageProvider = ({ children }) => {
     if (language === 'ar') {
       document.documentElement.setAttribute('dir', 'rtl')
       document.documentElement.setAttribute('lang', 'ar')
+      document.body.setAttribute('dir', 'rtl')
     } else {
       document.documentElement.setAttribute('dir', 'ltr')
       document.documentElement.setAttribute('lang', language)
+      document.body.setAttribute('dir', 'ltr')
     }
   }, [language])
 

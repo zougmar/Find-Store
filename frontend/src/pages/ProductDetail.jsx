@@ -12,7 +12,7 @@ const ProductDetail = () => {
   const navigate = useNavigate()
   const { addToCart, getFinalPrice } = useCart()
   const { user } = useAuth()
-  const { t, isRTL } = useLanguage()
+  const { t, isRTL, language } = useLanguage()
   const [product, setProduct] = useState(null)
   const [loading, setLoading] = useState(true)
   const [quantity, setQuantity] = useState(1)
@@ -93,8 +93,11 @@ const ProductDetail = () => {
     // Get current page URL for product link
     const productUrl = window.location.href
     
-    // Build the message with product information in Arabic
-    const message = `مرحبا! 👋
+    // Build the message based on language
+    let message = ''
+    if (language === 'ar') {
+      // Arabic message
+      message = `مرحبا! 👋
 
 أنا مهتم بهذا المنتج:
 
@@ -102,15 +105,54 @@ const ProductDetail = () => {
 
 💰 السعر: ${hasDiscount ? formatCurrency(discountedPrice) : formatCurrency(originalPrice)}${hasDiscount ? ` (كان ${formatCurrency(originalPrice)}، وفر ${discountPercentage}%!)` : ''}
 
-📝 الوصف: ${product.description || 'لا يوجد وصف متاح'}
+📝 الوصف: ${product.description || t('noImageAvailable')}
 
-🏷️ الفئة: ${product.category || 'غير محدد'}
-${product.subcategory ? `📂 الفئة الفرعية: ${product.subcategory}\n` : ''}
-📊 المخزون: ${product.stock > 0 ? `${product.stock} متوفر` : 'نفد المخزون'}
+🏷️ ${t('category')}: ${product.category || t('noImageAvailable')}
+${product.subcategory ? `📂 ${product.subcategory}\n` : ''}
+📊 ${t('stock')}: ${product.stock > 0 ? `${product.stock} ${t('available')}` : t('outOfStockLabel')}
 
-🔗 رابط المنتج: ${productUrl}
+🔗 ${productUrl}
 
 أود معرفة المزيد عن هذا المنتج. هل يمكنك مساعدتي؟`
+    } else if (language === 'fr') {
+      // French message
+      message = `Bonjour! 👋
+
+Je suis intéressé(e) par ce produit:
+
+📦 *${product.name}*
+
+💰 Prix: ${hasDiscount ? formatCurrency(discountedPrice) : formatCurrency(originalPrice)}${hasDiscount ? ` (était ${formatCurrency(originalPrice)}, économisez ${discountPercentage}%!)` : ''}
+
+📝 Description: ${product.description || t('noImageAvailable')}
+
+🏷️ ${t('category')}: ${product.category || t('noImageAvailable')}
+${product.subcategory ? `📂 ${product.subcategory}\n` : ''}
+📊 Stock: ${product.stock > 0 ? `${product.stock} ${t('available')}` : t('outOfStockLabel')}
+
+🔗 Lien du produit: ${productUrl}
+
+J'aimerais en savoir plus sur ce produit. Pouvez-vous m'aider?`
+    } else {
+      // English message
+      message = `Hello! 👋
+
+I'm interested in this product:
+
+📦 *${product.name}*
+
+💰 Price: ${hasDiscount ? formatCurrency(discountedPrice) : formatCurrency(originalPrice)}${hasDiscount ? ` (was ${formatCurrency(originalPrice)}, save ${discountPercentage}%!)` : ''}
+
+📝 Description: ${product.description || t('noImageAvailable')}
+
+🏷️ ${t('category')}: ${product.category || t('noImageAvailable')}
+${product.subcategory ? `📂 ${product.subcategory}\n` : ''}
+📊 ${t('stock')}: ${product.stock > 0 ? `${product.stock} ${t('available')}` : t('outOfStockLabel')}
+
+🔗 Product link: ${productUrl}
+
+I would like to know more about this product. Can you help me?`
+    }
 
     // Encode the message for URL
     const encodedMessage = encodeURIComponent(message)
@@ -121,7 +163,7 @@ ${product.subcategory ? `📂 الفئة الفرعية: ${product.subcategory}\
     // Open WhatsApp in a new tab/window
     window.open(whatsappUrl, '_blank')
     
-    toast.success('جاري فتح واتساب...', {
+    toast.success(language === 'ar' ? 'جاري فتح واتساب...' : (language === 'fr' ? 'Ouverture de WhatsApp...' : 'Opening WhatsApp...'), {
       icon: '💬',
       duration: 2000
     })
@@ -130,8 +172,14 @@ ${product.subcategory ? `📂 الفئة الفرعية: ${product.subcategory}\
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="flex justify-center items-center min-h-screen bg-white">
+        <div className="text-center">
+          <div className="relative">
+            <div className="animate-spin rounded-full h-16 w-16 border-4 border-gray-200 mx-auto"></div>
+            <div className="animate-spin rounded-full h-16 w-16 border-4 border-transparent border-t-blue-600 mx-auto absolute top-0 left-1/2 transform -translate-x-1/2"></div>
+          </div>
+          <p className="text-gray-600 font-medium mt-6 text-lg">{t('loadingProduct')}</p>
+        </div>
       </div>
     )
   }
@@ -141,220 +189,301 @@ ${product.subcategory ? `📂 الفئة الفرعية: ${product.subcategory}\
   }
 
   return (
-    <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8">
-      <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-8 p-4 md:p-8">
-          {/* Product Images Section */}
-          <div className="flex flex-col sm:flex-row gap-4">
-            {/* Thumbnail Images Column - Left Side (only on larger screens if multiple images) */}
-            {product.images && product.images.length > 1 && (
-              <div className="flex-shrink-0 hidden sm:block">
-                <div className="flex flex-col gap-3 max-h-[600px] overflow-y-auto pr-2 scrollbar-hide">
-                  {product.images.map((image, index) => (
-                    <button
-                      key={index}
-                      type="button"
-                      onClick={() => setSelectedImageIndex(index)}
-                      className={`flex-shrink-0 w-20 h-20 md:w-24 md:h-24 rounded-xl overflow-hidden border-2 transition-all duration-200 shadow-md hover:shadow-lg ${
-                        selectedImageIndex === index
-                          ? 'border-[#FF385C] ring-2 ring-[#FF385C]/30 scale-105'
-                          : 'border-gray-200 hover:border-[#FF385C]/50'
-                      }`}
-                    >
-                      <img
-                        src={image}
-                        alt={`${product.name} ${index + 1}`}
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          e.target.src = 'https://via.placeholder.com/96?text=Error'
-                        }}
-                      />
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Main Image Area - Smaller and responsive */}
-            <div className="flex-1 w-full">
+    <div className="min-h-screen bg-white">
+      {/* Hero Section */}
+      <section className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white border-b border-slate-700/50">
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 via-transparent to-purple-600/10"></div>
+        <div className="absolute inset-0 opacity-[0.03]" style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
+        }}></div>
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12 items-center">
+            {/* Product Image Hero */}
+            <div className="relative">
               {product.images && product.images.length > 0 ? (
                 <div className="relative group">
-                  <div className="relative overflow-hidden rounded-2xl bg-white shadow-xl border border-gray-100">
-                    {/* Smaller main image - constrained width */}
-                    <div className="aspect-square w-full max-w-md mx-auto">
+                  <div className="relative overflow-hidden rounded-2xl bg-white/5 backdrop-blur-sm shadow-2xl border border-white/10 p-6">
+                    <div className="aspect-square w-full max-w-lg mx-auto bg-white/5 rounded-xl overflow-hidden">
                       <img
                         src={product.images[selectedImageIndex]}
                         alt={product.name}
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                         onError={(e) => {
                           e.target.src = 'https://via.placeholder.com/800x800?text=No+Image'
                         }}
                       />
                     </div>
-                    {/* Overlay gradient for depth */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/5 to-transparent pointer-events-none"></div>
+                    {/* Floating badges */}
+                    {hasDiscount && (
+                      <div className={`absolute top-8 ${isRTL ? 'right-8' : 'left-8'} bg-gradient-to-r from-red-600 to-red-500 text-white px-5 py-2.5 rounded-lg font-bold text-sm shadow-2xl backdrop-blur-sm border border-white/20`}>
+                        <span className="flex items-center gap-1.5">
+                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M12.395 2.553a1 1 0 00-1.45-.385c-.345.23-.614.558-.822.88-.214.33-.403.713-.57 1.116-.334.804-.614 1.768-.84 2.734a31.365 31.365 0 00-.613 3.58 2.64 2.64 0 01-.945-1.067c-.328-.68-.398-1.534-.398-2.654A1 1 0 005.05 6.05 6.981 6.981 0 003 11a7 7 0 1011.95-4.95c-.592-.591-.98-.985-1.348-1.467-.363-.476-.724-1.063-1.207-2.03zM12.12 15.12A3 3 0 017 13s.879.5 2.5.5c0-1 .5-4 1.25-4.5.5 1 .786 1.293 1.371 1.879A2.99 2.99 0 0113 13a2.99 2.99 0 01-.879 2.121z" clipRule="evenodd" />
+                          </svg>
+                          {discountPercentage}% {t('save')}
+                        </span>
+                      </div>
+                    )}
+                    {product.stock > 0 && (
+                      <div className={`absolute top-8 ${isRTL ? 'left-8' : 'right-8'} bg-gradient-to-r from-emerald-600 to-emerald-500 text-white px-5 py-2.5 rounded-lg font-semibold text-sm shadow-2xl backdrop-blur-sm border border-white/20`}>
+                        <span className="flex items-center gap-1.5">
+                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                          </svg>
+                          {t('inStockLabel')}
+                        </span>
+                      </div>
+                    )}
                   </div>
                   
-                  {/* Image counter badge */}
-                  {product.images.length > 1 && (
-                    <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-full shadow-lg text-sm font-semibold text-gray-700">
-                      {selectedImageIndex + 1} / {product.images.length}
+                  {/* Image thumbnails for hero */}
+                  {product.images && product.images.length > 1 && (
+                    <div className="flex gap-3 mt-6 justify-center">
+                      {product.images.map((image, index) => (
+                        <button
+                          key={index}
+                          type="button"
+                          onClick={() => setSelectedImageIndex(index)}
+                          className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-all duration-300 shadow-lg backdrop-blur-sm ${
+                            selectedImageIndex === index
+                              ? 'border-white ring-2 ring-white/30 scale-105 shadow-xl'
+                              : 'border-white/20 hover:border-white/40 opacity-70 hover:opacity-100'
+                          }`}
+                        >
+                          <img
+                            src={image}
+                            alt={`${product.name} ${index + 1}`}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              e.target.src = 'https://via.placeholder.com/96?text=Error'
+                            }}
+                          />
+                        </button>
+                      ))}
                     </div>
                   )}
                 </div>
               ) : (
-                <div className="w-full max-w-md mx-auto aspect-square bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl flex items-center justify-center text-gray-400 shadow-inner border border-gray-200">
+                <div className="w-full max-w-lg mx-auto aspect-square bg-white/5 backdrop-blur-sm rounded-2xl flex items-center justify-center border border-white/10">
                   <div className="text-center">
-                    <svg className="w-16 h-16 mx-auto mb-2 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    <svg className="w-24 h-24 mx-auto mb-4 text-white/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
-                    <p className="text-sm font-medium">{t('noProductsFound') || 'No Image Available'}</p>
+                    <p className="text-white/50 font-medium text-sm">{t('noImageAvailable')}</p>
                   </div>
                 </div>
               )}
+            </div>
 
-              {/* Mobile Thumbnails - Horizontal scroll below main image */}
-              {product.images && product.images.length > 1 && (
-                <div className="mt-4 sm:hidden">
-                  <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
-                    {product.images.map((image, index) => (
-                      <button
-                        key={index}
-                        type="button"
-                        onClick={() => setSelectedImageIndex(index)}
-                        className={`flex-shrink-0 w-20 h-20 rounded-xl overflow-hidden border-2 transition-all duration-200 shadow-md hover:shadow-lg ${
-                          selectedImageIndex === index
-                            ? 'border-[#FF385C] ring-2 ring-[#FF385C]/30 scale-105'
-                            : 'border-gray-200 hover:border-[#FF385C]/50'
-                        }`}
-                      >
-                        <img
-                          src={image}
-                          alt={`${product.name} ${index + 1}`}
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            e.target.src = 'https://via.placeholder.com/96?text=Error'
-                          }}
-                        />
-                      </button>
+            {/* Hero Content */}
+            <div className={`text-center ${isRTL ? 'lg:text-right' : 'lg:text-left'} space-y-6`}>
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-sm rounded-lg text-xs font-medium text-white/90 border border-white/20">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                </svg>
+                <span>{product.category}</span>
+                {product.subcategory && (
+                  <>
+                    <span className="text-white/40">•</span>
+                    <span>{product.subcategory}</span>
+                  </>
+                )}
+              </div>
+              
+              <div>
+                <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-4 leading-tight tracking-tight">
+                  {product.name}
+                </h1>
+                <div className={`flex items-center justify-center ${isRTL ? 'lg:justify-end' : 'lg:justify-start'} gap-3 mb-6`}>
+                  <div className="flex items-center gap-1">
+                    {[...Array(5)].map((_, i) => (
+                      <span key={i} className={`text-xl ${i < Math.floor(product.averageRating || 0) ? 'text-amber-400' : 'text-white/20'}`}>
+                        ★
+                      </span>
                     ))}
                   </div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Product Info */}
-          <div>
-            <h1 className="text-2xl md:text-4xl font-bold text-gray-900 mb-3 md:mb-4">{product.name}</h1>
-            <div className="flex items-center mb-3 md:mb-4">
-              <span className="text-yellow-500 text-xl md:text-2xl">★</span>
-              <span className="text-base md:text-xl text-gray-700 ml-2">
-                {product.averageRating || 0} ({product.numReviews || 0} {t('reviews') || 'reviews'})
-              </span>
-            </div>
-            {/* Price with Discount */}
-            <div className="mb-4 md:mb-6">
-              {hasDiscount ? (
-                <div className="flex flex-col gap-2">
-                  <div className="flex items-center gap-3">
-                    <span className="text-2xl md:text-3xl font-bold text-blue-600">
-                      {formatCurrency(discountedPrice)}
-                    </span>
-                    <span className="px-3 py-1 bg-red-500 text-white text-sm font-bold rounded-full">
-                      -{discountPercentage}%
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg text-gray-400 line-through">
-                      {formatCurrency(originalPrice)}
-                    </span>
-                    <span className="text-sm text-gray-600">
-                      {t('youSave') || 'You save'} {formatCurrency(originalPrice - discountedPrice)}
-                    </span>
-                  </div>
-                </div>
-              ) : (
-                <p className="text-2xl md:text-3xl font-bold text-blue-600">
-                  {formatCurrency(originalPrice)}
-                </p>
-              )}
-            </div>
-            <p className="text-sm md:text-base text-gray-700 mb-4 md:mb-6">{product.description}</p>
-            
-            <div className="mb-6">
-              <p className="text-sm text-gray-600 mb-2">
-                <span className="font-semibold">{t('category')}:</span> {product.category}
-              </p>
-              <p className="text-sm text-gray-600">
-                <span className="font-semibold">{t('stock')}:</span> {product.stock} {t('available')}
-              </p>
-            </div>
-
-            {product.stock > 0 ? (
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {t('quantity')}
-                </label>
-                <div className="flex items-center space-x-4">
-                  <button
-                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    className="px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300"
-                  >
-                    -
-                  </button>
-                  <span className="text-lg font-semibold">{quantity}</span>
-                  <button
-                    onClick={() => setQuantity(Math.min(product.stock, quantity + 1))}
-                    className="px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300"
-                  >
-                    +
-                  </button>
+                  <span className="text-base font-semibold text-white/90">
+                    {product.averageRating?.toFixed(1) || '0.0'}
+                  </span>
+                  <span className="text-sm text-white/60">
+                    ({product.numReviews || 0} {t('reviews') || 'reviews'})
+                  </span>
                 </div>
               </div>
-            ) : (
-              <p className="text-red-500 font-semibold mb-6">{t('outOfStockLabel') || 'Out of Stock'}</p>
-            )}
+              
+              {/* Price Section */}
+              <div className="space-y-3">
+                {hasDiscount ? (
+                  <div className="space-y-2">
+                    <div className={`flex items-baseline justify-center ${isRTL ? 'lg:justify-end' : 'lg:justify-start'} gap-4`}>
+                      <span className="text-5xl md:text-6xl font-bold tracking-tight">
+                        {formatCurrency(discountedPrice)}
+                      </span>
+                      <span className="px-3 py-1.5 bg-gradient-to-r from-red-600 to-red-500 text-white text-sm font-bold rounded-lg shadow-lg">
+                        {t('save')} {discountPercentage}%
+                      </span>
+                    </div>
+                    <div className={`flex items-center justify-center ${isRTL ? 'lg:justify-end' : 'lg:justify-start'} gap-3`}>
+                      <span className="text-2xl text-white/50 line-through font-medium">
+                        {formatCurrency(originalPrice)}
+                      </span>
+                      <span className="text-sm text-white/70 font-medium">
+                        {t('youSaveAmount')} {formatCurrency(originalPrice - discountedPrice)}
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-5xl md:text-6xl font-bold tracking-tight">
+                    {formatCurrency(originalPrice)}
+                  </p>
+                )}
+              </div>
 
-            <div className="space-y-3">
-            <button
-              onClick={handleAddToCart}
-              disabled={product.stock === 0}
-              className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
-            >
-              {t('addToCartButton') || t('addToCart')}
-            </button>
-            
-            {/* WhatsApp Button */}
-            <button
-              onClick={handleWhatsApp}
-              className="w-full bg-[#25D366] hover:bg-[#20BA5A] text-white font-semibold py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2 shadow-md hover:shadow-lg"
-            >
-              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
-              </svg>
-              <span>Contact via WhatsApp</span>
-            </button>
+              {/* Stock & Quantity */}
+              {product.stock > 0 && (
+                <div className="bg-white/5 backdrop-blur-sm rounded-xl p-5 border border-white/10">
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="text-sm font-semibold text-white/90 uppercase tracking-wide">{t('quantity') || 'Quantity'}</span>
+                    <span className="text-xs text-white/60 font-medium">{t('stock') || 'Stock'}: {product.stock} {t('available') || 'available'}</span>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <button
+                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                      className="w-11 h-11 bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg font-semibold text-lg transition-all duration-200 hover:scale-105"
+                    >
+                      −
+                    </button>
+                    <span className="text-2xl font-bold text-white min-w-[3rem] text-center">{quantity}</span>
+                    <button
+                      onClick={() => setQuantity(Math.min(product.stock, quantity + 1))}
+                      className="w-11 h-11 bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg font-semibold text-lg transition-all duration-200 hover:scale-105"
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* CTA Buttons */}
+              <div className="flex flex-col sm:flex-row gap-3 pt-2">
+                <button
+                  onClick={handleAddToCart}
+                  disabled={product.stock === 0}
+                  className="flex-1 bg-white text-slate-900 hover:bg-gray-50 disabled:bg-slate-700 disabled:text-slate-400 font-semibold py-4 px-8 rounded-xl transition-all duration-200 hover:scale-[1.02] shadow-xl text-base"
+                >
+                  {product.stock > 0 ? (t('addToCartButton') || t('addToCart')) : (t('outOfStockLabel') || 'Out of Stock')}
+                </button>
+                <button
+                  onClick={handleWhatsApp}
+                  className="flex-1 bg-[#25D366] hover:bg-[#20BA5A] text-white font-semibold py-4 px-8 rounded-xl transition-all duration-200 hover:scale-[1.02] shadow-xl text-base flex items-center justify-center gap-2"
+                >
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+                  </svg>
+                  {t('contactViaWhatsApp')}
+                </button>
+              </div>
             </div>
           </div>
         </div>
+      </section>
 
-        {/* Reviews Section */}
-        <div className="border-t p-4 md:p-8">
-          <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-4 md:mb-6">{t('customerReviews') || t('reviews')}</h2>
+      {/* Product Description Section */}
+      <section className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-20 ${isRTL ? 'text-right' : 'text-left'}`}>
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-8 md:p-12">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-10 pb-8 border-b border-gray-200">
+            <div>
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">{t('productOverview')}</h2>
+            </div>
+          </div>
+          <div className="space-y-6">
+            <div className="p-6 bg-gray-50 rounded-xl border border-gray-200 hover:border-gray-300 transition-all duration-200">
+              <p className={`text-gray-700 leading-relaxed whitespace-pre-line text-base md:text-lg ${isRTL ? 'text-right' : 'text-left'}`} dir={isRTL ? 'rtl' : 'ltr'}>
+                {product.description || t('noImageAvailable')}
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Features/Benefits Section */}
+      <section className="bg-gray-50 border-y border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-20">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">{t('whyChooseThisProduct')}</h2>
+            <p className="text-gray-600 text-lg">{t('premiumFeatures')}</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
+            <div className="bg-white rounded-xl border border-gray-200 p-8 text-center hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+              <div className="w-16 h-16 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl flex items-center justify-center mx-auto mb-6">
+                <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">{t('premiumQuality')}</h3>
+              <p className="text-gray-600 leading-relaxed">{t('premiumQualityDesc')}</p>
+            </div>
+            <div className="bg-white rounded-xl border border-gray-200 p-8 text-center hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+              <div className="w-16 h-16 bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-xl flex items-center justify-center mx-auto mb-6">
+                <svg className="w-8 h-8 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">{t('fastDelivery')}</h3>
+              <p className="text-gray-600 leading-relaxed">{t('fastDeliveryDesc')}</p>
+            </div>
+            <div className="bg-white rounded-xl border border-gray-200 p-8 text-center hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+              <div className="w-16 h-16 bg-gradient-to-br from-violet-50 to-violet-100 rounded-xl flex items-center justify-center mx-auto mb-6">
+                <svg className="w-8 h-8 text-violet-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">{t('securePurchase')}</h3>
+              <p className="text-gray-600 leading-relaxed">{t('securePurchaseDesc')}</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Reviews Section */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-20">
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-8 md:p-12">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-10 pb-8 border-b border-gray-200">
+            <div>
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">{t('customerReviews') || t('reviews') || 'Customer Reviews'}</h2>
+              <p className="text-gray-600">{t('seeWhatCustomersSaying')}</p>
+            </div>
+            <div className="flex items-center gap-3 bg-gray-50 px-6 py-4 rounded-xl border border-gray-200">
+              <div className="flex items-center gap-1">
+                {[...Array(5)].map((_, i) => (
+                  <span key={i} className={`text-xl ${i < Math.floor(product.averageRating || 0) ? 'text-amber-400' : 'text-gray-300'}`}>
+                    ★
+                  </span>
+                ))}
+              </div>
+              <div className={isRTL ? 'mr-2' : 'ml-2'}>
+                <span className="text-2xl font-bold text-gray-900 block leading-none">
+                  {product.averageRating?.toFixed(1) || '0.0'}
+                </span>
+                <span className="text-xs text-gray-500 font-medium">
+                  {product.numReviews || 0} {t('reviews')}
+                </span>
+              </div>
+            </div>
+          </div>
           
           {/* Add Review Form */}
           {user && (
-            <form onSubmit={handleSubmitReview} className="mb-8 p-4 bg-gray-50 rounded-lg">
-              <h3 className="text-lg font-semibold mb-4">{t('writeReview')}</h3>
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {t('yourRating') || t('rating')}
+            <form onSubmit={handleSubmitReview} className="mb-12 p-8 bg-gradient-to-br from-gray-50 to-gray-100/50 rounded-xl border border-gray-200">
+              <h3 className="text-xl font-bold text-gray-900 mb-6">{t('writeReview') || 'Write a Review'}</h3>
+              <div className="mb-6">
+                <label className="block text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wide">
+                  {t('yourRating') || t('rating') || 'Your Rating'}
                 </label>
                 <select
                   value={review.rating}
                   onChange={(e) => setReview({ ...review, rating: Number(e.target.value) })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  className="w-full max-w-xs px-4 py-3 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 font-medium"
                 >
                   <option value={5}>{t('ratingExcellent') || '5 - Excellent'}</option>
                   <option value={4}>{t('ratingVeryGood') || '4 - Very Good'}</option>
@@ -363,47 +492,100 @@ ${product.subcategory ? `📂 الفئة الفرعية: ${product.subcategory}\
                   <option value={1}>{t('ratingPoor') || '1 - Poor'}</option>
                 </select>
               </div>
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {t('yourComment') || t('comment') || 'Comment'}
+              <div className="mb-6">
+                <label className="block text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wide">
+                  {t('yourComment') || t('comment') || 'Your Comment'}
                 </label>
                 <textarea
                   value={review.comment}
                   onChange={(e) => setReview({ ...review, comment: e.target.value })}
-                  rows="4"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  rows="5"
+                  className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 resize-none"
+                  placeholder={t('shareYourExperience')}
                   required
                 />
               </div>
               <button
                 type="submit"
-                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md"
+                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold px-8 py-3 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl"
               >
-                {t('submitReview')}
+                {t('submitReview') || 'Submit Review'}
               </button>
             </form>
           )}
 
           {/* Reviews List */}
-          <div className="space-y-4">
+          <div className="space-y-6">
             {product.ratings && product.ratings.length > 0 ? (
               product.ratings.map((rating, index) => (
-                <div key={index} className="p-4 bg-gray-50 rounded-lg">
-                  <div className="flex items-center mb-2">
-                    <span className="text-yellow-500">★</span>
-                    <span className="ml-2 font-semibold">{rating.rating}/5</span>
+                <div key={index} className="p-6 bg-gray-50 rounded-xl border border-gray-200 hover:border-gray-300 transition-all duration-200">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-md">
+                        {rating.user?.name?.charAt(0)?.toUpperCase() || 'U'}
+                      </div>
+                      <div>
+                        <p className="font-semibold text-gray-900 text-base">{rating.user?.name || t('anonymousUser')}</p>
+                        <p className="text-sm text-gray-500 font-medium">{new Date(rating.createdAt).toLocaleDateString(isRTL ? 'ar-SA' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      {[...Array(5)].map((_, i) => (
+                        <span key={i} className={`text-lg ${i < rating.rating ? 'text-amber-400' : 'text-gray-300'}`}>
+                          ★
+                        </span>
+                      ))}
+                    </div>
                   </div>
                   {rating.comment && (
-                    <p className="text-gray-700">{rating.comment}</p>
+                    <p className={`text-gray-700 leading-relaxed ${isRTL ? 'pr-16' : 'pl-16'}`}>{rating.comment}</p>
                   )}
                 </div>
               ))
             ) : (
-              <p className="text-gray-500">{t('noReviews')}. {t('beFirstReview')}!</p>
+              <div className="text-center py-16">
+                <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <svg className="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                  </svg>
+                </div>
+                <p className="text-xl font-semibold text-gray-700 mb-2">{t('noReviews') || 'No reviews yet'}</p>
+                <p className="text-gray-500">{t('beFirstReview') || 'Be the first to review this product!'}</p>
+              </div>
             )}
           </div>
         </div>
-      </div>
+      </section>
+
+      {/* Final CTA Section */}
+      <section className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border-t border-slate-700/50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-20">
+          <div className="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 p-8 md:p-12 text-center text-white">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">{t('readyToMakePurchase')}</h2>
+            <p className="text-lg text-white/80 mb-8 max-w-2xl mx-auto leading-relaxed">
+              {t('dontMissOut')}
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center max-w-md mx-auto">
+              <button
+                onClick={handleAddToCart}
+                disabled={product.stock === 0}
+                className="flex-1 bg-white text-slate-900 hover:bg-gray-50 disabled:bg-slate-700 disabled:text-slate-400 font-semibold py-4 px-8 rounded-xl transition-all duration-200 hover:scale-[1.02] shadow-xl text-base"
+              >
+                {product.stock > 0 ? (t('addToCartButton') || t('addToCart')) : (t('outOfStockLabel') || 'Out of Stock')}
+              </button>
+              <button
+                onClick={handleWhatsApp}
+                className="flex-1 bg-[#25D366] hover:bg-[#20BA5A] text-white font-semibold py-4 px-8 rounded-xl transition-all duration-200 hover:scale-[1.02] shadow-xl text-base flex items-center justify-center gap-2"
+              >
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+                </svg>
+                Contact via WhatsApp
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
   )
 }

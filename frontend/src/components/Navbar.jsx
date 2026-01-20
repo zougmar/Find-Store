@@ -196,11 +196,11 @@ const Navbar = () => {
   }, [showCategoriesMenu, showLanguageMenu])
 
   return (
-    <nav className="bg-white border-b border-gray-200 sticky top-0 z-50">
+    <nav className={`bg-white border-b border-gray-200 sticky top-0 z-50 ${isRTL ? 'text-right' : 'text-left'}`} dir={isRTL ? 'rtl' : 'ltr'}>
       <div className="max-w-[1600px] mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-14 sm:h-16 md:h-20">
+        <div className={`flex justify-between items-center h-14 sm:h-16 md:h-20 ${isRTL ? 'flex-row-reverse' : ''}`}>
           {/* Logo */}
-          <Link to="/" className="flex items-center group flex-shrink-0">
+          <Link to="/" className={`flex items-center group flex-shrink-0 ${isRTL ? 'order-last' : 'order-first'}`}>
             <div className="relative">
               <img 
                 src={logoImage} 
@@ -214,7 +214,7 @@ const Navbar = () => {
           {/* Mobile Menu Button */}
           <button
             onClick={() => setShowMobileMenu(!showMobileMenu)}
-            className="md:hidden p-1.5 sm:p-2 rounded-lg hover:bg-gray-100 active:bg-gray-200 transition-colors ml-2"
+            className={`md:hidden p-1.5 sm:p-2 rounded-lg hover:bg-gray-100 active:bg-gray-200 transition-colors ${isRTL ? 'mr-2' : 'ml-2'}`}
             aria-label="Toggle menu"
           >
             <svg className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -227,19 +227,19 @@ const Navbar = () => {
           </button>
           
           {/* Search Bar (Airbnb style) - Functional */}
-          <div className="hidden md:flex flex-1 max-w-2xl mx-8">
+          <div className={`hidden md:flex flex-1 max-w-2xl ${isRTL ? 'mx-8' : 'mx-8'}`}>
             <form 
-              className="flex items-center w-full border border-gray-300 rounded-full px-2 py-1 shadow-sm hover:shadow-md transition-all bg-white"
+              className={`flex items-center w-full border border-gray-300 rounded-full px-2 py-1 shadow-sm hover:shadow-md transition-all bg-white ${isRTL ? 'flex-row-reverse' : ''}`}
               onSubmit={handleSearch}
             >
               <div 
-                className="flex-1 text-center px-4 py-2 hover:bg-gray-50 rounded-full transition-colors cursor-pointer"
+                className={`flex-1 text-center px-4 py-2 hover:bg-gray-50 rounded-full transition-colors cursor-pointer ${isRTL ? 'text-right' : 'text-left'}`}
                 onClick={handleHomepageClick}
               >
                 <span className="text-sm font-bold text-gray-900">{t('homepage')}</span>
               </div>
               <div className="w-px h-6 bg-gray-300"></div>
-              <div className="category-dropdown-container flex-1 text-center px-4 py-2 hover:bg-gray-50 rounded-full transition-colors relative cursor-pointer">
+              <div className={`category-dropdown-container flex-1 text-center px-4 py-2 hover:bg-gray-50 rounded-full transition-colors relative cursor-pointer ${isRTL ? 'text-right' : 'text-left'}`}>
                 <div onClick={handleCategoryToggle} className="w-full">
                   <span className="text-sm font-bold text-gray-900">{selectedCategory}</span>
                 </div>
@@ -290,17 +290,18 @@ const Navbar = () => {
                 )}
               </div>
               <div className="w-px h-6 bg-gray-300"></div>
-              <div className="flex items-center flex-1 px-4">
+              <div className={`flex items-center flex-1 px-4 ${isRTL ? 'flex-row-reverse' : ''}`}>
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder={t('searchProducts')}
-                  className="flex-1 outline-none text-sm text-gray-900 placeholder-gray-500"
+                  className={`flex-1 outline-none text-sm text-gray-900 placeholder-gray-500 ${isRTL ? 'text-right' : 'text-left'}`}
+                  dir={isRTL ? 'rtl' : 'ltr'}
                 />
                 <button
                   type="submit"
-                  className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+                  className={`p-2 rounded-full hover:bg-gray-100 transition-colors ${isRTL ? 'order-last' : ''}`}
                 >
                   <svg className="w-5 h-5 text-[#FF385C]" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
@@ -418,15 +419,15 @@ const Navbar = () => {
                           {category}
                         </button>
                         {subcategories.length > 0 && (
-                          <div className="pl-4 pb-1">
+                          <div className={`${isRTL ? 'pr-4' : 'pl-4'} pb-1`}>
                             {subcategories.map((subcategory) => (
                               <button
                                 key={`${category}-${subcategory}`}
                                 type="button"
                                 onClick={() => handleSubcategoryClick(category, subcategory)}
-                                className="block w-full text-left px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors"
+                                className={`block w-full ${isRTL ? 'text-right' : 'text-left'} px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors`}
                               >
-                                └ {subcategory}
+                                {isRTL ? `${subcategory} └` : `└ ${subcategory}`}
                               </button>
                             ))}
                           </div>
@@ -442,21 +443,21 @@ const Navbar = () => {
               <>
                 <Link
                   to="/products"
-                  className="hidden md:block text-sm font-bold text-gray-900 px-4 py-2 rounded-full hover:bg-gray-100 transition-colors"
+                  className={`hidden md:block text-sm font-bold text-gray-900 px-4 py-2 rounded-full hover:bg-gray-100 transition-colors ${isRTL ? 'text-right' : 'text-left'}`}
                 >
-                  Products
+                  {t('products')}
                 </Link>
                 <Link
                   to="/about"
-                  className="hidden md:block text-sm font-bold text-gray-900 px-4 py-2 rounded-full hover:bg-gray-100 transition-colors"
+                  className={`hidden md:block text-sm font-bold text-gray-900 px-4 py-2 rounded-full hover:bg-gray-100 transition-colors ${isRTL ? 'text-right' : 'text-left'}`}
                 >
-                  About
+                  {t('about')}
                 </Link>
                 <Link
                   to="/contact"
-                  className="hidden md:block text-sm font-bold text-gray-900 px-4 py-2 rounded-full hover:bg-gray-100 transition-colors"
+                  className={`hidden md:block text-sm font-bold text-gray-900 px-4 py-2 rounded-full hover:bg-gray-100 transition-colors ${isRTL ? 'text-right' : 'text-left'}`}
                 >
-                  Contact
+                  {t('contact')}
                 </Link>
                 
                 <Link
@@ -484,7 +485,7 @@ const Navbar = () => {
                 )}
 
                 {/* User Menu */}
-                <div className={`flex items-center gap-2 sm:gap-3 ${isRTL ? 'pr-2 sm:pr-4 border-r border-l-0 border-r' : 'pl-2 sm:pl-4 border-l'} border-gray-300`}>
+                <div className={`flex items-center gap-2 sm:gap-3 ${isRTL ? 'pr-2 sm:pr-4 border-r border-l-0' : 'pl-2 sm:pl-4 border-l border-r-0'} border-gray-300 ${isRTL ? 'flex-row-reverse' : ''}`}>
                   {isAdmin ? (
                     <Link
                       to="/profile"
@@ -539,11 +540,11 @@ const Navbar = () => {
                       )}
                     </div>
                   )}
-                  <button
-                    onClick={handleLogout}
-                    className="hidden md:flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold text-red-600 hover:text-red-700 hover:bg-red-50 rounded-full transition-all duration-200 border border-red-200 hover:border-red-300"
-                    title={t('logout')}
-                  >
+                <button
+                  onClick={handleLogout}
+                  className={`hidden md:flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold text-red-600 hover:text-red-700 hover:bg-red-50 rounded-full transition-all duration-200 border border-red-200 hover:border-red-300 ${isRTL ? 'flex-row-reverse' : ''}`}
+                  title={t('logout')}
+                >
                     <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                     </svg>
@@ -591,8 +592,8 @@ const Navbar = () => {
       
       {/* Mobile Menu */}
       {showMobileMenu && (
-        <div className="md:hidden border-t border-gray-200 bg-white max-h-[calc(100vh-3.5rem)] overflow-y-auto">
-          <div className="px-3 sm:px-4 py-3 sm:py-4 space-y-1 sm:space-y-2">
+        <div className={`md:hidden border-t border-gray-200 bg-white max-h-[calc(100vh-3.5rem)] overflow-y-auto ${isRTL ? 'text-right' : 'text-left'}`}>
+          <div className={`px-3 sm:px-4 py-3 sm:py-4 space-y-1 sm:space-y-2 ${isRTL ? 'text-right' : 'text-left'}`}>
             <Link
               to="/products"
               onClick={() => setShowMobileMenu(false)}
@@ -639,7 +640,7 @@ const Navbar = () => {
                     handleLogout()
                     setShowMobileMenu(false)
                   }}
-                  className="flex items-center gap-2 w-full text-left px-3 sm:px-4 py-2 sm:py-2.5 text-sm font-semibold text-red-600 hover:text-red-700 active:text-red-800 hover:bg-red-50 active:bg-red-100 rounded-lg transition-all duration-200 border border-red-200 hover:border-red-300 mt-2"
+                  className={`flex items-center gap-2 w-full ${isRTL ? 'text-right flex-row-reverse' : 'text-left'} px-3 sm:px-4 py-2 sm:py-2.5 text-sm font-semibold text-red-600 hover:text-red-700 active:text-red-800 hover:bg-red-50 active:bg-red-100 rounded-lg transition-all duration-200 border border-red-200 hover:border-red-300 mt-2`}
                 >
                   <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
