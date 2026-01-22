@@ -2,6 +2,8 @@ const express = require('express');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const cloudinary = require('cloudinary').v2;
+const streamifier = require('streamifier');
 const User = require('../models/User');
 const Product = require('../models/Product');
 const Order = require('../models/Order');
@@ -9,6 +11,15 @@ const Favorite = require('../models/Favorite');
 const Page = require('../models/Page');
 const Message = require('../models/Message');
 const { protect, admin, hasPermission, hasAnyPermission } = require('../middleware/auth');
+
+// Configure Cloudinary if credentials are provided
+if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET) {
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET
+  });
+}
 
 const router = express.Router();
 
@@ -32,19 +43,8 @@ router.use((req, res, next) => {
 });
 
 // Configure multer for file uploads
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const uploadDir = path.join(__dirname, '../uploads');
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, 'page-' + uniqueSuffix + path.extname(file.originalname));
-  }
-});
+// Use memory storage for Vercel/serverless compatibility
+const storage = multer.memoryStorage();
 
 const upload = multer({
   storage: storage,
@@ -61,6 +61,46 @@ const upload = multer({
     }
   }
 });
+
+// Helper function to upload to Cloudinary
+const uploadToCloudinary = (buffer, folder = 'products') => {
+  return new Promise((resolve, reject) => {
+    const uploadStream = cloudinary.uploader.upload_stream(
+      {
+        folder: folder,
+        resource_type: 'image',
+        transformation: [
+          { quality: 'auto' },
+          { fetch_format: 'auto' }
+        ]
+      },
+      (error, result) => {
+        if (error) {
+          reject(error);
+        } else {
+          resolve(result);
+        }
+      }
+    );
+    
+    streamifier.createReadStream(buffer).pipe(uploadStream);
+  });
+};
+
+// Helper function to save locally (for development)
+const saveLocalFile = (buffer, originalName) => {
+  const uploadDir = path.join(__dirname, '../uploads');
+  if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+  }
+  
+  const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+  const filename = 'product-' + uniqueSuffix + path.extname(originalName);
+  const filepath = path.join(uploadDir, filename);
+  
+  fs.writeFileSync(filepath, buffer);
+  return `/uploads/${filename}`;
+};
 
 // @route   GET /api/admin/dashboard
 // @desc    Get dashboard statistics
@@ -654,19 +694,45 @@ router.delete('/pages/:id', async (req, res, next) => {
 });
 
 // @route   POST /api/admin/upload
-// @desc    Upload image for pages
+// @desc    Upload image for products/pages
 // @access  Private/Admin
-router.post('/upload', upload.single('image'), (req, res, next) => {
+router.post('/upload', upload.single('image'), async (req, res, next) => {
   try {
     if (!req.file) {
       return res.status(400).json({ message: 'No file uploaded' });
     }
     
+    let imageUrl;
+    
+    // Use Cloudinary if configured (production/Vercel)
+    if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET) {
+      try {
+        const result = await uploadToCloudinary(req.file.buffer, 'products');
+        imageUrl = result.secure_url;
+      } catch (cloudinaryError) {
+        console.error('Cloudinary upload error:', cloudinaryError);
+        return res.status(500).json({ 
+          message: 'Failed to upload image to cloud storage',
+          error: cloudinaryError.message 
+        });
+      }
+    } else {
+      // Fallback to local storage (development only)
+      // Note: This won't work on Vercel, Cloudinary is required
+      if (process.env.NODE_ENV === 'production') {
+        return res.status(500).json({ 
+          message: 'Cloudinary configuration is required for production. Please set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET environment variables.' 
+        });
+      }
+      imageUrl = saveLocalFile(req.file.buffer, req.file.originalname);
+    }
+    
     res.json({
-      imageUrl: `/uploads/${req.file.filename}`,
-      filename: req.file.filename
+      imageUrl: imageUrl,
+      filename: req.file.originalname
     });
   } catch (error) {
+    console.error('Upload error:', error);
     next(error);
   }
 });
