@@ -719,9 +719,14 @@ router.post('/upload', upload.single('image'), async (req, res, next) => {
     } else {
       // Fallback to local storage (development only)
       // Note: This won't work on Vercel, Cloudinary is required
-      if (process.env.NODE_ENV === 'production') {
+      const isVercel = process.env.VERCEL === '1' || process.env.VERCEL_ENV;
+      const isProduction = process.env.NODE_ENV === 'production';
+      
+      if (isVercel || isProduction) {
         return res.status(500).json({ 
-          message: 'Cloudinary configuration is required for production. Please set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET environment variables.' 
+          message: 'Cloudinary configuration is required for production/Vercel deployment. Please set the following environment variables in Vercel: CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET. See CLOUDINARY_SETUP.md for detailed instructions.',
+          error: 'MISSING_CLOUDINARY_CONFIG',
+          required: ['CLOUDINARY_CLOUD_NAME', 'CLOUDINARY_API_KEY', 'CLOUDINARY_API_SECRET']
         });
       }
       imageUrl = saveLocalFile(req.file.buffer, req.file.originalname);
