@@ -21,7 +21,8 @@ const AdminProducts = () => {
     category: '',
     subcategory: '',
     stock: '',
-    images: []
+    images: [],
+    features: []
   })
   const [uploadingImages, setUploadingImages] = useState(false)
   const [categories, setCategories] = useState([])
@@ -96,7 +97,8 @@ const AdminProducts = () => {
         price: Number(formData.price),
         discountPercentage: formData.discountPercentage ? Number(formData.discountPercentage) : 0,
         stock: Number(formData.stock),
-        images: formData.images.filter(img => img && img.trim()) // Remove empty images
+        images: formData.images.filter(img => img && img.trim()), // Remove empty images
+        features: formData.features.filter(feature => feature && feature.trim()) // Remove empty features
       }
 
       if (editingProduct) {
@@ -117,7 +119,8 @@ const AdminProducts = () => {
         category: '',
         subcategory: '',
         stock: '',
-        images: []
+        images: [],
+        features: []
       })
       fetchProducts()
       fetchFavoritesData()
@@ -130,6 +133,7 @@ const AdminProducts = () => {
   const handleEdit = (product) => {
     setEditingProduct(product)
     const images = product.images || []
+    const features = product.features || []
     setFormData({
       name: product.name,
       description: product.description,
@@ -138,7 +142,8 @@ const AdminProducts = () => {
       category: product.category || '',
       subcategory: product.subcategory || '',
       stock: product.stock,
-      images: images
+      images: images,
+      features: features
     })
     setShowModal(true)
   }
@@ -194,11 +199,59 @@ const AdminProducts = () => {
     setFormData({ ...formData, images: newImages })
   }
 
+  const handleMoveImageUp = (index) => {
+    if (index === 0) return // Already at the top
+    const newImages = [...formData.images]
+    const temp = newImages[index]
+    newImages[index] = newImages[index - 1]
+    newImages[index - 1] = temp
+    setFormData({ ...formData, images: newImages })
+  }
+
+  const handleMoveImageDown = (index) => {
+    if (index === formData.images.length - 1) return // Already at the bottom
+    const newImages = [...formData.images]
+    const temp = newImages[index]
+    newImages[index] = newImages[index + 1]
+    newImages[index + 1] = temp
+    setFormData({ ...formData, images: newImages })
+  }
+
   const handleImageUrlAdd = (url) => {
     if (url.trim()) {
       const newImages = [...formData.images, url.trim()]
       setFormData({ ...formData, images: newImages })
     }
+  }
+
+  const handleAddFeature = (feature) => {
+    if (feature.trim()) {
+      const newFeatures = [...formData.features, feature.trim()]
+      setFormData({ ...formData, features: newFeatures })
+    }
+  }
+
+  const handleRemoveFeature = (index) => {
+    const newFeatures = formData.features.filter((_, i) => i !== index)
+    setFormData({ ...formData, features: newFeatures })
+  }
+
+  const handleMoveFeatureUp = (index) => {
+    if (index === 0) return
+    const newFeatures = [...formData.features]
+    const temp = newFeatures[index]
+    newFeatures[index] = newFeatures[index - 1]
+    newFeatures[index - 1] = temp
+    setFormData({ ...formData, features: newFeatures })
+  }
+
+  const handleMoveFeatureDown = (index) => {
+    if (index === formData.features.length - 1) return
+    const newFeatures = [...formData.features]
+    const temp = newFeatures[index]
+    newFeatures[index] = newFeatures[index + 1]
+    newFeatures[index + 1] = temp
+    setFormData({ ...formData, features: newFeatures })
   }
 
   const handleDelete = async (productId) => {
@@ -748,33 +801,173 @@ const AdminProducts = () => {
                   <div className="mt-4">
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Image Previews ({formData.images.length})
+                      <span className="text-xs text-gray-500 ml-2">First image will be shown as primary</span>
                     </label>
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 md:gap-4">
                       {formData.images.map((image, index) => (
-                        <div key={index} className="relative group">
+                        <div key={index} className={`relative group ${index === 0 ? 'ring-2 ring-[#FF385C] ring-offset-2' : ''}`}>
                           <img
                             src={image}
                             alt={`Preview ${index + 1}`}
-                            className="w-full h-24 md:h-32 object-cover rounded-lg border border-gray-300"
+                            className={`w-full h-24 md:h-32 object-cover rounded-lg border-2 ${index === 0 ? 'border-[#FF385C]' : 'border-gray-300'}`}
                             onError={(e) => {
                               e.target.src = 'https://via.placeholder.com/200?text=Invalid+Image'
                             }}
                           />
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveImage(index)}
-                            className="absolute top-1 right-1 md:top-2 md:right-2 bg-red-600 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                            title="Remove image"
-                          >
-                            <svg className="w-3 h-3 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                          </button>
+                          {/* Primary Badge */}
+                          {index === 0 && (
+                            <div className="absolute top-1 left-1 md:top-2 md:left-2 bg-[#FF385C] text-white text-xs font-bold px-2 py-1 rounded-md shadow-lg">
+                              Primary
+                            </div>
+                          )}
+                          {/* Position Number */}
+                          <div className="absolute bottom-1 left-1 md:bottom-2 md:left-2 bg-black bg-opacity-60 text-white text-xs font-semibold px-2 py-1 rounded-md">
+                            #{index + 1}
+                          </div>
+                          {/* Control Buttons */}
+                          <div className="absolute top-1 right-1 md:top-2 md:right-2 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            {/* Remove Button */}
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveImage(index)}
+                              className="bg-red-600 hover:bg-red-700 text-white rounded-full p-1 shadow-lg"
+                              title="Remove image"
+                            >
+                              <svg className="w-3 h-3 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            </button>
+                            {/* Move Up Button */}
+                            {index > 0 && (
+                              <button
+                                type="button"
+                                onClick={() => handleMoveImageUp(index)}
+                                className="bg-blue-600 hover:bg-blue-700 text-white rounded-full p-1 shadow-lg"
+                                title="Move up (make primary)"
+                              >
+                                <svg className="w-3 h-3 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                </svg>
+                              </button>
+                            )}
+                            {/* Move Down Button */}
+                            {index < formData.images.length - 1 && (
+                              <button
+                                type="button"
+                                onClick={() => handleMoveImageDown(index)}
+                                className="bg-blue-600 hover:bg-blue-700 text-white rounded-full p-1 shadow-lg"
+                                title="Move down"
+                              >
+                                <svg className="w-3 h-3 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                </svg>
+                              </button>
+                            )}
+                          </div>
                         </div>
                       ))}
                     </div>
                   </div>
                 )}
+
+                {/* Product Features */}
+                <div className="mt-8">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Product Features
+                  </label>
+                  
+                  {/* Add Feature Input */}
+                  <div className="mb-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Add Feature
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        placeholder="e.g., Premium quality materials"
+                        className="flex-1 px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF385C] focus:border-[#FF385C] transition-all"
+                        onKeyPress={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault()
+                            handleAddFeature(e.target.value)
+                            e.target.value = ''
+                          }
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          const input = e.target.previousElementSibling
+                          handleAddFeature(input.value)
+                          input.value = ''
+                        }}
+                        className="px-4 py-2.5 bg-[#FF385C] hover:bg-[#E61E4D] text-white rounded-lg font-semibold transition-colors"
+                      >
+                        Add Feature
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Features List */}
+                  {formData.features.length > 0 && (
+                    <div className="mt-4">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Features ({formData.features.length})
+                      </label>
+                      <div className="space-y-3">
+                        {formData.features.map((feature, index) => (
+                          <div key={index} className="relative group p-4 bg-gray-50 rounded-lg border border-gray-200 hover:border-gray-300 transition-all">
+                            <div className="flex items-start gap-3">
+                              <div className="flex-shrink-0 w-8 h-8 bg-[#FF385C] rounded-full flex items-center justify-center text-white font-bold text-sm mt-0.5">
+                                {index + 1}
+                              </div>
+                              <p className="flex-1 text-gray-700 leading-relaxed pt-1">{feature}</p>
+                              <div className="flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                {/* Remove Button */}
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveFeature(index)}
+                                  className="bg-red-600 hover:bg-red-700 text-white rounded-full p-1 shadow-lg"
+                                  title="Remove feature"
+                                >
+                                  <svg className="w-3 h-3 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                  </svg>
+                                </button>
+                                {/* Move Up Button */}
+                                {index > 0 && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleMoveFeatureUp(index)}
+                                    className="bg-blue-600 hover:bg-blue-700 text-white rounded-full p-1 shadow-lg"
+                                    title="Move up"
+                                  >
+                                    <svg className="w-3 h-3 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                    </svg>
+                                  </button>
+                                )}
+                                {/* Move Down Button */}
+                                {index < formData.features.length - 1 && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleMoveFeatureDown(index)}
+                                    className="bg-blue-600 hover:bg-blue-700 text-white rounded-full p-1 shadow-lg"
+                                    title="Move down"
+                                  >
+                                    <svg className="w-3 h-3 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
                 <div className="flex flex-col sm:flex-row gap-3 pt-6 border-t border-gray-200">
                   <button

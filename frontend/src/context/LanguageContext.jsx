@@ -173,6 +173,9 @@ const translations = {
     noImageAvailable: 'No Image Available',
     loadingProduct: 'Loading product details...',
     productOverview: 'Product Overview',
+    productOverviewSubtitle: 'Detailed information about this product',
+    productFeatures: 'Product Features',
+    productFeaturesSubtitle: 'Key features and benefits of this product',
     whyChooseThisProduct: 'Why Choose This Product?',
     premiumFeatures: 'Premium features that set us apart',
     premiumQuality: 'Premium Quality',
@@ -476,6 +479,9 @@ const translations = {
     noImageAvailable: 'لا توجد صورة متاحة',
     loadingProduct: 'جاري تحميل تفاصيل المنتج...',
     productOverview: 'نظرة عامة على المنتج',
+    productOverviewSubtitle: 'معلومات تفصيلية عن هذا المنتج',
+    productFeatures: 'مميزات المنتج',
+    productFeaturesSubtitle: 'المميزات والفوائد الرئيسية لهذا المنتج',
     whyChooseThisProduct: 'لماذا تختار هذا المنتج؟',
     premiumFeatures: 'ميزات مميزة تميزنا عن الآخرين',
     premiumQuality: 'جودة عالية',
@@ -779,6 +785,9 @@ const translations = {
     noImageAvailable: 'Aucune image disponible',
     loadingProduct: 'Chargement des détails du produit...',
     productOverview: 'Aperçu du produit',
+    productOverviewSubtitle: 'Informations détaillées sur ce produit',
+    productFeatures: 'Caractéristiques du produit',
+    productFeaturesSubtitle: 'Caractéristiques et avantages clés de ce produit',
     whyChooseThisProduct: 'Pourquoi choisir ce produit?',
     premiumFeatures: 'Fonctionnalités premium qui nous distinguent',
     premiumQuality: 'Qualité premium',
@@ -954,6 +963,7 @@ export const LanguageProvider = ({ children }) => {
     language,
     changeLanguage,
     t,
+    // RTL only for Arabic, LTR for French and English
     isRTL: language === 'ar'
   }
 

@@ -189,9 +189,9 @@ I would like to know more about this product. Can you help me?`
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className={`min-h-screen bg-white ${isRTL ? 'text-right' : 'text-left'}`} dir={isRTL ? 'rtl' : 'ltr'} lang={isRTL ? 'ar' : language}>
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white border-b border-slate-700/50">
+      <section className={`relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white border-b border-slate-700/50 ${isRTL ? 'text-right' : 'text-left'}`} dir={isRTL ? 'rtl' : 'ltr'} lang={isRTL ? 'ar' : language}>
         <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 via-transparent to-purple-600/10"></div>
         <div className="absolute inset-0 opacity-[0.03]" style={{
           backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
@@ -199,7 +199,7 @@ I would like to know more about this product. Can you help me?`
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12 items-center">
             {/* Product Image Hero */}
-            <div className="relative">
+            <div className={`relative ${isRTL ? 'lg:order-2' : 'lg:order-1'}`}>
               {product.images && product.images.length > 0 ? (
                 <div className="relative group">
                   <div className="relative overflow-hidden rounded-2xl bg-white/5 backdrop-blur-sm shadow-2xl border border-white/10 p-6">
@@ -276,8 +276,8 @@ I would like to know more about this product. Can you help me?`
             </div>
 
             {/* Hero Content */}
-            <div className={`text-center ${isRTL ? 'lg:text-right' : 'lg:text-left'} space-y-6`}>
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-sm rounded-lg text-xs font-medium text-white/90 border border-white/20">
+            <div className={`${isRTL ? 'text-right lg:order-1' : 'text-center lg:text-left lg:order-2'} space-y-6`} dir={isRTL ? 'rtl' : 'ltr'} lang={isRTL ? 'ar' : language}>
+              <div className={`inline-flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-sm rounded-lg text-xs font-medium text-white/90 border border-white/20 ${isRTL ? 'flex-row-reverse' : ''}`}>
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
                 </svg>
@@ -290,11 +290,11 @@ I would like to know more about this product. Can you help me?`
                 )}
               </div>
               
-              <div>
-                <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-4 leading-tight tracking-tight">
+              <div className={isRTL ? 'text-right' : ''}>
+                <h1 className={`text-4xl md:text-5xl lg:text-6xl font-bold mb-4 leading-tight tracking-tight ${isRTL ? 'text-right font-semibold' : ''}`} lang={isRTL ? 'ar' : language}>
                   {product.name}
                 </h1>
-                <div className={`flex items-center justify-center ${isRTL ? 'lg:justify-end' : 'lg:justify-start'} gap-3 mb-6`}>
+                <div className={`flex items-center ${isRTL ? 'justify-end' : 'justify-center lg:justify-start'} gap-3 mb-6`}>
                   <div className="flex items-center gap-1">
                     {[...Array(5)].map((_, i) => (
                       <span key={i} className={`text-xl ${i < Math.floor(product.averageRating || 0) ? 'text-amber-400' : 'text-white/20'}`}>
@@ -312,10 +312,10 @@ I would like to know more about this product. Can you help me?`
               </div>
               
               {/* Price Section */}
-              <div className="space-y-3">
+              <div className={`space-y-3 ${isRTL ? 'text-right' : ''}`}>
                 {hasDiscount ? (
                   <div className="space-y-2">
-                    <div className={`flex items-baseline justify-center ${isRTL ? 'lg:justify-end' : 'lg:justify-start'} gap-4`}>
+                    <div className={`flex items-baseline ${isRTL ? 'justify-end' : 'justify-center lg:justify-start'} gap-4 ${isRTL ? 'flex-row-reverse' : ''}`}>
                       <span className="text-5xl md:text-6xl font-bold tracking-tight">
                         {formatCurrency(discountedPrice)}
                       </span>
@@ -323,7 +323,7 @@ I would like to know more about this product. Can you help me?`
                         {t('save')} {discountPercentage}%
                       </span>
                     </div>
-                    <div className={`flex items-center justify-center ${isRTL ? 'lg:justify-end' : 'lg:justify-start'} gap-3`}>
+                    <div className={`flex items-center ${isRTL ? 'justify-end' : 'justify-center lg:justify-start'} gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
                       <span className="text-2xl text-white/50 line-through font-medium">
                         {formatCurrency(originalPrice)}
                       </span>
@@ -333,7 +333,7 @@ I would like to know more about this product. Can you help me?`
                     </div>
                   </div>
                 ) : (
-                  <p className="text-5xl md:text-6xl font-bold tracking-tight">
+                  <p className={`text-5xl md:text-6xl font-bold tracking-tight ${isRTL ? 'text-right' : ''}`}>
                     {formatCurrency(originalPrice)}
                   </p>
                 )}
@@ -341,12 +341,12 @@ I would like to know more about this product. Can you help me?`
 
               {/* Stock & Quantity */}
               {product.stock > 0 && (
-                <div className="bg-white/5 backdrop-blur-sm rounded-xl p-5 border border-white/10">
-                  <div className="flex items-center justify-between mb-4">
+                <div className={`bg-white/5 backdrop-blur-sm rounded-xl p-5 border border-white/10 ${isRTL ? 'text-right' : 'text-left'}`} dir={isRTL ? 'rtl' : 'ltr'}>
+                  <div className={`flex items-center justify-between mb-4 ${isRTL ? 'flex-row-reverse' : ''}`}>
                     <span className="text-sm font-semibold text-white/90 uppercase tracking-wide">{t('quantity') || 'Quantity'}</span>
                     <span className="text-xs text-white/60 font-medium">{t('stock') || 'Stock'}: {product.stock} {t('available') || 'available'}</span>
                   </div>
-                  <div className="flex items-center gap-4">
+                  <div className={`flex items-center gap-4 ${isRTL ? 'flex-row-reverse' : ''}`}>
                     <button
                       onClick={() => setQuantity(Math.max(1, quantity - 1))}
                       className="w-11 h-11 bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg font-semibold text-lg transition-all duration-200 hover:scale-105"
@@ -365,7 +365,7 @@ I would like to know more about this product. Can you help me?`
               )}
 
               {/* CTA Buttons */}
-              <div className="flex flex-col sm:flex-row gap-3 pt-2">
+              <div className={`flex flex-col sm:flex-row gap-3 pt-2 ${isRTL ? 'sm:flex-row-reverse' : ''}`}>
                 <button
                   onClick={handleAddToCart}
                   disabled={product.stock === 0}
@@ -375,7 +375,7 @@ I would like to know more about this product. Can you help me?`
                 </button>
                 <button
                   onClick={handleWhatsApp}
-                  className="flex-1 bg-[#25D366] hover:bg-[#20BA5A] text-white font-semibold py-4 px-8 rounded-xl transition-all duration-200 hover:scale-[1.02] shadow-xl text-base flex items-center justify-center gap-2"
+                  className={`flex-1 bg-[#25D366] hover:bg-[#20BA5A] text-white font-semibold py-4 px-8 rounded-xl transition-all duration-200 hover:scale-[1.02] shadow-xl text-base flex items-center justify-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}
                 >
                   <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
@@ -389,16 +389,17 @@ I would like to know more about this product. Can you help me?`
       </section>
 
       {/* Product Description Section */}
-      <section className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-20 ${isRTL ? 'text-right' : 'text-left'}`}>
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-8 md:p-12">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-10 pb-8 border-b border-gray-200">
-            <div>
-              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">{t('productOverview')}</h2>
+      <section className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-20 ${isRTL ? 'text-right' : 'text-left'}`} dir={isRTL ? 'rtl' : 'ltr'} lang={isRTL ? 'ar' : language}>
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-lg p-8 md:p-12">
+          <div className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-10 pb-8 border-b-2 border-gray-100 ${isRTL ? 'sm:flex-row-reverse' : ''}`}>
+            <div className={isRTL ? 'text-right' : 'text-left'}>
+              <h2 className={`text-3xl md:text-4xl font-bold text-gray-900 mb-3 ${isRTL ? 'text-right' : 'text-left'} ${isRTL ? 'font-semibold' : ''}`}>{t('productOverview')}</h2>
+              <p className={`text-gray-600 text-base md:text-lg ${isRTL ? 'text-right' : 'text-left'} ${isRTL ? 'leading-relaxed' : ''}`}>{t('productOverviewSubtitle') || 'Detailed information about this product'}</p>
             </div>
           </div>
           <div className="space-y-6">
-            <div className="p-6 bg-gray-50 rounded-xl border border-gray-200 hover:border-gray-300 transition-all duration-200">
-              <p className={`text-gray-700 leading-relaxed whitespace-pre-line text-base md:text-lg ${isRTL ? 'text-right' : 'text-left'}`} dir={isRTL ? 'rtl' : 'ltr'}>
+            <div className={`p-8 bg-gradient-to-br ${isRTL ? 'from-gray-50 to-gray-100/50' : 'from-gray-50 to-gray-100/50'} rounded-xl border-2 border-gray-200 hover:border-[#FF385C]/30 transition-all duration-300 shadow-sm`}>
+              <p className={`text-gray-700 leading-relaxed whitespace-pre-line text-base md:text-lg ${isRTL ? 'text-right font-medium' : 'text-left'} ${isRTL ? 'leading-loose' : ''}`} dir={isRTL ? 'rtl' : 'ltr'} lang={isRTL ? 'ar' : language}>
                 {product.description || t('noImageAvailable')}
               </p>
             </div>
@@ -406,54 +407,43 @@ I would like to know more about this product. Can you help me?`
         </div>
       </section>
 
-      {/* Features/Benefits Section */}
-      <section className="bg-gray-50 border-y border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-20">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">{t('whyChooseThisProduct')}</h2>
-            <p className="text-gray-600 text-lg">{t('premiumFeatures')}</p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
-            <div className="bg-white rounded-xl border border-gray-200 p-8 text-center hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
-              <div className="w-16 h-16 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl flex items-center justify-center mx-auto mb-6">
-                <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
+      {/* Product Features Section */}
+      {product.features && product.features.length > 0 && (
+        <section className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-20 ${isRTL ? 'text-right' : 'text-left'}`} dir={isRTL ? 'rtl' : 'ltr'} lang={isRTL ? 'ar' : language}>
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-lg p-8 md:p-12">
+            <div className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-10 pb-8 border-b-2 border-gray-100 ${isRTL ? 'sm:flex-row-reverse' : ''}`}>
+              <div className={isRTL ? 'text-right' : 'text-left'}>
+                <h2 className={`text-3xl md:text-4xl font-bold text-gray-900 mb-3 ${isRTL ? 'text-right' : 'text-left'} ${isRTL ? 'font-semibold' : ''}`}>{t('productFeatures') || 'Product Features'}</h2>
+                <p className={`text-gray-600 text-base md:text-lg ${isRTL ? 'text-right' : 'text-left'} ${isRTL ? 'leading-relaxed' : ''}`}>{t('productFeaturesSubtitle') || 'Key features and benefits of this product'}</p>
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">{t('premiumQuality')}</h3>
-              <p className="text-gray-600 leading-relaxed">{t('premiumQualityDesc')}</p>
             </div>
-            <div className="bg-white rounded-xl border border-gray-200 p-8 text-center hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
-              <div className="w-16 h-16 bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-xl flex items-center justify-center mx-auto mb-6">
-                <svg className="w-8 h-8 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">{t('fastDelivery')}</h3>
-              <p className="text-gray-600 leading-relaxed">{t('fastDeliveryDesc')}</p>
-            </div>
-            <div className="bg-white rounded-xl border border-gray-200 p-8 text-center hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
-              <div className="w-16 h-16 bg-gradient-to-br from-violet-50 to-violet-100 rounded-xl flex items-center justify-center mx-auto mb-6">
-                <svg className="w-8 h-8 text-violet-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                </svg>
-              </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">{t('securePurchase')}</h3>
-              <p className="text-gray-600 leading-relaxed">{t('securePurchaseDesc')}</p>
+            <div className="space-y-6">
+              {product.features.map((feature, index) => (
+                <div key={index} className={`p-6 md:p-8 bg-gradient-to-br ${isRTL ? 'from-gray-50 to-gray-100/50' : 'from-gray-50 to-gray-100/50'} rounded-xl border-2 border-gray-200 hover:border-[#FF385C]/30 transition-all duration-300 shadow-sm hover:shadow-md`}>
+                  <div className={`flex items-start gap-4 md:gap-6 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                    <div className={`flex-shrink-0 w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-[#FF385C] to-[#FF6B8A] rounded-full flex items-center justify-center text-white font-bold text-base md:text-lg shadow-lg ${isRTL ? 'ml-4' : 'mr-0'}`}>
+                      {index + 1}
+                    </div>
+                    <p className={`text-gray-700 leading-relaxed text-base md:text-lg flex-1 ${isRTL ? 'text-right font-medium' : 'text-left'} ${isRTL ? 'leading-loose' : ''}`} dir={isRTL ? 'rtl' : 'ltr'} lang={isRTL ? 'ar' : language}>
+                      {feature}
+                    </p>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* Reviews Section */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-20">
+      <section className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-20 ${isRTL ? 'text-right' : 'text-left'}`} dir={isRTL ? 'rtl' : 'ltr'} lang={isRTL ? 'ar' : language}>
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-8 md:p-12">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-10 pb-8 border-b border-gray-200">
-            <div>
-              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">{t('customerReviews') || t('reviews') || 'Customer Reviews'}</h2>
-              <p className="text-gray-600">{t('seeWhatCustomersSaying')}</p>
+          <div className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-10 pb-8 border-b-2 border-gray-100 ${isRTL ? 'sm:flex-row-reverse' : ''}`}>
+            <div className={isRTL ? 'text-right' : 'text-left'}>
+              <h2 className={`text-3xl md:text-4xl font-bold text-gray-900 mb-3 ${isRTL ? 'text-right' : 'text-left'} ${isRTL ? 'font-semibold' : ''}`}>{t('customerReviews') || t('reviews') || 'Customer Reviews'}</h2>
+              <p className={`text-gray-600 text-base md:text-lg ${isRTL ? 'text-right' : 'text-left'} ${isRTL ? 'leading-relaxed' : ''}`}>{t('seeWhatCustomersSaying')}</p>
             </div>
-            <div className="flex items-center gap-3 bg-gray-50 px-6 py-4 rounded-xl border border-gray-200">
+            <div className={`flex items-center gap-3 bg-gray-50 px-6 py-4 rounded-xl border border-gray-200 ${isRTL ? 'flex-row-reverse' : ''}`}>
               <div className="flex items-center gap-1">
                 {[...Array(5)].map((_, i) => (
                   <span key={i} className={`text-xl ${i < Math.floor(product.averageRating || 0) ? 'text-amber-400' : 'text-gray-300'}`}>
@@ -474,16 +464,17 @@ I would like to know more about this product. Can you help me?`
           
           {/* Add Review Form */}
           {user && (
-            <form onSubmit={handleSubmitReview} className="mb-12 p-8 bg-gradient-to-br from-gray-50 to-gray-100/50 rounded-xl border border-gray-200">
+            <form onSubmit={handleSubmitReview} className={`mb-12 p-8 bg-gradient-to-br from-gray-50 to-gray-100/50 rounded-xl border border-gray-200 ${isRTL ? 'text-right' : 'text-left'}`} dir={isRTL ? 'rtl' : 'ltr'} lang={isRTL ? 'ar' : language}>
               <h3 className="text-xl font-bold text-gray-900 mb-6">{t('writeReview') || 'Write a Review'}</h3>
               <div className="mb-6">
-                <label className="block text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wide">
+                <label className={`block text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wide ${isRTL ? 'text-right' : 'text-left'}`}>
                   {t('yourRating') || t('rating') || 'Your Rating'}
                 </label>
                 <select
                   value={review.rating}
                   onChange={(e) => setReview({ ...review, rating: Number(e.target.value) })}
-                  className="w-full max-w-xs px-4 py-3 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 font-medium"
+                  className={`w-full max-w-xs px-4 py-3 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 font-medium ${isRTL ? 'text-right' : 'text-left'}`}
+                  dir={isRTL ? 'rtl' : 'ltr'}
                 >
                   <option value={5}>{t('ratingExcellent') || '5 - Excellent'}</option>
                   <option value={4}>{t('ratingVeryGood') || '4 - Very Good'}</option>
@@ -493,15 +484,16 @@ I would like to know more about this product. Can you help me?`
                 </select>
               </div>
               <div className="mb-6">
-                <label className="block text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wide">
+                <label className={`block text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wide ${isRTL ? 'text-right' : 'text-left'}`}>
                   {t('yourComment') || t('comment') || 'Your Comment'}
                 </label>
                 <textarea
                   value={review.comment}
                   onChange={(e) => setReview({ ...review, comment: e.target.value })}
                   rows="5"
-                  className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 resize-none"
+                  className={`w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 resize-none ${isRTL ? 'text-right' : 'text-left'}`}
                   placeholder={t('shareYourExperience')}
+                  dir={isRTL ? 'rtl' : 'ltr'}
                   required
                 />
               </div>
@@ -518,18 +510,18 @@ I would like to know more about this product. Can you help me?`
           <div className="space-y-6">
             {product.ratings && product.ratings.length > 0 ? (
               product.ratings.map((rating, index) => (
-                <div key={index} className="p-6 bg-gray-50 rounded-xl border border-gray-200 hover:border-gray-300 transition-all duration-200">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-center gap-4">
+                <div key={index} className={`p-6 bg-gray-50 rounded-xl border border-gray-200 hover:border-gray-300 transition-all duration-200 ${isRTL ? 'text-right' : 'text-left'}`} dir={isRTL ? 'rtl' : 'ltr'} lang={isRTL ? 'ar' : language}>
+                  <div className={`flex items-start justify-between mb-4 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                    <div className={`flex items-center gap-4 ${isRTL ? 'flex-row-reverse' : ''}`}>
                       <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-md">
                         {rating.user?.name?.charAt(0)?.toUpperCase() || 'U'}
                       </div>
                       <div>
                         <p className="font-semibold text-gray-900 text-base">{rating.user?.name || t('anonymousUser')}</p>
-                        <p className="text-sm text-gray-500 font-medium">{new Date(rating.createdAt).toLocaleDateString(isRTL ? 'ar-SA' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                        <p className="text-sm text-gray-500 font-medium">{new Date(rating.createdAt).toLocaleDateString(isRTL ? 'ar-SA' : (language === 'fr' ? 'fr-FR' : 'en-US'), { year: 'numeric', month: 'long', day: 'numeric' })}</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-1">
+                    <div className={`flex items-center gap-1 ${isRTL ? 'flex-row-reverse' : ''}`}>
                       {[...Array(5)].map((_, i) => (
                         <span key={i} className={`text-lg ${i < rating.rating ? 'text-amber-400' : 'text-gray-300'}`}>
                           ★
@@ -538,7 +530,7 @@ I would like to know more about this product. Can you help me?`
                     </div>
                   </div>
                   {rating.comment && (
-                    <p className={`text-gray-700 leading-relaxed ${isRTL ? 'pr-16' : 'pl-16'}`}>{rating.comment}</p>
+                    <p className={`text-gray-700 leading-relaxed ${isRTL ? 'pr-16 text-right font-medium leading-loose' : 'pl-16 text-left'}`} dir={isRTL ? 'rtl' : 'ltr'} lang={isRTL ? 'ar' : language}>{rating.comment}</p>
                   )}
                 </div>
               ))
@@ -558,14 +550,14 @@ I would like to know more about this product. Can you help me?`
       </section>
 
       {/* Final CTA Section */}
-      <section className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border-t border-slate-700/50">
+      <section className={`bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border-t border-slate-700/50 ${isRTL ? 'text-right' : 'text-left'}`} dir={isRTL ? 'rtl' : 'ltr'} lang={isRTL ? 'ar' : language}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-20">
-          <div className="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 p-8 md:p-12 text-center text-white">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">{t('readyToMakePurchase')}</h2>
-            <p className="text-lg text-white/80 mb-8 max-w-2xl mx-auto leading-relaxed">
+          <div className={`bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 p-8 md:p-12 ${isRTL ? 'text-right' : 'text-center'} text-white`} dir={isRTL ? 'rtl' : 'ltr'} lang={isRTL ? 'ar' : language}>
+            <h2 className={`text-3xl md:text-4xl font-bold mb-4 ${isRTL ? 'text-right' : 'text-center'} ${isRTL ? 'font-semibold' : ''}`}>{t('readyToMakePurchase')}</h2>
+            <p className={`text-lg text-white/80 mb-8 max-w-2xl mx-auto leading-relaxed ${isRTL ? 'text-right' : 'text-center'} ${isRTL ? 'leading-loose' : ''}`} dir={isRTL ? 'rtl' : 'ltr'} lang={isRTL ? 'ar' : language}>
               {t('dontMissOut')}
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center max-w-md mx-auto">
+            <div className={`flex flex-col sm:flex-row gap-4 justify-center max-w-md mx-auto ${isRTL ? 'sm:flex-row-reverse' : ''}`}>
               <button
                 onClick={handleAddToCart}
                 disabled={product.stock === 0}
@@ -575,12 +567,12 @@ I would like to know more about this product. Can you help me?`
               </button>
               <button
                 onClick={handleWhatsApp}
-                className="flex-1 bg-[#25D366] hover:bg-[#20BA5A] text-white font-semibold py-4 px-8 rounded-xl transition-all duration-200 hover:scale-[1.02] shadow-xl text-base flex items-center justify-center gap-2"
+                className={`flex-1 bg-[#25D366] hover:bg-[#20BA5A] text-white font-semibold py-4 px-8 rounded-xl transition-all duration-200 hover:scale-[1.02] shadow-xl text-base flex items-center justify-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}
               >
                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
                 </svg>
-                Contact via WhatsApp
+                {t('contactViaWhatsApp')}
               </button>
             </div>
           </div>

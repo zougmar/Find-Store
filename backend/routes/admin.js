@@ -2,8 +2,6 @@ const express = require('express');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const cloudinary = require('cloudinary').v2;
-const streamifier = require('streamifier');
 const User = require('../models/User');
 const Product = require('../models/Product');
 const Order = require('../models/Order');
@@ -11,16 +9,6 @@ const Favorite = require('../models/Favorite');
 const Page = require('../models/Page');
 const Message = require('../models/Message');
 const { protect, admin, hasPermission, hasAnyPermission } = require('../middleware/auth');
-
-// Configure Cloudinary if credentials are provided
-if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET) {
-  cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME.trim(),
-    api_key: process.env.CLOUDINARY_API_KEY.trim(),
-    api_secret: process.env.CLOUDINARY_API_SECRET.trim()
-  });
-  console.log('Cloudinary configured with cloud_name:', process.env.CLOUDINARY_CLOUD_NAME.trim());
-}
 
 const router = express.Router();
 
@@ -43,9 +31,20 @@ router.use((req, res, next) => {
   return res.status(403).json({ message: 'Access denied. Admin or moderator with permissions required.' });
 });
 
-// Configure multer for file uploads
-// Use memory storage for Vercel/serverless compatibility
-const storage = multer.memoryStorage();
+// Configure multer for file uploads (local storage)
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadDir = path.join(__dirname, '../uploads');
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, 'product-' + uniqueSuffix + path.extname(file.originalname));
+  }
+});
 
 const upload = multer({
   storage: storage,
@@ -54,7 +53,7 @@ const upload = multer({
     // Allow images and videos
     const allowedImageTypes = /jpeg|jpg|png|gif|webp/;
     const allowedVideoTypes = /mp4|webm|ogg|mov|avi|mkv/;
-    const extname = path.extname(file.originalname).toLowerCase().replace('.', '');
+    const extname = path.extname(file.originalname).toLowerCase();
     const mimetype = file.mimetype;
     
     const isImage = allowedImageTypes.test(extname) || mimetype.startsWith('image/');
@@ -67,59 +66,6 @@ const upload = multer({
     }
   }
 });
-
-// Helper function to upload to Cloudinary
-const uploadToCloudinary = (buffer, folder = 'products', resourceType = 'auto') => {
-  return new Promise((resolve, reject) => {
-    const options = {
-      folder: folder,
-      resource_type: resourceType, // 'auto' detects image or video automatically
-    };
-    
-    // Only add image transformations for images
-    if (resourceType === 'image' || resourceType === 'auto') {
-      options.transformation = [
-        { quality: 'auto' },
-        { fetch_format: 'auto' }
-      ];
-    }
-    
-    const uploadStream = cloudinary.uploader.upload_stream(
-      options,
-      (error, result) => {
-        if (error) {
-          console.error('Cloudinary upload stream error:', error);
-          reject(error);
-        } else {
-          resolve(result);
-        }
-      }
-    );
-    
-    const stream = streamifier.createReadStream(buffer);
-    stream.on('error', (err) => {
-      console.error('Stream error:', err);
-      reject(err);
-    });
-    
-    stream.pipe(uploadStream);
-  });
-};
-
-// Helper function to save locally (for development)
-const saveLocalFile = (buffer, originalName) => {
-  const uploadDir = path.join(__dirname, '../uploads');
-  if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir, { recursive: true });
-  }
-  
-  const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-  const filename = 'product-' + uniqueSuffix + path.extname(originalName);
-  const filepath = path.join(uploadDir, filename);
-  
-  fs.writeFileSync(filepath, buffer);
-  return `/uploads/${filename}`;
-};
 
 // @route   GET /api/admin/dashboard
 // @desc    Get dashboard statistics
@@ -712,136 +658,26 @@ router.delete('/pages/:id', async (req, res, next) => {
   }
 });
 
-// @route   GET /api/admin/test-cloudinary
-// @desc    Test Cloudinary configuration
-// @access  Private/Admin
-router.get('/test-cloudinary', async (req, res, next) => {
-  try {
-    if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
-      return res.status(400).json({
-        configured: false,
-        message: 'Cloudinary environment variables are not set',
-        required: ['CLOUDINARY_CLOUD_NAME', 'CLOUDINARY_API_KEY', 'CLOUDINARY_API_SECRET']
-      });
-    }
-
-    const config = cloudinary.config();
-    if (!config.cloud_name) {
-      return res.status(400).json({
-        configured: false,
-        message: 'Cloudinary is not properly configured'
-      });
-    }
-
-    // Test upload with a small test image (1x1 transparent PNG)
-    const testImage = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', 'base64');
-    
-    try {
-      const result = await uploadToCloudinary(testImage, 'test', 'image');
-      res.json({
-        configured: true,
-        valid: true,
-        message: 'Cloudinary credentials are valid',
-        cloud_name: config.cloud_name,
-        test_url: result.secure_url
-      });
-    } catch (error) {
-      res.status(401).json({
-        configured: true,
-        valid: false,
-        message: 'Cloudinary credentials are invalid',
-        error: error.message,
-        http_code: error.http_code,
-        cloud_name: config.cloud_name,
-        suggestion: 'Please verify your CLOUDINARY_API_SECRET in Vercel environment variables. Make sure there are no extra spaces or characters.'
-      });
-    }
-  } catch (error) {
-    next(error);
-  }
-});
-
 // @route   POST /api/admin/upload
-// @desc    Upload image or video for products/pages
+// @desc    Upload image or video for products/pages (local storage)
 // @access  Private/Admin
-router.post('/upload', upload.single('image'), async (req, res, next) => {
+router.post('/upload', upload.single('image'), (req, res, next) => {
   try {
     if (!req.file) {
       return res.status(400).json({ message: 'No file uploaded' });
     }
     
-    // Determine if file is image or video
-    const mimetype = req.file.mimetype;
-    const isVideo = mimetype.startsWith('video/');
-    const isImage = mimetype.startsWith('image/');
-    const resourceType = isVideo ? 'video' : (isImage ? 'image' : 'auto');
+    // File is already saved to disk by multer
+    const fileUrl = `/uploads/${req.file.filename}`;
+    const isVideo = req.file.mimetype.startsWith('video/');
     
-    console.log('Uploading file:', {
+    console.log('File uploaded successfully:', {
+      filename: req.file.filename,
       originalname: req.file.originalname,
       mimetype: req.file.mimetype,
       size: req.file.size,
-      resourceType: resourceType
+      url: fileUrl
     });
-    
-    let fileUrl;
-    
-    // Use Cloudinary if configured (production/Vercel)
-    if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET) {
-      try {
-        // Verify Cloudinary is configured
-        const cloudinaryConfig = cloudinary.config();
-        if (!cloudinaryConfig.cloud_name) {
-          throw new Error('Cloudinary is not properly configured. Check your environment variables.');
-        }
-        
-        console.log('Uploading to Cloudinary...', {
-          cloud_name: cloudinaryConfig.cloud_name,
-          file_size: req.file.size,
-          resource_type: resourceType
-        });
-        
-        const result = await uploadToCloudinary(req.file.buffer, 'products', resourceType);
-        fileUrl = result.secure_url;
-        console.log('Upload successful:', fileUrl);
-      } catch (cloudinaryError) {
-        console.error('Cloudinary upload error details:', {
-          message: cloudinaryError.message,
-          http_code: cloudinaryError.http_code,
-          name: cloudinaryError.name,
-          error: cloudinaryError.error || cloudinaryError
-        });
-        
-        // Provide more helpful error messages
-        let errorMessage = 'Failed to upload file to cloud storage';
-        if (cloudinaryError.http_code === 401) {
-          errorMessage = 'Cloudinary authentication failed. Please check your API key and secret.';
-        } else if (cloudinaryError.http_code === 400) {
-          errorMessage = 'Invalid file format or Cloudinary configuration error.';
-        } else if (cloudinaryError.message) {
-          errorMessage = cloudinaryError.message;
-        }
-        
-        return res.status(500).json({ 
-          message: errorMessage,
-          error: cloudinaryError.message || 'Unknown Cloudinary error',
-          http_code: cloudinaryError.http_code
-        });
-      }
-    } else {
-      // Fallback to local storage (development only)
-      // Note: This won't work on Vercel, Cloudinary is required
-      const isVercel = process.env.VERCEL === '1' || process.env.VERCEL_ENV;
-      const isProduction = process.env.NODE_ENV === 'production';
-      
-      if (isVercel || isProduction) {
-        return res.status(500).json({ 
-          message: 'Cloudinary configuration is required for production/Vercel deployment. Please set the following environment variables in Vercel: CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET. See CLOUDINARY_SETUP.md for detailed instructions.',
-          error: 'MISSING_CLOUDINARY_CONFIG',
-          required: ['CLOUDINARY_CLOUD_NAME', 'CLOUDINARY_API_KEY', 'CLOUDINARY_API_SECRET']
-        });
-      }
-      fileUrl = saveLocalFile(req.file.buffer, req.file.originalname);
-    }
     
     res.json({
       imageUrl: fileUrl, // Keep 'imageUrl' for backward compatibility
