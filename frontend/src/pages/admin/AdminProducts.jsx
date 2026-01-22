@@ -150,31 +150,38 @@ const AdminProducts = () => {
     setUploadingImages(true)
     try {
       const uploadPromises = files.map(async (file) => {
-        // Validate file type
-        const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
-        if (!allowedTypes.includes(file.type)) {
-          throw new Error(`${file.name} is not a valid image file`)
+        // Validate file type (images and videos)
+        const allowedImageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
+        const allowedVideoTypes = ['video/mp4', 'video/webm', 'video/ogg', 'video/quicktime', 'video/x-msvideo', 'video/x-matroska']
+        const isImage = file.type.startsWith('image/') || allowedImageTypes.includes(file.type)
+        const isVideo = file.type.startsWith('video/') || allowedVideoTypes.includes(file.type)
+        
+        if (!isImage && !isVideo) {
+          throw new Error(`${file.name} is not a valid image or video file`)
         }
 
-        // Validate file size (5MB max)
-        if (file.size > 5 * 1024 * 1024) {
-          throw new Error(`${file.name} is too large (max 5MB)`)
+        // Validate file size (100MB max for videos, 10MB for images)
+        const maxSize = isVideo ? 100 * 1024 * 1024 : 10 * 1024 * 1024
+        if (file.size > maxSize) {
+          const maxSizeMB = Math.round(maxSize / (1024 * 1024))
+          throw new Error(`${file.name} is too large (max ${maxSizeMB}MB)`)
         }
 
         const formData = new FormData()
         formData.append('image', file)
 
         const res = await api.post('/admin/upload', formData)
-        return res.data.imageUrl
+        return res.data.imageUrl || res.data.fileUrl
       })
 
       const uploadedUrls = await Promise.all(uploadPromises)
       const newImages = [...formData.images, ...uploadedUrls]
       setFormData({ ...formData, images: newImages })
-      toast.success(`${uploadedUrls.length} image(s) uploaded successfully!`)
+      toast.success(`${uploadedUrls.length} file(s) uploaded successfully!`)
     } catch (error) {
       console.error('Upload error:', error)
-      toast.error(error.response?.data?.message || error.message || 'Failed to upload images')
+      const errorMessage = error.response?.data?.message || error.response?.data?.error || error.message || 'Failed to upload files'
+      toast.error(errorMessage)
     } finally {
       setUploadingImages(false)
       // Reset file input
@@ -680,11 +687,11 @@ const AdminProducts = () => {
                   {/* Upload from Local */}
                   <div className="mb-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Upload Images from Computer
+                      Upload Images or Videos from Computer
                     </label>
                     <input
                       type="file"
-                      accept="image/*"
+                      accept="image/*,video/*"
                       multiple
                       onChange={handleImageUpload}
                       disabled={uploadingImages}
@@ -697,10 +704,10 @@ const AdminProducts = () => {
                         disabled:opacity-50"
                     />
                     {uploadingImages && (
-                      <p className="text-sm text-[#FF385C] mt-2 font-medium">Uploading images...</p>
+                      <p className="text-sm text-[#FF385C] mt-2 font-medium">Uploading files...</p>
                     )}
                     <p className="text-xs text-gray-500 mt-2">
-                      You can select multiple images. Max 5MB per image.
+                      You can select multiple files. Max 10MB per image, 100MB per video.
                     </p>
                   </div>
 

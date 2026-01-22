@@ -48,34 +48,46 @@ const storage = multer.memoryStorage();
 
 const upload = multer({
   storage: storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  limits: { fileSize: 100 * 1024 * 1024 }, // 100MB limit (for videos)
   fileFilter: (req, file, cb) => {
-    const allowedTypes = /jpeg|jpg|png|gif|webp/;
-    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-    const mimetype = allowedTypes.test(file.mimetype);
+    // Allow images and videos
+    const allowedImageTypes = /jpeg|jpg|png|gif|webp/;
+    const allowedVideoTypes = /mp4|webm|ogg|mov|avi|mkv/;
+    const extname = path.extname(file.originalname).toLowerCase().replace('.', '');
+    const mimetype = file.mimetype;
     
-    if (mimetype && extname) {
+    const isImage = allowedImageTypes.test(extname) || mimetype.startsWith('image/');
+    const isVideo = allowedVideoTypes.test(extname) || mimetype.startsWith('video/');
+    
+    if (isImage || isVideo) {
       return cb(null, true);
     } else {
-      cb(new Error('Only image files are allowed!'));
+      cb(new Error('Only image and video files are allowed!'));
     }
   }
 });
 
 // Helper function to upload to Cloudinary
-const uploadToCloudinary = (buffer, folder = 'products') => {
+const uploadToCloudinary = (buffer, folder = 'products', resourceType = 'auto') => {
   return new Promise((resolve, reject) => {
+    const options = {
+      folder: folder,
+      resource_type: resourceType, // 'auto' detects image or video automatically
+    };
+    
+    // Only add image transformations for images
+    if (resourceType === 'image' || resourceType === 'auto') {
+      options.transformation = [
+        { quality: 'auto' },
+        { fetch_format: 'auto' }
+      ];
+    }
+    
     const uploadStream = cloudinary.uploader.upload_stream(
-      {
-        folder: folder,
-        resource_type: 'image',
-        transformation: [
-          { quality: 'auto' },
-          { fetch_format: 'auto' }
-        ]
-      },
+      options,
       (error, result) => {
         if (error) {
+          console.error('Cloudinary upload stream error:', error);
           reject(error);
         } else {
           resolve(result);
@@ -83,7 +95,13 @@ const uploadToCloudinary = (buffer, folder = 'products') => {
       }
     );
     
-    streamifier.createReadStream(buffer).pipe(uploadStream);
+    const stream = streamifier.createReadStream(buffer);
+    stream.on('error', (err) => {
+      console.error('Stream error:', err);
+      reject(err);
+    });
+    
+    stream.pipe(uploadStream);
   });
 };
 
@@ -694,7 +712,7 @@ router.delete('/pages/:id', async (req, res, next) => {
 });
 
 // @route   POST /api/admin/upload
-// @desc    Upload image for products/pages
+// @desc    Upload image or video for products/pages
 // @access  Private/Admin
 router.post('/upload', upload.single('image'), async (req, res, next) => {
   try {
@@ -702,18 +720,61 @@ router.post('/upload', upload.single('image'), async (req, res, next) => {
       return res.status(400).json({ message: 'No file uploaded' });
     }
     
-    let imageUrl;
+    // Determine if file is image or video
+    const mimetype = req.file.mimetype;
+    const isVideo = mimetype.startsWith('video/');
+    const isImage = mimetype.startsWith('image/');
+    const resourceType = isVideo ? 'video' : (isImage ? 'image' : 'auto');
+    
+    console.log('Uploading file:', {
+      originalname: req.file.originalname,
+      mimetype: req.file.mimetype,
+      size: req.file.size,
+      resourceType: resourceType
+    });
+    
+    let fileUrl;
     
     // Use Cloudinary if configured (production/Vercel)
     if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET) {
       try {
-        const result = await uploadToCloudinary(req.file.buffer, 'products');
-        imageUrl = result.secure_url;
+        // Verify Cloudinary is configured
+        const cloudinaryConfig = cloudinary.config();
+        if (!cloudinaryConfig.cloud_name) {
+          throw new Error('Cloudinary is not properly configured. Check your environment variables.');
+        }
+        
+        console.log('Uploading to Cloudinary...', {
+          cloud_name: cloudinaryConfig.cloud_name,
+          file_size: req.file.size,
+          resource_type: resourceType
+        });
+        
+        const result = await uploadToCloudinary(req.file.buffer, 'products', resourceType);
+        fileUrl = result.secure_url;
+        console.log('Upload successful:', fileUrl);
       } catch (cloudinaryError) {
-        console.error('Cloudinary upload error:', cloudinaryError);
+        console.error('Cloudinary upload error details:', {
+          message: cloudinaryError.message,
+          http_code: cloudinaryError.http_code,
+          name: cloudinaryError.name,
+          error: cloudinaryError.error || cloudinaryError
+        });
+        
+        // Provide more helpful error messages
+        let errorMessage = 'Failed to upload file to cloud storage';
+        if (cloudinaryError.http_code === 401) {
+          errorMessage = 'Cloudinary authentication failed. Please check your API key and secret.';
+        } else if (cloudinaryError.http_code === 400) {
+          errorMessage = 'Invalid file format or Cloudinary configuration error.';
+        } else if (cloudinaryError.message) {
+          errorMessage = cloudinaryError.message;
+        }
+        
         return res.status(500).json({ 
-          message: 'Failed to upload image to cloud storage',
-          error: cloudinaryError.message 
+          message: errorMessage,
+          error: cloudinaryError.message || 'Unknown Cloudinary error',
+          http_code: cloudinaryError.http_code
         });
       }
     } else {
@@ -729,12 +790,14 @@ router.post('/upload', upload.single('image'), async (req, res, next) => {
           required: ['CLOUDINARY_CLOUD_NAME', 'CLOUDINARY_API_KEY', 'CLOUDINARY_API_SECRET']
         });
       }
-      imageUrl = saveLocalFile(req.file.buffer, req.file.originalname);
+      fileUrl = saveLocalFile(req.file.buffer, req.file.originalname);
     }
     
     res.json({
-      imageUrl: imageUrl,
-      filename: req.file.originalname
+      imageUrl: fileUrl, // Keep 'imageUrl' for backward compatibility
+      fileUrl: fileUrl,
+      filename: req.file.originalname,
+      type: isVideo ? 'video' : 'image'
     });
   } catch (error) {
     console.error('Upload error:', error);
