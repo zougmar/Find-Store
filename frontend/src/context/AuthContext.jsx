@@ -87,6 +87,72 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
+  const registerWithGoogle = async (googleId, email, name, image) => {
+    try {
+      const res = await axios.post('/api/auth/google', {
+        googleId,
+        email,
+        name,
+        image
+      })
+      localStorage.setItem('token', res.data.token)
+      axios.defaults.headers.common['Authorization'] = `Bearer ${res.data.token}`
+      setUser(res.data)
+      await fetchUser()
+      toast.success('Signed in with Google successfully!', {
+        icon: '✅',
+        duration: 3000,
+        style: {
+          background: '#10b981',
+          color: '#ffffff',
+          fontWeight: '600',
+          fontSize: '15px',
+          padding: '14px 18px',
+          borderRadius: '12px',
+          boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)'
+        }
+      })
+      return res.data
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || 'Google sign in failed. Please try again.'
+      toast.error(errorMessage)
+      throw error
+    }
+  }
+
+  const registerWithFacebook = async (facebookId, email, name, image) => {
+    try {
+      const res = await axios.post('/api/auth/facebook', {
+        facebookId,
+        email,
+        name,
+        image
+      })
+      localStorage.setItem('token', res.data.token)
+      axios.defaults.headers.common['Authorization'] = `Bearer ${res.data.token}`
+      setUser(res.data)
+      await fetchUser()
+      toast.success('Signed in with Facebook successfully!', {
+        icon: '✅',
+        duration: 3000,
+        style: {
+          background: '#10b981',
+          color: '#ffffff',
+          fontWeight: '600',
+          fontSize: '15px',
+          padding: '14px 18px',
+          borderRadius: '12px',
+          boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)'
+        }
+      })
+      return res.data
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || 'Facebook sign in failed. Please try again.'
+      toast.error(errorMessage)
+      throw error
+    }
+  }
+
   const logout = () => {
     localStorage.removeItem('token')
     delete axios.defaults.headers.common['Authorization']
@@ -99,6 +165,8 @@ export const AuthProvider = ({ children }) => {
     loading,
     login,
     register,
+    registerWithGoogle,
+    registerWithFacebook,
     logout,
     fetchUser,
     isAdmin: user?.role === 'admin'

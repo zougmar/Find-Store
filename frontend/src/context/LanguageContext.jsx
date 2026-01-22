@@ -234,6 +234,9 @@ const translations = {
     createAccountButton: 'Create Account',
     alreadyHaveAccount: 'Already have an account?',
     signInLink: 'Sign in',
+    signUpWithGoogle: 'Sign up with Google',
+    signUpWithFacebook: 'Sign up with Facebook',
+    or: 'or',
     // Profile
     myProfile: 'My Profile',
     manageAccount: 'Manage your account information and view order history',
@@ -540,6 +543,9 @@ const translations = {
     createAccountButton: 'إنشاء حساب',
     alreadyHaveAccount: 'لديك حساب بالفعل؟',
     signInLink: 'تسجيل الدخول',
+    signUpWithGoogle: 'التسجيل عبر Google',
+    signUpWithFacebook: 'التسجيل عبر Facebook',
+    or: 'أو',
     // Profile
     myProfile: 'ملفي الشخصي',
     manageAccount: 'إدارة معلومات حسابك وعرض سجل الطلبات',
@@ -846,6 +852,9 @@ const translations = {
     createAccountButton: 'Créer un compte',
     alreadyHaveAccount: 'Vous avez déjà un compte?',
     signInLink: 'Se connecter',
+    signUpWithGoogle: 'S\'inscrire avec Google',
+    signUpWithFacebook: 'S\'inscrire avec Facebook',
+    or: 'ou',
     // Profile
     myProfile: 'Mon profil',
     manageAccount: 'Gérez les informations de votre compte et consultez l\'historique des commandes',
