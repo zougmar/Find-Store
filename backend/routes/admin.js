@@ -15,10 +15,11 @@ const { protect, admin, hasPermission, hasAnyPermission } = require('../middlewa
 // Configure Cloudinary if credentials are provided
 if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET) {
   cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-    api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME.trim(),
+    api_key: process.env.CLOUDINARY_API_KEY.trim(),
+    api_secret: process.env.CLOUDINARY_API_SECRET.trim()
   });
+  console.log('Cloudinary configured with cloud_name:', process.env.CLOUDINARY_CLOUD_NAME.trim());
 }
 
 const router = express.Router();
@@ -706,6 +707,55 @@ router.delete('/pages/:id', async (req, res, next) => {
     }
     
     res.json({ message: 'Page deleted successfully' });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// @route   GET /api/admin/test-cloudinary
+// @desc    Test Cloudinary configuration
+// @access  Private/Admin
+router.get('/test-cloudinary', async (req, res, next) => {
+  try {
+    if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
+      return res.status(400).json({
+        configured: false,
+        message: 'Cloudinary environment variables are not set',
+        required: ['CLOUDINARY_CLOUD_NAME', 'CLOUDINARY_API_KEY', 'CLOUDINARY_API_SECRET']
+      });
+    }
+
+    const config = cloudinary.config();
+    if (!config.cloud_name) {
+      return res.status(400).json({
+        configured: false,
+        message: 'Cloudinary is not properly configured'
+      });
+    }
+
+    // Test upload with a small test image (1x1 transparent PNG)
+    const testImage = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', 'base64');
+    
+    try {
+      const result = await uploadToCloudinary(testImage, 'test', 'image');
+      res.json({
+        configured: true,
+        valid: true,
+        message: 'Cloudinary credentials are valid',
+        cloud_name: config.cloud_name,
+        test_url: result.secure_url
+      });
+    } catch (error) {
+      res.status(401).json({
+        configured: true,
+        valid: false,
+        message: 'Cloudinary credentials are invalid',
+        error: error.message,
+        http_code: error.http_code,
+        cloud_name: config.cloud_name,
+        suggestion: 'Please verify your CLOUDINARY_API_SECRET in Vercel environment variables. Make sure there are no extra spaces or characters.'
+      });
+    }
   } catch (error) {
     next(error);
   }
