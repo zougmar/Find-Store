@@ -44,6 +44,25 @@ const ProductDetail = () => {
   }
 
   const handleAddToCart = () => {
+    // Check if user is logged in
+    if (!user) {
+      toast.error(t('pleaseLogin') || 'Please sign up or login first', {
+        icon: '⚠️',
+        duration: 3000,
+        style: {
+          background: '#ef4444',
+          color: '#ffffff',
+          fontWeight: '600',
+          fontSize: '15px',
+          padding: '14px 18px',
+          borderRadius: '12px',
+          boxShadow: '0 4px 12px rgba(239, 68, 68, 0.3)'
+        }
+      })
+      navigate('/register')
+      return
+    }
+
     if (product.stock < quantity) {
       toast.error(t('outOfStock') || 'Insufficient stock')
       return
