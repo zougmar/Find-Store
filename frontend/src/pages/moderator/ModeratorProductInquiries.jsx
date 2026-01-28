@@ -3,6 +3,8 @@ import ModeratorLayout from '../../components/ModeratorLayout'
 import api from '../../utils/api'
 import toast from 'react-hot-toast'
 import jsPDF from 'jspdf'
+import QRCode from 'qrcode'
+import logoImage from '../../images/logo.png'
 
 const statusColors = {
   new: 'bg-blue-100 text-blue-800',
@@ -47,109 +49,375 @@ const ModeratorProductInquiries = () => {
     }
   }
 
-  const generateTicket = (inquiry) => {
+  const generateTicket = async (inquiry) => {
     try {
+      // Generate tracking number (using last 12 chars of inquiry ID)
+      const trackingNumber = inquiry._id.slice(-12).toUpperCase()
+      
+      // Load logo image as data URL
+      let logoDataUrl = null
+      try {
+        const img = new Image()
+        img.crossOrigin = 'anonymous'
+        logoDataUrl = await new Promise((resolve, reject) => {
+          img.onload = () => {
+            try {
+              const canvas = document.createElement('canvas')
+              canvas.width = img.width
+              canvas.height = img.height
+              const ctx = canvas.getContext('2d')
+              ctx.drawImage(img, 0, 0)
+              resolve(canvas.toDataURL('image/png'))
+            } catch (error) {
+              reject(error)
+            }
+          }
+          img.onerror = reject
+          img.src = logoImage
+        })
+      } catch (error) {
+        console.error('Logo loading error:', error)
+        // Will use fallback circle if logo fails to load
+      }
+      
+      // Generate QR Code
+      let qrDataUrl
+      try {
+        qrDataUrl = await QRCode.toDataURL(inquiry._id, {
+          width: 200,
+          margin: 1
+        })
+      } catch (error) {
+        console.error('QR Code generation error:', error)
+        qrDataUrl = null
+      }
+
       const doc = new jsPDF('p', 'mm', 'a4')
       const pageWidth = doc.internal.pageSize.getWidth()
       const margin = 15
-      let y = margin
+      const sectionMargin = 5
+      let yPosition = margin
 
-      const ticketId = inquiry._id.slice(-8).toUpperCase()
-
-      // Header
-      doc.setFillColor(248, 250, 252)
-      doc.rect(0, 0, pageWidth, 25, 'F')
-
-      doc.setFont('helvetica', 'bold')
+      // Professional Header Section with Brand Color
+      const headerHeight = 30
+      doc.setFillColor(255, 56, 92) // #FF385C brand color
+      doc.rect(0, 0, pageWidth, headerHeight, 'F')
+      
+      // White text on colored background
+      doc.setTextColor(255, 255, 255)
+      
+      // Add logo image or fallback
+      if (logoDataUrl) {
+        doc.addImage(logoDataUrl, 'PNG', margin, 7, 18, 18)
+      } else {
+        // Fallback: Draw white circle
+        doc.setFillColor(255, 255, 255)
+        doc.circle(20, 13, 9, 'F')
+        doc.setFillColor(255, 56, 92)
+        doc.circle(20, 13, 7, 'F')
+      }
+      
       doc.setFontSize(16)
-      doc.text('FIND STORE', margin, 14)
-
-      doc.setFontSize(11)
-      doc.setFont('helvetica', 'normal')
-      doc.text('تذكرة طلب منتج', margin, 20) // Arabic: Product Request Ticket
-      doc.text('+212 707625535', pageWidth - margin, 20, { align: 'right' })
-
-      y = 32
-
-      // Ticket ID and date
       doc.setFont('helvetica', 'bold')
-      doc.setFontSize(12)
-      doc.text(`رقم التذكرة: ${ticketId}`, margin, y)
-      const created = new Date(inquiry.createdAt).toISOString().split('T')[0]
-      doc.text(`التاريخ: ${created}`, pageWidth - margin, y, { align: 'right' })
-
-      y += 8
-      doc.setDrawColor(230, 230, 230)
-      doc.line(margin, y, pageWidth - margin, y)
-      y += 8
-
-      // Customer info
-      doc.setFontSize(11)
-      doc.setFont('helvetica', 'bold')
-      doc.text('معلومات الزبون', margin, y)
-      y += 6
-
+      doc.text('FIND STORE', margin + 22, 12)
+      
       doc.setFontSize(10)
       doc.setFont('helvetica', 'normal')
-      doc.text(`الاسم: ${inquiry.fullName || ''}`, margin, y)
-      y += 5
-      doc.text(`الهاتف: ${inquiry.phone || ''}`, margin, y)
-      y += 5
-      doc.text(`المدينة: ${inquiry.city || ''}`, margin, y)
-      y += 5
+      doc.text('Product Request Ticket', margin + 22, 18)
+      doc.text('+212 707625535', pageWidth - margin, 18, { align: 'right' })
 
-      const addressLines = doc.splitTextToSize(`العنوان: ${inquiry.address || ''}`, pageWidth - margin * 2)
-      doc.text(addressLines, margin, y)
-      y += addressLines.length * 5 + 4
+      yPosition = headerHeight + 10
 
-      // Product info
-      doc.setFontSize(11)
-      doc.setFont('helvetica', 'bold')
-      doc.text('المنتج', margin, y)
-      y += 6
-
-      doc.setFontSize(10)
-      doc.setFont('helvetica', 'normal')
-      doc.text(`اسم المنتج: ${inquiry.product?.name || inquiry.productName || ''}`, margin, y)
-      y += 5
-      if (inquiry.product?.price != null) {
-        doc.text(`السعر: ${inquiry.product.price} MAD`, margin, y)
-        y += 5
+      // Tracking Number and QR Code Section with Box
+      const trackingBoxHeight = 40
+      doc.setDrawColor(220, 220, 220)
+      doc.setLineWidth(0.5)
+      doc.setFillColor(250, 250, 250)
+      doc.rect(margin, yPosition, pageWidth - margin * 2, trackingBoxHeight, 'FD')
+      
+      // QR Code
+      if (qrDataUrl) {
+        doc.addImage(qrDataUrl, 'PNG', margin + 5, yPosition + 5, 30, 30)
+      } else {
+        doc.setFillColor(240, 240, 240)
+        doc.setDrawColor(200, 200, 200)
+        doc.rect(margin + 5, yPosition + 5, 30, 30, 'FD')
+        doc.setTextColor(150, 150, 150)
+        doc.setFontSize(8)
+        doc.text('QR', margin + 20, yPosition + 20, { align: 'center' })
       }
-
-      // Status and note
-      y += 4
-      doc.setFontSize(11)
+      
+      // Tracking Number (large, prominent)
+      doc.setTextColor(0, 0, 0)
+      doc.setFontSize(20)
       doc.setFont('helvetica', 'bold')
-      doc.text('الحالة والملاحظات', margin, y)
-      y += 6
-
-      doc.setFontSize(10)
-      doc.setFont('helvetica', 'normal')
-      doc.text(`الحالة: ${inquiry.status}`, margin, y)
-      y += 5
-
-      if (inquiry.note) {
-        const noteLines = doc.splitTextToSize(`ملاحظة: ${inquiry.note}`, pageWidth - margin * 2)
-        doc.text(noteLines, margin, y)
-        y += noteLines.length * 5 + 4
-      }
-
-      y += 6
-      doc.setFontSize(9)
+      doc.text('TICKET #', margin + 40, yPosition + 12)
+      
+      doc.setFontSize(16)
+      doc.setTextColor(255, 56, 92)
+      doc.text(trackingNumber, margin + 40, yPosition + 22)
+      
+      doc.setFontSize(8)
       doc.setTextColor(120, 120, 120)
+      doc.setFont('helvetica', 'normal')
+      const requestDate = new Date(inquiry.createdAt).toLocaleDateString('en-US', { 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+      })
+      doc.text(`Request Date: ${requestDate}`, margin + 40, yPosition + 30)
+
+      yPosition += trackingBoxHeight + 10
+
+      // Customer Information Section with Box
+      const customerBoxY = yPosition
+      doc.setFillColor(255, 255, 255)
+      doc.setDrawColor(220, 220, 220)
+      doc.setLineWidth(0.3)
+      
+      // Section Header
+      doc.setFillColor(245, 247, 250)
+      doc.rect(margin, yPosition, pageWidth - margin * 2, 8, 'F')
+      doc.setTextColor(0, 0, 0)
+      doc.setFontSize(11)
+      doc.setFont('helvetica', 'bold')
+      doc.text('CUSTOMER INFORMATION', margin + 3, yPosition + 5.5)
+      yPosition += 10
+
+      // Customer Details
+      doc.setFontSize(9)
+      doc.setFont('helvetica', 'normal')
+      doc.setTextColor(100, 100, 100)
+      
+      const customerDetails = [
+        { label: 'Full Name', value: inquiry.fullName || 'N/A' },
+        { label: 'Phone', value: inquiry.phone || 'N/A' },
+        { label: 'City', value: inquiry.city || 'N/A' },
+        { label: 'Address', value: inquiry.address || 'N/A' }
+      ]
+
+      customerDetails.forEach((detail, index) => {
+        doc.setTextColor(100, 100, 100)
+        doc.setFont('helvetica', 'bold')
+        doc.text(`${detail.label}:`, margin + 5, yPosition)
+        
+        doc.setTextColor(0, 0, 0)
+        doc.setFont('helvetica', 'normal')
+        if (detail.label === 'Address' && detail.value !== 'N/A') {
+          const addressLines = doc.splitTextToSize(detail.value, pageWidth - margin * 2 - 40)
+          doc.text(addressLines, margin + 25, yPosition)
+          yPosition += addressLines.length * 4 + 2
+        } else {
+          doc.text(detail.value, margin + 25, yPosition)
+          yPosition += 5
+        }
+      })
+
+      // Close customer box
+      const customerBoxHeight = yPosition - customerBoxY + 3
+      doc.setDrawColor(220, 220, 220)
+      doc.setLineWidth(0.3)
+      doc.rect(margin, customerBoxY, pageWidth - margin * 2, customerBoxHeight, 'D')
+      yPosition += 5
+
+      // Product Information Section with Box
+      const productBoxY = yPosition
+      doc.setFillColor(255, 255, 255)
+      doc.setDrawColor(220, 220, 220)
+      doc.setLineWidth(0.3)
+      
+      // Section Header
+      doc.setFillColor(245, 247, 250)
+      doc.rect(margin, yPosition, pageWidth - margin * 2, 8, 'F')
+      doc.setTextColor(0, 0, 0)
+      doc.setFontSize(11)
+      doc.setFont('helvetica', 'bold')
+      doc.text('PRODUCT INFORMATION', margin + 3, yPosition + 5.5)
+      yPosition += 10
+
+      // Product Details
+      doc.setFontSize(9)
+      doc.setFont('helvetica', 'normal')
+      doc.setTextColor(100, 100, 100)
+      
+      // Product Name
+      doc.setFont('helvetica', 'bold')
+      doc.text('Product Name:', margin + 5, yPosition)
+      
+      const productName = inquiry.product?.name || inquiry.productName || 'N/A'
+      const hasArabic = /[\u0600-\u06FF]/.test(productName)
+      
+      if (hasArabic) {
+        // Render Arabic text to canvas and add as image
+        try {
+          const tempDiv = document.createElement('div')
+          tempDiv.style.position = 'absolute'
+          tempDiv.style.visibility = 'hidden'
+          tempDiv.style.whiteSpace = 'nowrap'
+          tempDiv.style.fontSize = '16px'
+          tempDiv.style.fontFamily = 'Arial, "Segoe UI", "Arabic Typesetting", sans-serif'
+          tempDiv.style.direction = 'rtl'
+          tempDiv.style.textAlign = 'right'
+          tempDiv.textContent = productName
+          document.body.appendChild(tempDiv)
+          
+          const textWidth = tempDiv.offsetWidth || tempDiv.scrollWidth
+          const textHeight = tempDiv.offsetHeight || 24
+          
+          const padding = 20
+          const canvas = document.createElement('canvas')
+          canvas.width = Math.min(textWidth + padding * 2, (pageWidth - margin * 2) * 3.779527559)
+          canvas.height = textHeight + padding
+          const ctx = canvas.getContext('2d')
+          
+          ctx.fillStyle = '#FFFFFF'
+          ctx.fillRect(0, 0, canvas.width, canvas.height)
+          
+          ctx.font = '16px Arial, "Segoe UI", "Arabic Typesetting", sans-serif'
+          ctx.textAlign = 'right'
+          ctx.textBaseline = 'middle'
+          ctx.fillStyle = '#000000'
+          ctx.fillText(productName, canvas.width - padding, canvas.height / 2)
+          
+          document.body.removeChild(tempDiv)
+          
+          const textImageData = canvas.toDataURL('image/png')
+          const maxWidthMm = pageWidth - margin * 2 - 30
+          const imgWidthMm = Math.min((canvas.width * 0.264583), maxWidthMm)
+          const imgHeightMm = canvas.height * 0.264583
+          
+          doc.addImage(textImageData, 'PNG', margin + 25, yPosition - 2, imgWidthMm, imgHeightMm)
+          yPosition += imgHeightMm + 3
+        } catch (error) {
+          console.error('Error rendering Arabic text:', error)
+          doc.setTextColor(0, 0, 0)
+          doc.setFont('helvetica', 'normal')
+          doc.text('(Arabic text)', margin + 25, yPosition)
+          yPosition += 5
+        }
+      } else {
+        doc.setTextColor(0, 0, 0)
+        doc.setFont('helvetica', 'normal')
+        const productNameLines = doc.splitTextToSize(productName, pageWidth - margin * 2 - 30)
+        doc.text(productNameLines, margin + 25, yPosition)
+        yPosition += productNameLines.length * 4 + 2
+      }
+
+      // Price
+      if (inquiry.product?.price != null) {
+        doc.setTextColor(100, 100, 100)
+        doc.setFont('helvetica', 'bold')
+        doc.text('Price:', margin + 5, yPosition)
+        doc.setTextColor(0, 0, 0)
+        doc.setFont('helvetica', 'normal')
+        doc.setFontSize(10)
+        doc.setTextColor(255, 56, 92)
+        doc.setFont('helvetica', 'bold')
+        doc.text(`${inquiry.product.price} MAD`, margin + 25, yPosition)
+        doc.setFontSize(9)
+        yPosition += 6
+      }
+
+      // Close product box
+      const productBoxHeight = yPosition - productBoxY + 3
+      doc.setDrawColor(220, 220, 220)
+      doc.setLineWidth(0.3)
+      doc.rect(margin, productBoxY, pageWidth - margin * 2, productBoxHeight, 'D')
+      yPosition += 8
+
+      // Status and Notes Section with Box
+      const statusBoxY = yPosition
+      doc.setFillColor(255, 255, 255)
+      doc.setDrawColor(220, 220, 220)
+      doc.setLineWidth(0.3)
+      
+      // Section Header
+      doc.setFillColor(245, 247, 250)
+      doc.rect(margin, yPosition, pageWidth - margin * 2, 8, 'F')
+      doc.setTextColor(0, 0, 0)
+      doc.setFontSize(11)
+      doc.setFont('helvetica', 'bold')
+      doc.text('STATUS & NOTES', margin + 3, yPosition + 5.5)
+      yPosition += 10
+
+      // Status with colored badge
+      doc.setFontSize(9)
+      doc.setTextColor(100, 100, 100)
+      doc.setFont('helvetica', 'bold')
+      doc.text('Status:', margin + 5, yPosition)
+      
+      const statusText = inquiry.status.replace('_', ' ').toUpperCase()
+      const statusColors = {
+        'NEW': [59, 130, 246], // Blue
+        'IN PROGRESS': [234, 179, 8], // Yellow
+        'CONVERTED': [34, 197, 94], // Green
+        'CLOSED': [107, 114, 128] // Gray
+      }
+      const statusColor = statusColors[statusText] || [107, 114, 128]
+      
+      // Status badge background
+      doc.setFillColor(statusColor[0], statusColor[1], statusColor[2])
+      doc.rect(margin + 25, yPosition - 3, 40, 6, 'F')
+      doc.setTextColor(255, 255, 255)
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(8)
+      doc.text(statusText, margin + 45, yPosition, { align: 'center' })
+      yPosition += 8
+
+      // Notes
+      if (inquiry.note) {
+        doc.setTextColor(100, 100, 100)
+        doc.setFont('helvetica', 'bold')
+        doc.setFontSize(9)
+        doc.text('Note:', margin + 5, yPosition)
+        doc.setTextColor(0, 0, 0)
+        doc.setFont('helvetica', 'normal')
+        const noteLines = doc.splitTextToSize(inquiry.note, pageWidth - margin * 2 - 30)
+        doc.text(noteLines, margin + 25, yPosition)
+        yPosition += noteLines.length * 4 + 3
+      }
+
+      // Close status box
+      const statusBoxHeight = yPosition - statusBoxY + 3
+      doc.setDrawColor(220, 220, 220)
+      doc.setLineWidth(0.3)
+      doc.rect(margin, statusBoxY, pageWidth - margin * 2, statusBoxHeight, 'D')
+      yPosition += 10
+
+      // Professional Footer
+      doc.setDrawColor(230, 230, 230)
+      doc.setLineWidth(0.5)
+      doc.line(margin, yPosition, pageWidth - margin, yPosition)
+      yPosition += 5
+      
+      doc.setFontSize(7)
+      doc.setTextColor(150, 150, 150)
+      doc.setFont('helvetica', 'italic')
       doc.text(
-        'Use this ticket as a reference when converting this request to an order and assigning it to a delivery man.',
+        'This ticket serves as a reference document for product request management.',
         margin,
-        y
+        yPosition,
+        { align: 'left', maxWidth: pageWidth - margin * 2 }
+      )
+      yPosition += 4
+      
+      doc.setFontSize(6)
+      doc.setTextColor(180, 180, 180)
+      doc.text(
+        'Generated by Find Store Product Request System',
+        pageWidth - margin,
+        yPosition,
+        { align: 'right' }
       )
 
-      const fileName = `Product-Request-${ticketId}.pdf`
+      // Save the PDF
+      const fileName = `Product-Request-${trackingNumber}.pdf`
       doc.save(fileName)
-      toast.success('Ticket generated successfully')
+      
+      toast.success('Ticket generated and downloaded successfully!')
     } catch (error) {
       console.error('Error generating ticket:', error)
-      toast.error('Failed to generate ticket')
+      toast.error('Failed to generate ticket. Please try again.')
     }
   }
 

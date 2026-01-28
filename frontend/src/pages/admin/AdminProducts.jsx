@@ -329,7 +329,8 @@ const AdminProducts = () => {
                 category: '',
                 subcategory: '',
                 stock: '',
-                images: []
+                images: [],
+                features: []
               })
               setShowModal(true)
             }}
