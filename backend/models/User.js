@@ -44,6 +44,7 @@ const userSchema = new mongoose.Schema({
     viewDashboard: { type: Boolean, default: false },
     manageProducts: { type: Boolean, default: false },
     manageOrders: { type: Boolean, default: false },
+    manageProductInquiries: { type: Boolean, default: false },
     manageUsers: { type: Boolean, default: false },
     managePages: { type: Boolean, default: false },
     manageMessages: { type: Boolean, default: false },

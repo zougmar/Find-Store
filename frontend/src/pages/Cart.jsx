@@ -20,6 +20,7 @@ const Cart = () => {
   const [orderPlaced, setOrderPlaced] = useState(false)
   const [orderDetails, setOrderDetails] = useState(null)
   const [processing, setProcessing] = useState(false)
+  const [contactConsent, setContactConsent] = useState(false)
   
   // Payment form data
   const [cardData, setCardData] = useState({
@@ -177,7 +178,8 @@ const Cart = () => {
             zipCode: cashOnDeliveryData.zipCode,
             country: cashOnDeliveryData.country
           }
-        } : {}
+        } : {},
+        contactConsent: contactConsent
       }
 
       const response = await api.post('/orders', orderData)
@@ -744,6 +746,21 @@ const Cart = () => {
                       </div>
                     </div>
                   )}
+
+                  {/* Contact Consent Checkbox */}
+                  <div className="mb-4 md:mb-6">
+                    <label className="flex items-start gap-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={contactConsent}
+                        onChange={(e) => setContactConsent(e.target.checked)}
+                        className="mt-1 w-5 h-5 text-[#FF385C] border-gray-300 rounded focus:ring-[#FF385C] focus:ring-2"
+                      />
+                      <span className="text-sm text-gray-700">
+                        I agree to be contacted via WhatsApp and email for order updates and confirmations
+                      </span>
+                    </label>
+                  </div>
 
                   {/* Complete Payment Button */}
                   <button

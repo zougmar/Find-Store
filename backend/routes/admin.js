@@ -7,6 +7,7 @@ const Product = require('../models/Product');
 const Order = require('../models/Order');
 const Favorite = require('../models/Favorite');
 const Page = require('../models/Page');
+const ProductInquiry = require('../models/ProductInquiry');
 const Message = require('../models/Message');
 const { protect, admin, hasPermission, hasAnyPermission } = require('../middleware/auth');
 
@@ -788,6 +789,64 @@ router.delete('/messages/:id', async (req, res, next) => {
     }
     
     res.json({ message: 'Message deleted successfully' });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// ==================== PRODUCT INQUIRY MANAGEMENT ROUTES ====================
+
+// @route   GET /api/admin/product-inquiries
+// @desc    Get all product inquiries
+// @access  Private/Admin or Moderator with manageProductInquiries permission
+router.get('/product-inquiries', hasPermission('manageProductInquiries'), async (req, res, next) => {
+  try {
+    const inquiries = await ProductInquiry.find()
+      .populate('product', 'name images price')
+      .populate('assignedDeliveryMan', 'name email phone image')
+      .sort({ createdAt: -1 });
+    res.json(inquiries);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// @route   PUT /api/admin/product-inquiries/:id/status
+// @desc    Update inquiry status
+// @access  Private/Admin or Moderator with manageProductInquiries permission
+router.put('/product-inquiries/:id/status', hasPermission('manageProductInquiries'), async (req, res, next) => {
+  try {
+    const { status } = req.body;
+
+    const inquiry = await ProductInquiry.findByIdAndUpdate(
+      req.params.id,
+      { status },
+      { new: true }
+    ).populate('product', 'name images price')
+     .populate('assignedDeliveryMan', 'name email phone image');
+
+    if (!inquiry) {
+      return res.status(404).json({ message: 'Inquiry not found' });
+    }
+
+    res.json(inquiry);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// @route   DELETE /api/admin/product-inquiries/:id
+// @desc    Delete a product inquiry
+// @access  Private/Admin or Moderator with manageProductInquiries permission
+router.delete('/product-inquiries/:id', hasPermission('manageProductInquiries'), async (req, res, next) => {
+  try {
+    const inquiry = await ProductInquiry.findByIdAndDelete(req.params.id);
+
+    if (!inquiry) {
+      return res.status(404).json({ message: 'Inquiry not found' });
+    }
+
+    res.json({ message: 'Inquiry deleted successfully' });
   } catch (error) {
     next(error);
   }

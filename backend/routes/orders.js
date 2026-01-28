@@ -1,7 +1,9 @@
 const express = require('express');
 const Order = require('../models/Order');
 const Product = require('../models/Product');
+const User = require('../models/User');
 const { protect } = require('../middleware/auth');
+const { triggerAutomation } = require('../services/aiAgentService');
 
 const router = express.Router();
 
@@ -50,10 +52,38 @@ router.post('/', protect, async (req, res, next) => {
       totalAmount,
       shippingAddress: shippingAddress || req.user.address,
       paymentMethod: paymentMethod || 'card',
-      paymentDetails: req.body.paymentDetails || {}
+      paymentDetails: req.body.paymentDetails || {},
+      contactConsent: req.body.contactConsent || false
     });
     
     await order.populate('items.product', 'name images');
+    await order.populate('user', 'name email phone');
+    
+    // Trigger AI Agent automation if consent is given
+    if (order.contactConsent) {
+      const customerName = req.body.paymentDetails?.customerName || req.user.name || 'Customer';
+      const customerPhone = req.body.paymentDetails?.customerPhone || req.user.phone || '';
+      const customerEmail = req.user.email || '';
+      
+      const automationData = {
+        orderId: order._id.toString(),
+        customerName: customerName,
+        customerEmail: customerEmail,
+        customerPhone: customerPhone,
+        products: order.items.map(item => ({
+          name: item.product.name,
+          quantity: item.quantity,
+          price: item.price
+        })),
+        totalPrice: order.totalAmount,
+        shippingAddress: order.shippingAddress
+      };
+      
+      // Trigger automation asynchronously (don't wait for response)
+      triggerAutomation(automationData).catch(err => {
+        console.error('Automation error (non-blocking):', err.message);
+      });
+    }
     
     res.status(201).json(order);
   } catch (error) {

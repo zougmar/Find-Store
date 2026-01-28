@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
 const User = require('../models/User');
 const Order = require('../models/Order');
+const ProductInquiry = require('../models/ProductInquiry');
 const { protect } = require('../middleware/auth');
 
 const router = express.Router();
@@ -284,14 +285,45 @@ router.get('/me', protect, isDeliveryMan, async (req, res, next) => {
       deliveryStatus: { $in: ['pending', 'picked_up', 'on_the_way'] }
     });
 
+    // Product inquiry stats
+    const totalProductInquiries = await ProductInquiry.countDocuments({ assignedDeliveryMan: req.user._id });
+    const pendingProductInquiries = await ProductInquiry.countDocuments({ 
+      assignedDeliveryMan: req.user._id,
+      deliveryStatus: { $in: ['pending', 'on_the_way', 'none'] }
+    });
+    const deliveredProductInquiries = await ProductInquiry.countDocuments({ 
+      assignedDeliveryMan: req.user._id,
+      deliveryStatus: 'delivered'
+    });
+
     res.json({
       ...req.user.toObject(),
       stats: {
         totalOrders,
         deliveredOrders,
-        pendingOrders
+        pendingOrders,
+        totalProductInquiries,
+        pendingProductInquiries,
+        deliveredProductInquiries
       }
     });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// @route   GET /api/delivery/product-inquiries
+// @desc    Get all product inquiries assigned to the delivery man
+// @access  Private (Delivery Man)
+router.get('/product-inquiries', protect, isDeliveryMan, async (req, res, next) => {
+  try {
+    const inquiries = await ProductInquiry.find({
+      assignedDeliveryMan: req.user._id
+    })
+      .populate('product', 'name images price')
+      .sort({ createdAt: -1 });
+
+    res.json(inquiries);
   } catch (error) {
     next(error);
   }

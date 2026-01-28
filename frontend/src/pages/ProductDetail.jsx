@@ -18,6 +18,14 @@ const ProductDetail = () => {
   const [quantity, setQuantity] = useState(1)
   const [review, setReview] = useState({ rating: 5, comment: '' })
   const [selectedImageIndex, setSelectedImageIndex] = useState(0)
+  const [lead, setLead] = useState({
+    fullName: '',
+    phone: '',
+    city: '',
+    address: '',
+    note: ''
+  })
+  const [submittingLead, setSubmittingLead] = useState(false)
 
   // Calculate discounted price
   const discountPercentage = product?.discountPercentage || 0
@@ -186,6 +194,45 @@ I would like to know more about this product. Can you help me?`
       icon: '💬',
       duration: 2000
     })
+  }
+
+  const handleSubmitLead = async (e) => {
+    e.preventDefault()
+
+    if (!product?._id) {
+      toast.error('Product not found')
+      return
+    }
+
+    if (!lead.fullName || !lead.phone || !lead.city || !lead.address) {
+      toast.error('Please fill all required fields')
+      return
+    }
+
+    try {
+      setSubmittingLead(true)
+      await api.post('/product-inquiries', {
+        productId: product._id,
+        fullName: lead.fullName,
+        phone: lead.phone,
+        city: lead.city,
+        address: lead.address,
+        note: lead.note
+      })
+      toast.success('Your information has been sent. We will contact you soon.')
+      setLead({
+        fullName: '',
+        phone: '',
+        city: '',
+        address: '',
+        note: ''
+      })
+    } catch (error) {
+      console.error('Error sending lead:', error)
+      toast.error(error.response?.data?.message || 'Failed to send your request')
+    } finally {
+      setSubmittingLead(false)
+    }
   }
 
 
@@ -409,18 +456,121 @@ I would like to know more about this product. Can you help me?`
 
       {/* Product Description Section */}
       <section className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-20 ${isRTL ? 'text-right' : 'text-left'}`} dir={isRTL ? 'rtl' : 'ltr'} lang={isRTL ? 'ar' : language}>
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-lg p-8 md:p-12">
-          <div className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-10 pb-8 border-b-2 border-gray-100 ${isRTL ? 'sm:flex-row-reverse' : ''}`}>
-            <div className={isRTL ? 'text-right' : 'text-left'}>
-              <h2 className={`text-3xl md:text-4xl font-bold text-gray-900 mb-3 ${isRTL ? 'text-right' : 'text-left'} ${isRTL ? 'font-semibold' : ''}`}>{t('productOverview')}</h2>
-              <p className={`text-gray-600 text-base md:text-lg ${isRTL ? 'text-right' : 'text-left'} ${isRTL ? 'leading-relaxed' : ''}`}>{t('productOverviewSubtitle') || 'Detailed information about this product'}</p>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-2">
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-lg p-8 md:p-12">
+              <div className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-10 pb-8 border-b-2 border-gray-100 ${isRTL ? 'sm:flex-row-reverse' : ''}`}>
+                <div className={isRTL ? 'text-right' : 'text-left'}>
+                  <h2 className={`text-3xl md:text-4xl font-bold text-gray-900 mb-3 ${isRTL ? 'text-right' : 'text-left'} ${isRTL ? 'font-semibold' : ''}`}>{t('productOverview')}</h2>
+                  <p className={`text-gray-600 text-base md:text-lg ${isRTL ? 'text-right' : 'text-left'} ${isRTL ? 'leading-relaxed' : ''}`}>{t('productOverviewSubtitle') || 'Detailed information about this product'}</p>
+                </div>
+              </div>
+              <div className="space-y-6">
+                <div className={`p-8 bg-gradient-to-br ${isRTL ? 'from-gray-50 to-gray-100/50' : 'from-gray-50 to-gray-100/50'} rounded-xl border-2 border-gray-200 hover:border-[#FF385C]/30 transition-all duration-300 shadow-sm`}>
+                  <p className={`text-gray-700 leading-relaxed whitespace-pre-line text-base md:text-lg ${isRTL ? 'text-right font-medium' : 'text-left'} ${isRTL ? 'leading-loose' : ''}`} dir={isRTL ? 'rtl' : 'ltr'} lang={isRTL ? 'ar' : language}>
+                    {product.description || t('noImageAvailable')}
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
-          <div className="space-y-6">
-            <div className={`p-8 bg-gradient-to-br ${isRTL ? 'from-gray-50 to-gray-100/50' : 'from-gray-50 to-gray-100/50'} rounded-xl border-2 border-gray-200 hover:border-[#FF385C]/30 transition-all duration-300 shadow-sm`}>
-              <p className={`text-gray-700 leading-relaxed whitespace-pre-line text-base md:text-lg ${isRTL ? 'text-right font-medium' : 'text-left'} ${isRTL ? 'leading-loose' : ''}`} dir={isRTL ? 'rtl' : 'ltr'} lang={isRTL ? 'ar' : language}>
-                {product.description || t('noImageAvailable')}
+
+          {/* Lead Capture Form */}
+          <div>
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-lg p-6 md:p-7">
+              <h3 className={`text-xl font-bold text-gray-900 mb-4 ${isRTL ? 'text-right' : 'text-left'}`}>
+                {language === 'ar'
+                  ? 'أرسل معلوماتك وسنتواصل معك'
+                  : language === 'fr'
+                  ? 'Envoyez vos informations et nous vous contacterons'
+                  : 'Send your info and we will contact you'}
+              </h3>
+              <p className={`text-sm text-gray-600 mb-6 ${isRTL ? 'text-right' : 'text-left'}`}>
+                {language === 'ar'
+                  ? 'املأ هذه الخانات وسنتواصل معك عبر الهاتف أو واتساب لتأكيد الطلب.'
+                  : language === 'fr'
+                  ? 'Remplissez ces champs et nous vous contacterons par téléphone ou WhatsApp pour confirmer la commande.'
+                  : 'Fill in these fields and we will contact you by phone or WhatsApp to confirm your order.'}
               </p>
+
+              <form onSubmit={handleSubmitLead} className={isRTL ? 'text-right' : 'text-left'}>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      {language === 'ar' ? 'الاسم الكامل*' : language === 'fr' ? 'Nom complet*' : 'Full name*'}
+                    </label>
+                    <input
+                      type="text"
+                      value={lead.fullName}
+                      onChange={(e) => setLead({ ...lead, fullName: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      {language === 'ar' ? 'رقم الهاتف*' : language === 'fr' ? 'Numéro de téléphone*' : 'Phone number*'}
+                    </label>
+                    <input
+                      type="tel"
+                      value={lead.phone}
+                      onChange={(e) => setLead({ ...lead, phone: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      placeholder="+212..."
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      {language === 'ar' ? 'المدينة*' : language === 'fr' ? 'Ville*' : 'City*'}
+                    </label>
+                    <input
+                      type="text"
+                      value={lead.city}
+                      onChange={(e) => setLead({ ...lead, city: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      {language === 'ar' ? 'العنوان الكامل*' : language === 'fr' ? 'Adresse complète*' : 'Full address*'}
+                    </label>
+                    <textarea
+                      rows="2"
+                      value={lead.address}
+                      onChange={(e) => setLead({ ...lead, address: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      {language === 'ar' ? 'ملاحظة (اختياري)' : language === 'fr' ? 'Note (optionnel)' : 'Note (optional)'}
+                    </label>
+                    <textarea
+                      rows="2"
+                      value={lead.note}
+                      onChange={(e) => setLead({ ...lead, note: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none"
+                    />
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={submittingLead}
+                  className="mt-5 w-full bg-[#FF385C] hover:bg-[#E61E4D] text-white font-semibold py-2.5 rounded-lg text-sm shadow-md transition-colors disabled:opacity-60"
+                >
+                  {submittingLead
+                    ? language === 'ar'
+                      ? 'جاري الإرسال...'
+                      : language === 'fr'
+                      ? 'Envoi...'
+                      : 'Sending...'
+                    : language === 'ar'
+                    ? 'إرسال المعلومات'
+                    : language === 'fr'
+                    ? 'Envoyer les informations'
+                    : 'Send information'}
+                </button>
+              </form>
             </div>
           </div>
         </div>

@@ -20,6 +20,7 @@ import AdminProducts from './pages/admin/AdminProducts'
 import AdminOrders from './pages/admin/AdminOrders'
 import AdminPages from './pages/admin/AdminPages'
 import AdminMessages from './pages/admin/AdminMessages'
+import AdminProductInquiries from './pages/admin/AdminProductInquiries'
 import DeliveryLogin from './pages/delivery/DeliveryLogin'
 import DeliveryDashboard from './pages/delivery/DeliveryDashboard'
 import DeliveryOrderDetail from './pages/delivery/DeliveryOrderDetail'
@@ -27,6 +28,7 @@ import DeliveryScan from './pages/delivery/DeliveryScan'
 import ModeratorLogin from './pages/moderator/ModeratorLogin'
 import ModeratorDashboard from './pages/moderator/ModeratorDashboard'
 import ModeratorOrders from './pages/moderator/ModeratorOrders'
+import ModeratorProductInquiries from './pages/moderator/ModeratorProductInquiries'
 import ProtectedRoute from './components/ProtectedRoute'
 
 const AppContent = () => {
@@ -136,6 +138,14 @@ const AppContent = () => {
                   </ProtectedRoute>
                 }
               />
+              <Route
+                path="/admin/product-inquiries"
+                element={
+                  <ProtectedRoute adminOnly>
+                    <AdminProductInquiries />
+                  </ProtectedRoute>
+                }
+              />
 
               {/* Delivery routes */}
               <Route path="/delivery/login" element={<DeliveryLogin />} />
@@ -158,6 +168,14 @@ const AppContent = () => {
                 element={
                   <ProtectedRoute moderatorOnly>
                     <ModeratorOrders />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/moderator/product-inquiries"
+                element={
+                  <ProtectedRoute moderatorOnly>
+                    <ModeratorProductInquiries />
                   </ProtectedRoute>
                 }
               />

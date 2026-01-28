@@ -84,6 +84,10 @@ const orderSchema = new mongoose.Schema({
     type: String,
     default: ''
   },
+  contactConsent: {
+    type: Boolean,
+    default: false
+  },
   changeHistory: [{
     changedBy: {
       type: mongoose.Schema.Types.ObjectId,

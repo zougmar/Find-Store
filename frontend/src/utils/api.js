@@ -25,9 +25,9 @@ api.interceptors.request.use(
     else if (url.includes('/moderator/')) {
       token = localStorage.getItem('moderator_token')
     }
-    // For admin routes, try moderator_token first (admins can login as moderators), then regular token
+    // For admin routes, prefer main admin/user token first, then fallback to moderator token
     else if (url.includes('/admin/')) {
-      token = localStorage.getItem('moderator_token') || localStorage.getItem('token')
+      token = localStorage.getItem('token') || localStorage.getItem('moderator_token')
     }
     // For all other routes, use regular token, then moderator token, then delivery token
     else {

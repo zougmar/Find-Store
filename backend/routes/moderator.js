@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
 const User = require('../models/User');
 const Order = require('../models/Order');
+const ProductInquiry = require('../models/ProductInquiry');
 const { protect } = require('../middleware/auth');
 
 const router = express.Router();
@@ -26,11 +27,11 @@ const isModerator = (req, res, next) => {
   }
   
   if (req.user.role === 'moderator') {
-    // Check if moderator has manageOrders permission
-    if (req.user.permissions && req.user.permissions.manageOrders) {
+    // Check if moderator has manageOrders or manageProductInquiries permission
+    if (req.user.permissions && (req.user.permissions.manageOrders || req.user.permissions.manageProductInquiries)) {
       return next();
     }
-    return res.status(403).json({ message: 'Access denied. Moderator with manageOrders permission required.' });
+    return res.status(403).json({ message: 'Access denied. Moderator with proper permissions required.' });
   }
   
   return res.status(403).json({ message: 'Access denied. Moderator or admin only.' });
@@ -69,18 +70,18 @@ router.post('/login', [
       return res.status(401).json({ message: 'Invalid credentials. Wrong password.' });
     }
 
-    // For moderators, check if they have manageOrders permission
-    // Allow access if permissions object doesn't exist (legacy) or if manageOrders is true
+    // For moderators, check if they have manageOrders or manageProductInquiries permission
+    // Allow access if permissions object doesn't exist (legacy) or if at least one is true
     if (user.role === 'moderator') {
       if (user.permissions === undefined || user.permissions === null) {
         // If permissions don't exist, allow access (legacy behavior)
         // But log a warning
         console.warn(`Moderator ${user.email} logged in without permissions object. Consider setting permissions.`);
-      } else if (user.permissions && !user.permissions.manageOrders) {
+      } else if (user.permissions && !user.permissions.manageOrders && !user.permissions.manageProductInquiries) {
         return res.status(403).json({ 
-          message: '✅ Password correct! But your account does not have "Manage Orders" permission. Please contact admin to enable this permission.',
+          message: '✅ Password correct! But your account does not have "Manage Orders" or "Manage Product Inquiries" permissions. Please contact admin to enable at least one of these permissions.',
           currentPermissions: user.permissions || {},
-          requiredPermission: 'manageOrders',
+          requiredPermission: 'manageOrders or manageProductInquiries',
           userId: user._id.toString(),
           email: user.email
         });
@@ -451,6 +452,99 @@ router.get('/me', protect, isModerator, async (req, res, next) => {
         confirmedOrders,
         pendingOrders
       }
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// ==================== PRODUCT INQUIRIES (LEADS) ====================
+
+// @route   GET /api/moderator/product-inquiries
+// @desc    Get all product inquiries (leads from product detail form)
+// @access  Private (Moderator)
+router.get('/product-inquiries', protect, isModerator, async (req, res, next) => {
+  try {
+    const inquiries = await ProductInquiry.find()
+      .populate('product', 'name images price')
+      .populate('assignedDeliveryMan', 'name email phone image')
+      .sort({ createdAt: -1 });
+
+    res.json(inquiries);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// @route   PUT /api/moderator/product-inquiries/:id/status
+// @desc    Update product inquiry status
+// @access  Private (Moderator)
+router.put('/product-inquiries/:id/status', protect, isModerator, async (req, res, next) => {
+  try {
+    const { status } = req.body;
+
+    const inquiry = await ProductInquiry.findByIdAndUpdate(
+      req.params.id,
+      { status },
+      { new: true }
+    ).populate('product', 'name images price')
+     .populate('assignedDeliveryMan', 'name email phone image');
+
+    if (!inquiry) {
+      return res.status(404).json({ message: 'Inquiry not found' });
+    }
+
+    res.json(inquiry);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// @route   PUT /api/moderator/product-inquiries/:id/assign
+// @desc    Assign product inquiry to delivery man
+// @access  Private (Moderator)
+router.put('/product-inquiries/:id/assign', protect, isModerator, [
+  body('assignedDeliveryMan').notEmpty().withMessage('Delivery man ID is required')
+], async (req, res, next) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ message: errors.array()[0].msg });
+    }
+
+    const { assignedDeliveryMan, deliveryNotes } = req.body;
+    const { id } = req.params;
+
+    // Verify delivery man exists and has delivery role
+    const deliveryMan = await User.findById(assignedDeliveryMan);
+    if (!deliveryMan || deliveryMan.role !== 'delivery') {
+      return res.status(400).json({ message: 'Invalid delivery man. User must have delivery role.' });
+    }
+
+    const inquiry = await ProductInquiry.findById(id);
+
+    if (!inquiry) {
+      return res.status(404).json({ message: 'Inquiry not found' });
+    }
+
+    inquiry.assignedDeliveryMan = assignedDeliveryMan;
+    inquiry.deliveryStatus = 'pending';
+    if (deliveryNotes !== undefined) {
+      inquiry.deliveryNotes = deliveryNotes;
+    }
+    if (inquiry.status === 'new') {
+      inquiry.status = 'in_progress';
+    }
+
+    await inquiry.save();
+
+    const updatedInquiry = await ProductInquiry.findById(id)
+      .populate('product', 'name images price')
+      .populate('assignedDeliveryMan', 'name email phone image');
+
+    res.json({
+      message: 'Product request assigned to delivery man successfully',
+      inquiry: updatedInquiry
     });
   } catch (error) {
     next(error);
