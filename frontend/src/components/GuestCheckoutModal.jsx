@@ -180,12 +180,6 @@ const GuestCheckoutModal = () => {
                     )
                   })}
                 </div>
-                <div className="px-4 py-4 border-t-2 border-gray-100 bg-gray-50/50">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm font-semibold text-gray-700">{tr('total', 'Total')}</span>
-                    <span className="text-lg font-bold text-gray-900">{formatCurrency(total)}</span>
-                  </div>
-                </div>
               </div>
 
               {/* Delivery information form */}
