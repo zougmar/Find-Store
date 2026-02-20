@@ -15,6 +15,7 @@ export const useCart = () => {
 export const CartProvider = ({ children }) => {
   const [cartItems, setCartItems] = useState([])
   const [loading, setLoading] = useState(false)
+  const [showGuestCheckoutModal, setShowGuestCheckoutModal] = useState(false)
   const { user } = useAuth()
 
   // Load cart from backend when user logs in
@@ -151,7 +152,7 @@ export const CartProvider = ({ children }) => {
         })
       }
     } else {
-      // Save to localStorage for guests
+      // Save to localStorage for guests and open guest checkout form
       setCartItems(prevItems => {
         const existingItem = prevItems.find(item => 
           (item.product._id || item.product) === product._id
@@ -167,6 +168,7 @@ export const CartProvider = ({ children }) => {
         
         return [...prevItems, { product, quantity }]
       })
+      setShowGuestCheckoutModal(true)
     }
   }
 
@@ -275,6 +277,9 @@ export const CartProvider = ({ children }) => {
     return cartItems.reduce((count, item) => count + item.quantity, 0)
   }
 
+  const openGuestCheckoutModal = () => setShowGuestCheckoutModal(true)
+  const closeGuestCheckoutModal = () => setShowGuestCheckoutModal(false)
+
   const value = {
     cartItems,
     loading,
@@ -285,7 +290,11 @@ export const CartProvider = ({ children }) => {
     getCartTotal,
     getCartItemsCount,
     getFinalPrice,
-    loadCartFromServer
+    loadCartFromServer,
+    showGuestCheckoutModal,
+    openGuestCheckoutModal,
+    closeGuestCheckoutModal,
+    setShowGuestCheckoutModal
   }
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>

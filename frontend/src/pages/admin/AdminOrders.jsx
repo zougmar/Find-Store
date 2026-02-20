@@ -400,7 +400,8 @@ const AdminOrders = () => {
       order._id.toLowerCase().includes(searchQuery.toLowerCase()) ||
       order.user?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       order.user?.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (order.paymentDetails?.customerName?.toLowerCase().includes(searchQuery.toLowerCase()))
+      (order.paymentDetails?.customerName?.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (order.paymentDetails?.customerPhone?.toLowerCase().includes(searchQuery.toLowerCase()))
 
     // Order status filter
     const matchesOrderStatus = orderStatusFilter === 'all' || order.orderStatus === orderStatusFilter
@@ -669,15 +670,21 @@ const AdminOrders = () => {
                                   className="w-8 h-8 rounded-full object-cover border border-gray-200"
                                 />
                               ) : (
-                                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center border border-gray-200">
+                                <div className={`w-8 h-8 rounded-full flex items-center justify-center border border-gray-200 ${!order.user ? 'bg-gradient-to-br from-amber-500 to-orange-500' : 'bg-gradient-to-br from-blue-500 to-blue-600'}`}>
                                   <span className="text-white text-xs font-semibold">
-                                    {(order.user?.name || 'U').charAt(0).toUpperCase()}
+                                    {(order.user?.name || order.paymentDetails?.customerName || 'U').charAt(0).toUpperCase()}
                                   </span>
                                 </div>
                               )}
                               <div>
-                                <p className="text-sm font-semibold text-gray-900">{order.user?.name || 'N/A'}</p>
-                                <p className="text-xs text-gray-500">{order.user?.email || ''}</p>
+                                <p className="text-sm font-semibold text-gray-900">
+                                  {order.user?.name || order.paymentDetails?.customerName || 'N/A'}
+                                  {!order.user && <span className="ml-1.5 text-xs font-normal text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded">Guest</span>}
+                                </p>
+                                <p className="text-xs text-gray-500">{order.user?.email || order.paymentDetails?.customerPhone || ''}</p>
+                                {!order.user && order.paymentDetails?.city && (
+                                  <p className="text-xs text-gray-400">{order.paymentDetails.city}{order.paymentDetails?.address ? ` · ${order.paymentDetails.address.slice(0, 20)}${order.paymentDetails.address.length > 20 ? '…' : ''}` : ''}</p>
+                                )}
                               </div>
                             </div>
                           </td>
@@ -896,17 +903,22 @@ const AdminOrders = () => {
                                       </div>
                                     )}
 
-                                    {/* Contact Info from Payment Details (for COD) */}
+                                    {/* Contact Info from Payment Details (for COD / Guest orders) */}
                                     {order.paymentDetails?.customerName && (
                                       <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
                                         <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2 text-sm">
                                           <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                                           </svg>
-                                          Delivery Contact (COD)
+                                          {!order.user ? 'Guest order – Delivery contact' : 'Delivery Contact (COD)'}
                                         </h4>
                                         <div className="text-sm text-gray-700 space-y-2">
                                           <p className="font-medium">{order.paymentDetails.customerName}</p>
+                                          {(order.paymentDetails.city || order.paymentDetails.address) && (
+                                            <p className="text-gray-600">
+                                              {[order.paymentDetails.city, order.paymentDetails.address].filter(Boolean).join(' · ')}
+                                            </p>
+                                          )}
                                           {order.paymentDetails.customerPhone && (
                                             <div className="flex items-center gap-2 flex-wrap">
                                               <p className="font-medium text-gray-700">{order.paymentDetails.customerPhone}</p>

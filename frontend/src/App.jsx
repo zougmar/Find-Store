@@ -30,12 +30,14 @@ import ModeratorDashboard from './pages/moderator/ModeratorDashboard'
 import ModeratorOrders from './pages/moderator/ModeratorOrders'
 import ModeratorProductInquiries from './pages/moderator/ModeratorProductInquiries'
 import ProtectedRoute from './components/ProtectedRoute'
+import GuestCheckoutModal from './components/GuestCheckoutModal'
 
 const AppContent = () => {
   const { isRTL } = useLanguage()
   
   return (
     <Router>
+      <GuestCheckoutModal />
       <div className="min-h-screen bg-gray-50">
         <Routes>
               {/* Public routes with Navbar */}

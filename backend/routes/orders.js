@@ -7,6 +7,73 @@ const { triggerAutomation } = require('../services/aiAgentService');
 
 const router = express.Router();
 
+// @route   POST /api/orders/guest
+// @desc    Create a new order (guest checkout - no login required)
+// @access  Public
+router.post('/guest', async (req, res, next) => {
+  try {
+    const { items, customerName, customerPhone, city, address } = req.body;
+
+    if (!items || items.length === 0) {
+      return res.status(400).json({ message: 'No order items' });
+    }
+    if (!customerName || !customerPhone || !city || !address) {
+      return res.status(400).json({ message: 'Please provide name, phone, city, and address' });
+    }
+
+    let totalAmount = 0;
+    const orderItems = [];
+
+    for (const item of items) {
+      const product = await Product.findById(item.product);
+      if (!product) {
+        return res.status(404).json({ message: `Product ${item.product} not found` });
+      }
+      if (product.stock < item.quantity) {
+        return res.status(400).json({ message: `Insufficient stock for ${product.name}` });
+      }
+      const price = product.discountPercentage
+        ? product.price * (1 - product.discountPercentage / 100)
+        : product.price;
+      const itemTotal = price * item.quantity;
+      totalAmount += itemTotal;
+      orderItems.push({
+        product: product._id,
+        quantity: item.quantity,
+        price
+      });
+      product.stock -= item.quantity;
+      await product.save();
+    }
+
+    const order = await Order.create({
+      user: null,
+      items: orderItems,
+      totalAmount,
+      shippingAddress: {
+        street: address,
+        city,
+        country: req.body.country || ''
+      },
+      paymentMethod: 'cash',
+      paymentDetails: {
+        customerName,
+        customerPhone,
+        city,
+        address
+      },
+      paymentStatus: 'pending',
+      orderStatus: 'new',
+      contactConsent: false
+    });
+
+    await order.populate('items.product', 'name images');
+    res.status(201).json(order);
+  } catch (error) {
+    next(error);
+  }
+});
+
 // @route   POST /api/orders
 // @desc    Create a new order
 // @access  Private
@@ -119,8 +186,8 @@ router.get('/:id', protect, async (req, res, next) => {
       return res.status(404).json({ message: 'Order not found' });
     }
     
-    // Check if user owns the order or is admin
-    if (order.user._id.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
+    // Check if user owns the order or is admin (guest orders have no user)
+    if (order.user && order.user._id.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
       return res.status(403).json({ message: 'Access denied' });
     }
     

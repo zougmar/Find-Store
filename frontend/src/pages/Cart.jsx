@@ -8,7 +8,7 @@ import toast from 'react-hot-toast'
 import { formatCurrency } from '../utils/currency'
 
 const Cart = () => {
-  const { cartItems, removeFromCart, updateQuantity, getCartTotal, clearCart, getFinalPrice } = useCart()
+  const { cartItems, removeFromCart, updateQuantity, getCartTotal, clearCart, getFinalPrice, openGuestCheckoutModal } = useCart()
   const { user } = useAuth()
   const { t, isRTL } = useLanguage()
   const navigate = useNavigate()
@@ -87,14 +87,13 @@ const Cart = () => {
   }, [cartItems])
 
   const handleCheckout = async () => {
-    if (!user) {
-      toast.error('Please login to checkout')
-      navigate('/login')
+    if (cartItems.length === 0) {
+      toast.error('Cart is empty')
       return
     }
 
-    if (cartItems.length === 0) {
-      toast.error('Cart is empty')
+    if (!user) {
+      openGuestCheckoutModal()
       return
     }
 
