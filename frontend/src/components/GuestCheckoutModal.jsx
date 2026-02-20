@@ -4,16 +4,11 @@ import { useAuth } from '../context/AuthContext'
 import { useLanguage } from '../context/LanguageContext'
 import api from '../utils/api'
 import toast from 'react-hot-toast'
-import { formatCurrency } from '../utils/currency'
 
 const GuestCheckoutModal = () => {
   const {
     cartItems,
-    getCartTotal,
-    getFinalPrice,
     clearCart,
-    updateQuantity,
-    removeFromCart,
     showGuestCheckoutModal,
     closeGuestCheckoutModal,
     setShowGuestCheckoutModal
@@ -97,9 +92,6 @@ const GuestCheckoutModal = () => {
 
   if (!showGuestCheckoutModal || user) return null
 
-  const safeCartItems = (Array.isArray(cartItems) ? cartItems : []).filter(item => item?.product)
-  const total = typeof getCartTotal === 'function' ? getCartTotal() : 0
-  const getPrice = (product) => (typeof getFinalPrice === 'function' ? getFinalPrice(product) : 0) || 0
   const tr = (key, fallback) => (typeof t === 'function' ? t(key) : null) || fallback
   const iconPos = isRTL ? 'right-3.5 left-auto' : 'left-3.5 right-auto'
   const inputPad = isRTL ? 'pr-10 pl-4' : 'pl-10 pr-4'
@@ -130,59 +122,7 @@ const GuestCheckoutModal = () => {
             </div>
 
             <div className="p-6 space-y-6">
-              {/* Order summary – product list with prices */}
-              <div className="rounded-2xl border border-gray-100 bg-gradient-to-b from-gray-50/80 to-white overflow-hidden">
-                <div className="px-4 py-3 border-b border-gray-100 bg-white/80">
-                  <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wider">
-                    {tr('orderSummary', 'Order summary')}
-                  </h3>
-                </div>
-                <div className="divide-y divide-gray-100 max-h-52 overflow-y-auto">
-                  {safeCartItems.map((item, idx) => {
-                    const productId = item.product?._id ?? item.product
-                    const unitPrice = getPrice(item.product)
-                    const qty = Number(item.quantity) || 1
-                    const lineTotal = unitPrice * qty
-                    const name = item.product?.name || 'Product'
-                    const stock = item.product?.stock != null ? Number(item.product.stock) : null
-                    const canIncrease = stock == null || qty < stock
-                    return (
-                      <div key={productId || idx} className="px-4 py-3 flex flex-wrap items-center justify-between gap-2 sm:gap-3">
-                        <div className="min-w-0 flex-1">
-                          <p className="text-sm font-medium text-gray-900 truncate">{name}</p>
-                          <p className="text-xs text-gray-500 mt-0.5">{formatCurrency(unitPrice)} each</p>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <button
-                            type="button"
-                            onClick={() => qty > 1 ? updateQuantity(productId, qty - 1) : removeFromCart(productId)}
-                            disabled={submitting}
-                            className="w-8 h-8 rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center font-medium transition-colors"
-                            aria-label={qty > 1 ? 'Decrease quantity' : 'Remove item'}
-                          >
-                            −
-                          </button>
-                          <span className="min-w-[2rem] text-center text-sm font-semibold text-gray-900 px-1">{qty}</span>
-                          <button
-                            type="button"
-                            onClick={() => canIncrease && updateQuantity(productId, qty + 1)}
-                            disabled={!canIncrease || submitting}
-                            className="w-8 h-8 rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center font-medium transition-colors"
-                            aria-label="Increase quantity"
-                          >
-                            +
-                          </button>
-                        </div>
-                        <span className="text-sm font-semibold text-gray-900 whitespace-nowrap w-20 text-right">
-                          {formatCurrency(lineTotal)}
-                        </span>
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-
-              {/* Delivery information form */}
+              {/* Client / delivery information form only */}
               <form onSubmit={handleSubmit} className="space-y-5">
                 <div className="px-1">
                   <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wider mb-4">
@@ -296,7 +236,7 @@ const GuestCheckoutModal = () => {
                         {tr('placingOrder', 'Placing order...')}
                       </>
                     ) : (
-                      `${tr('submitOrder', 'Submit order')} – ${formatCurrency(total)}`
+                      tr('submitOrder', 'Submit order')
                     )}
                   </button>
                 </div>
