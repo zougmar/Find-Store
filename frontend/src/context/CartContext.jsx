@@ -27,7 +27,9 @@ export const CartProvider = ({ children }) => {
       const savedCart = localStorage.getItem('cart')
       if (savedCart) {
         try {
-          setCartItems(JSON.parse(savedCart))
+          const parsed = JSON.parse(savedCart)
+          const valid = Array.isArray(parsed) ? parsed.filter(item => item && item.product != null) : []
+          setCartItems(valid)
         } catch (error) {
           console.error('Error loading cart from localStorage:', error)
           setCartItems([])
@@ -109,10 +111,11 @@ export const CartProvider = ({ children }) => {
     try {
       // Update each item in the cart
       for (const item of items) {
+        if (!item.product) continue
         const productId = item.product._id || item.product
         const existingItem = await api.get('/cart')
           .then(res => res.data.items.find(i => 
-            i.product._id === productId || i.product.toString() === productId
+            i.product && (i.product._id === productId || i.product.toString() === productId)
           ))
         
         if (existingItem) {
@@ -137,12 +140,12 @@ export const CartProvider = ({ children }) => {
         // Fallback to local update
         setCartItems(prevItems => {
           const existingItem = prevItems.find(item => 
-            (item.product._id || item.product) === product._id
+            item.product && (item.product._id || item.product) === product._id
           )
           
           if (existingItem) {
             return prevItems.map(item =>
-              (item.product._id || item.product) === product._id
+              item.product && (item.product._id || item.product) === product._id
                 ? { ...item, quantity: item.quantity + quantity }
                 : item
             )
@@ -155,12 +158,12 @@ export const CartProvider = ({ children }) => {
       // Save to localStorage for guests and open guest checkout form
       setCartItems(prevItems => {
         const existingItem = prevItems.find(item => 
-          (item.product._id || item.product) === product._id
+          item.product && (item.product._id || item.product) === product._id
         )
         
         if (existingItem) {
           return prevItems.map(item =>
-            (item.product._id || item.product) === product._id
+            item.product && (item.product._id || item.product) === product._id
               ? { ...item, quantity: item.quantity + quantity }
               : item
           )
@@ -179,7 +182,7 @@ export const CartProvider = ({ children }) => {
         const res = await api.get('/cart')
         const cart = res.data
         const itemToRemove = cart.items.find(item => 
-          item.product._id === productId || item.product.toString() === productId
+          item.product && (item.product._id === productId || item.product.toString() === productId)
         )
         
         if (itemToRemove) {
@@ -190,13 +193,13 @@ export const CartProvider = ({ children }) => {
         console.error('Error removing from cart:', error)
         // Fallback to local update
         setCartItems(prevItems => prevItems.filter(item => 
-          (item.product._id || item.product) !== productId
+          item.product && (item.product._id || item.product) !== productId
         ))
       }
     } else {
       // Remove from localStorage for guests
       setCartItems(prevItems => prevItems.filter(item => 
-        (item.product._id || item.product) !== productId
+        item.product && (item.product._id || item.product) !== productId
       ))
     }
   }
@@ -213,7 +216,7 @@ export const CartProvider = ({ children }) => {
         const res = await api.get('/cart')
         const cart = res.data
         const itemToUpdate = cart.items.find(item => 
-          item.product._id === productId || item.product.toString() === productId
+          item.product && (item.product._id === productId || item.product.toString() === productId)
         )
         
         if (itemToUpdate) {
@@ -225,7 +228,7 @@ export const CartProvider = ({ children }) => {
         // Fallback to local update
         setCartItems(prevItems =>
           prevItems.map(item =>
-            (item.product._id || item.product) === productId ? { ...item, quantity } : item
+            item.product && (item.product._id || item.product) === productId ? { ...item, quantity } : item
           )
         )
       }
@@ -233,7 +236,7 @@ export const CartProvider = ({ children }) => {
       // Update localStorage for guests
       setCartItems(prevItems =>
         prevItems.map(item =>
-          (item.product._id || item.product) === productId ? { ...item, quantity } : item
+          item.product && (item.product._id || item.product) === productId ? { ...item, quantity } : item
         )
       )
     }

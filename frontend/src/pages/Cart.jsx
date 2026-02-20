@@ -152,7 +152,7 @@ const Cart = () => {
     setProcessing(true)
     try {
       const orderData = {
-        items: enrichedCartItems.map(item => ({
+        items: enrichedCartItems.filter(item => item?.product).map(item => ({
           product: item.product._id || item.product,
           quantity: item.quantity
         })),
@@ -239,7 +239,7 @@ const Cart = () => {
     }
   }
 
-  const displayItems = enrichedCartItems.length > 0 ? enrichedCartItems : cartItems
+  const displayItems = (enrichedCartItems.length > 0 ? enrichedCartItems : cartItems).filter(item => item?.product)
 
   if (displayItems.length === 0) {
     return (
