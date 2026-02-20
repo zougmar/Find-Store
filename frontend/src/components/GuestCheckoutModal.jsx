@@ -95,27 +95,30 @@ const GuestCheckoutModal = () => {
 
   if (!showGuestCheckoutModal || user) return null
 
-  const safeCartItems = Array.isArray(cartItems) ? cartItems : []
+  const safeCartItems = (Array.isArray(cartItems) ? cartItems : []).filter(item => item?.product)
   const total = typeof getCartTotal === 'function' ? getCartTotal() : 0
+  const getPrice = (product) => (typeof getFinalPrice === 'function' ? getFinalPrice(product) : 0) || 0
   const tr = (key, fallback) => (typeof t === 'function' ? t(key) : null) || fallback
+  const iconPos = isRTL ? 'right-3.5 left-auto' : 'left-3.5 right-auto'
+  const inputPad = isRTL ? 'pr-10 pl-4' : 'pl-10 pr-4'
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
       <div
-        className={`bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[95vh] overflow-y-auto border border-gray-200 ${isRTL ? 'text-right' : 'text-left'}`}
+        className={`bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[95vh] overflow-y-auto border-0 ${isRTL ? 'text-right' : 'text-left'}`}
         onClick={(e) => e.stopPropagation()}
       >
         {!orderSuccess ? (
           <>
-            <div className="sticky top-0 bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between rounded-t-2xl">
-              <h2 className="text-xl font-bold text-gray-900">
+            <div className="sticky top-0 z-10 bg-white/95 backdrop-blur border-b border-gray-100 px-6 py-4 flex items-center justify-between rounded-t-2xl shadow-sm">
+              <h2 className="text-xl font-bold text-gray-900 tracking-tight">
                 {tr('orderDetails', 'Order details')}
               </h2>
               <button
                 type="button"
                 onClick={handleClose}
                 disabled={submitting}
-                className="p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-50"
+                className="p-2.5 rounded-xl text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-all disabled:opacity-50"
                 aria-label="Close"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -124,89 +127,146 @@ const GuestCheckoutModal = () => {
               </button>
             </div>
 
-            <div className="p-6 space-y-5">
-              <div className="bg-gray-50 rounded-xl p-4">
-                <p className="text-sm font-medium text-gray-700 mb-2">{tr('orderSummary', 'Order summary')}</p>
-                <p className="text-2xl font-bold text-gray-900">{formatCurrency(total)}</p>
-                <p className="text-xs text-gray-500 mt-1">
-                  {safeCartItems.length} {safeCartItems.length === 1 ? 'item' : 'items'}
-                </p>
+            <div className="p-6 space-y-6">
+              {/* Order summary – product list with prices */}
+              <div className="rounded-2xl border border-gray-100 bg-gradient-to-b from-gray-50/80 to-white overflow-hidden">
+                <div className="px-4 py-3 border-b border-gray-100 bg-white/80">
+                  <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                    {tr('orderSummary', 'Order summary')}
+                  </h3>
+                </div>
+                <div className="divide-y divide-gray-100 max-h-44 overflow-y-auto">
+                  {safeCartItems.map((item, idx) => {
+                    const unitPrice = getPrice(item.product)
+                    const lineTotal = unitPrice * (Number(item.quantity) || 0)
+                    const name = item.product?.name || 'Product'
+                    return (
+                      <div key={item.product?._id || item.product || idx} className="px-4 py-3 flex justify-between items-start gap-3">
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-medium text-gray-900 truncate">{name}</p>
+                          <p className="text-xs text-gray-500 mt-0.5">
+                            {formatCurrency(unitPrice)} × {item.quantity}
+                          </p>
+                        </div>
+                        <span className="text-sm font-semibold text-gray-900 whitespace-nowrap">
+                          {formatCurrency(lineTotal)}
+                        </span>
+                      </div>
+                    )
+                  })}
+                </div>
+                <div className="px-4 py-4 border-t-2 border-gray-100 bg-gray-50/50">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-semibold text-gray-700">{tr('total', 'Total')}</span>
+                    <span className="text-lg font-bold text-gray-900">{formatCurrency(total)}</span>
+                  </div>
+                </div>
               </div>
 
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-800 mb-1.5">
-                    {tr('fullName', 'Full name')} <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="customerName"
-                    value={form.customerName}
-                    onChange={handleChange}
-                    placeholder="e.g. Ahmed Ali"
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-[#FF385C] focus:ring-2 focus:ring-[#FF385C]/20 outline-none transition-all"
-                    required
-                    disabled={submitting}
-                  />
+              {/* Delivery information form */}
+              <form onSubmit={handleSubmit} className="space-y-5">
+                <div className="px-1">
+                  <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wider mb-4">
+                    Delivery information
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="sm:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        {tr('fullName', 'Full name')} <span className="text-red-500">*</span>
+                      </label>
+                      <div className="relative">
+                        <span className={`absolute ${iconPos} top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none`}>
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                        </span>
+                        <input
+                          type="text"
+                          name="customerName"
+                          value={form.customerName}
+                          onChange={handleChange}
+                          placeholder="Ahmed Ali"
+                          className={`w-full ${inputPad} py-3 border border-gray-200 rounded-xl focus:border-[#FF385C] focus:ring-2 focus:ring-[#FF385C]/15 outline-none transition-all placeholder:text-gray-400`}
+                          required
+                          disabled={submitting}
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        {tr('phone', 'Phone number')} <span className="text-red-500">*</span>
+                      </label>
+                      <div className="relative">
+                        <span className={`absolute ${iconPos} top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none`}>
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></path>
+                        </svg>
+                        </span>
+                        <input
+                          type="tel"
+                          name="customerPhone"
+                          value={form.customerPhone}
+                          onChange={handleChange}
+                          placeholder="+212 600 000 000"
+                          className={`w-full ${inputPad} py-3 border border-gray-200 rounded-xl focus:border-[#FF385C] focus:ring-2 focus:ring-[#FF385C]/15 outline-none transition-all placeholder:text-gray-400`}
+                          required
+                          disabled={submitting}
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        {tr('city', 'City')} <span className="text-red-500">*</span>
+                      </label>
+                      <div className="relative">
+                        <span className={`absolute ${iconPos} top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none`}>
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                        </span>
+                        <input
+                          type="text"
+                          name="city"
+                          value={form.city}
+                          onChange={handleChange}
+                          placeholder="Casablanca"
+                          className={`w-full ${inputPad} py-3 border border-gray-200 rounded-xl focus:border-[#FF385C] focus:ring-2 focus:ring-[#FF385C]/15 outline-none transition-all placeholder:text-gray-400`}
+                          required
+                          disabled={submitting}
+                        />
+                      </div>
+                    </div>
+                    <div className="sm:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        {tr('address', 'Address')} <span className="text-red-500">*</span>
+                      </label>
+                      <div className="relative">
+                        <span className={`absolute ${iconPos} top-4 text-gray-400 pointer-events-none`}>
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
+                        </span>
+                        <textarea
+                          name="address"
+                          value={form.address}
+                          onChange={handleChange}
+                          placeholder="Street, building, floor, landmark..."
+                          rows={3}
+                          className={`w-full ${inputPad} py-3 border border-gray-200 rounded-xl focus:border-[#FF385C] focus:ring-2 focus:ring-[#FF385C]/15 outline-none transition-all resize-none placeholder:text-gray-400`}
+                          required
+                          disabled={submitting}
+                        />
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-800 mb-1.5">
-                    {tr('phone', 'Phone number')} <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="tel"
-                    name="customerPhone"
-                    value={form.customerPhone}
-                    onChange={handleChange}
-                    placeholder="e.g. +212 6 00 00 00 00"
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-[#FF385C] focus:ring-2 focus:ring-[#FF385C]/20 outline-none transition-all"
-                    required
-                    disabled={submitting}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-800 mb-1.5">
-                    {tr('city', 'City')} <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="city"
-                    value={form.city}
-                    onChange={handleChange}
-                    placeholder="e.g. Casablanca"
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-[#FF385C] focus:ring-2 focus:ring-[#FF385C]/20 outline-none transition-all"
-                    required
-                    disabled={submitting}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-800 mb-1.5">
-                    {tr('address', 'Address')} <span className="text-red-500">*</span>
-                  </label>
-                  <textarea
-                    name="address"
-                    value={form.address}
-                    onChange={handleChange}
-                    placeholder="Street, building, floor..."
-                    rows={3}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-[#FF385C] focus:ring-2 focus:ring-[#FF385C]/20 outline-none transition-all resize-none"
-                    required
-                    disabled={submitting}
-                  />
-                </div>
-                <div className="flex flex-col-reverse sm:flex-row gap-3 pt-2">
+
+                <div className="flex flex-col-reverse sm:flex-row gap-3 pt-1">
                   <button
                     type="button"
                     onClick={handleClose}
                     disabled={submitting}
-                    className="flex-1 py-3 px-4 rounded-xl font-semibold border-2 border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
+                    className="flex-1 py-3.5 px-5 rounded-xl font-semibold border border-gray-200 text-gray-700 bg-white hover:bg-gray-50 transition-all disabled:opacity-50 shadow-sm"
                   >
                     {tr('continueShopping', 'Continue shopping')}
                   </button>
                   <button
                     type="submit"
                     disabled={submitting}
-                    className="flex-1 py-3 px-4 rounded-xl font-semibold bg-[#FF385C] hover:bg-[#E61E4D] text-white shadow-lg hover:shadow-xl transition-all disabled:opacity-70 flex items-center justify-center gap-2"
+                    className="flex-1 py-3.5 px-5 rounded-xl font-semibold bg-[#FF385C] hover:bg-[#E61E4D] text-white shadow-lg hover:shadow-xl transition-all disabled:opacity-70 flex items-center justify-center gap-2"
                   >
                     {submitting ? (
                       <>
@@ -225,21 +285,21 @@ const GuestCheckoutModal = () => {
             </div>
           </>
         ) : (
-          <div className="p-8 text-center">
-            <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
-              <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="p-8 sm:p-10 text-center">
+            <div className="mx-auto w-20 h-20 bg-emerald-50 rounded-2xl flex items-center justify-center mb-6 ring-4 ring-emerald-100">
+              <svg className="w-10 h-10 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <h3 className="text-xl font-bold text-gray-900 mb-2">{tr('orderPlacedSuccess', 'Order placed successfully!')}</h3>
-            <p className="text-gray-600 mb-1">We will contact you to confirm and arrange delivery.</p>
+            <h3 className="text-2xl font-bold text-gray-900 mb-2">{tr('orderPlacedSuccess', 'Order placed successfully!')}</h3>
+            <p className="text-gray-600 mb-4 max-w-sm mx-auto">We will contact you shortly to confirm and arrange delivery.</p>
             {orderId && (
-              <p className="text-sm text-gray-500 font-mono mb-6">#{orderId.slice(-8).toUpperCase()}</p>
+              <p className="text-sm font-mono text-gray-500 bg-gray-100 px-4 py-2 rounded-lg inline-block mb-6">#{orderId.slice(-8).toUpperCase()}</p>
             )}
             <button
               type="button"
               onClick={handleClose}
-              className="w-full py-3 px-4 rounded-xl font-semibold bg-[#FF385C] hover:bg-[#E61E4D] text-white transition-colors"
+              className="w-full py-3.5 px-5 rounded-xl font-semibold bg-[#FF385C] hover:bg-[#E61E4D] text-white shadow-lg hover:shadow-xl transition-all"
             >
               {tr('continueShopping', 'Continue shopping')}
             </button>
