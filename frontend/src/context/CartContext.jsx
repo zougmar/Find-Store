@@ -257,6 +257,7 @@ export const CartProvider = ({ children }) => {
 
   // Helper function to get the final price (with discount applied)
   const getFinalPrice = (product) => {
+    if (!product || typeof product !== 'object' || product.price == null) return 0
     const discountPercentage = product.discountPercentage || 0
     if (discountPercentage > 0) {
       return product.price * (1 - discountPercentage / 100)
@@ -265,11 +266,13 @@ export const CartProvider = ({ children }) => {
   }
 
   const getCartTotal = () => {
+    if (!Array.isArray(cartItems)) return 0
     return cartItems.reduce((total, item) => {
       const product = item.product
       if (!product) return total
       const finalPrice = getFinalPrice(product)
-      return total + finalPrice * item.quantity
+      const qty = Number(item.quantity) || 0
+      return total + (finalPrice * qty)
     }, 0)
   }
 

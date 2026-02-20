@@ -31,13 +31,15 @@ import ModeratorOrders from './pages/moderator/ModeratorOrders'
 import ModeratorProductInquiries from './pages/moderator/ModeratorProductInquiries'
 import ProtectedRoute from './components/ProtectedRoute'
 import GuestCheckoutModal from './components/GuestCheckoutModal'
+import { useCart } from './context/CartContext'
 
 const AppContent = () => {
   const { isRTL } = useLanguage()
-  
+  const { showGuestCheckoutModal } = useCart()
+
   return (
     <Router>
-      <GuestCheckoutModal />
+      {showGuestCheckoutModal ? <GuestCheckoutModal /> : null}
       <div className="min-h-screen bg-gray-50">
         <Routes>
               {/* Public routes with Navbar */}

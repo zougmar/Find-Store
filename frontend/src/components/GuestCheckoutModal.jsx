@@ -52,14 +52,15 @@ const GuestCheckoutModal = () => {
       toast.error('Please enter a valid phone number')
       return
     }
-    if (cartItems.length === 0) {
+    const itemsToOrder = Array.isArray(cartItems) ? cartItems : []
+    if (itemsToOrder.length === 0) {
       toast.error('Your cart is empty')
       return
     }
 
     setSubmitting(true)
     try {
-      const items = cartItems.map((item) => ({
+      const items = itemsToOrder.map((item) => ({
         product: item.product?._id || item.product,
         quantity: item.quantity
       }))
@@ -94,6 +95,10 @@ const GuestCheckoutModal = () => {
 
   if (!showGuestCheckoutModal || user) return null
 
+  const safeCartItems = Array.isArray(cartItems) ? cartItems : []
+  const total = typeof getCartTotal === 'function' ? getCartTotal() : 0
+  const tr = (key, fallback) => (typeof t === 'function' ? t(key) : null) || fallback
+
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
       <div
@@ -104,7 +109,7 @@ const GuestCheckoutModal = () => {
           <>
             <div className="sticky top-0 bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between rounded-t-2xl">
               <h2 className="text-xl font-bold text-gray-900">
-                {t('orderDetails') || 'Order details'}
+                {tr('orderDetails', 'Order details')}
               </h2>
               <button
                 type="button"
@@ -121,17 +126,17 @@ const GuestCheckoutModal = () => {
 
             <div className="p-6 space-y-5">
               <div className="bg-gray-50 rounded-xl p-4">
-                <p className="text-sm font-medium text-gray-700 mb-2">{t('orderSummary') || 'Order summary'}</p>
-                <p className="text-2xl font-bold text-gray-900">{formatCurrency(getCartTotal())}</p>
+                <p className="text-sm font-medium text-gray-700 mb-2">{tr('orderSummary', 'Order summary')}</p>
+                <p className="text-2xl font-bold text-gray-900">{formatCurrency(total)}</p>
                 <p className="text-xs text-gray-500 mt-1">
-                  {cartItems.length} {cartItems.length === 1 ? 'item' : 'items'}
+                  {safeCartItems.length} {safeCartItems.length === 1 ? 'item' : 'items'}
                 </p>
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
                   <label className="block text-sm font-semibold text-gray-800 mb-1.5">
-                    {t('fullName') || 'Full name'} <span className="text-red-500">*</span>
+                    {tr('fullName', 'Full name')} <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
@@ -146,7 +151,7 @@ const GuestCheckoutModal = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-800 mb-1.5">
-                    {t('phone') || 'Phone number'} <span className="text-red-500">*</span>
+                    {tr('phone', 'Phone number')} <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="tel"
@@ -161,7 +166,7 @@ const GuestCheckoutModal = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-800 mb-1.5">
-                    {t('city') || 'City'} <span className="text-red-500">*</span>
+                    {tr('city', 'City')} <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
@@ -176,7 +181,7 @@ const GuestCheckoutModal = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-800 mb-1.5">
-                    {t('address') || 'Address'} <span className="text-red-500">*</span>
+                    {tr('address', 'Address')} <span className="text-red-500">*</span>
                   </label>
                   <textarea
                     name="address"
@@ -196,7 +201,7 @@ const GuestCheckoutModal = () => {
                     disabled={submitting}
                     className="flex-1 py-3 px-4 rounded-xl font-semibold border-2 border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
                   >
-                    {t('continueShopping') || 'Continue shopping'}
+                    {tr('continueShopping', 'Continue shopping')}
                   </button>
                   <button
                     type="submit"
@@ -209,10 +214,10 @@ const GuestCheckoutModal = () => {
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                         </svg>
-                        {t('placingOrder') || 'Placing order...'}
+                        {tr('placingOrder', 'Placing order...')}
                       </>
                     ) : (
-                      `${t('submitOrder') || 'Submit order'} – ${formatCurrency(getCartTotal())}`
+                      `${tr('submitOrder', 'Submit order')} – ${formatCurrency(total)}`
                     )}
                   </button>
                 </div>
@@ -226,7 +231,7 @@ const GuestCheckoutModal = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <h3 className="text-xl font-bold text-gray-900 mb-2">{t('orderPlacedSuccess') || 'Order placed successfully!'}</h3>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">{tr('orderPlacedSuccess', 'Order placed successfully!')}</h3>
             <p className="text-gray-600 mb-1">We will contact you to confirm and arrange delivery.</p>
             {orderId && (
               <p className="text-sm text-gray-500 font-mono mb-6">#{orderId.slice(-8).toUpperCase()}</p>
@@ -236,7 +241,7 @@ const GuestCheckoutModal = () => {
               onClick={handleClose}
               className="w-full py-3 px-4 rounded-xl font-semibold bg-[#FF385C] hover:bg-[#E61E4D] text-white transition-colors"
             >
-              {t('continueShopping') || 'Continue shopping'}
+              {tr('continueShopping', 'Continue shopping')}
             </button>
           </div>
         )}
