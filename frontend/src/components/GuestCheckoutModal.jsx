@@ -12,6 +12,8 @@ const GuestCheckoutModal = () => {
     getCartTotal,
     getFinalPrice,
     clearCart,
+    updateQuantity,
+    removeFromCart,
     showGuestCheckoutModal,
     closeGuestCheckoutModal,
     setShowGuestCheckoutModal
@@ -135,20 +137,43 @@ const GuestCheckoutModal = () => {
                     {tr('orderSummary', 'Order summary')}
                   </h3>
                 </div>
-                <div className="divide-y divide-gray-100 max-h-44 overflow-y-auto">
+                <div className="divide-y divide-gray-100 max-h-52 overflow-y-auto">
                   {safeCartItems.map((item, idx) => {
+                    const productId = item.product?._id ?? item.product
                     const unitPrice = getPrice(item.product)
-                    const lineTotal = unitPrice * (Number(item.quantity) || 0)
+                    const qty = Number(item.quantity) || 1
+                    const lineTotal = unitPrice * qty
                     const name = item.product?.name || 'Product'
+                    const stock = item.product?.stock != null ? Number(item.product.stock) : null
+                    const canIncrease = stock == null || qty < stock
                     return (
-                      <div key={item.product?._id || item.product || idx} className="px-4 py-3 flex justify-between items-start gap-3">
+                      <div key={productId || idx} className="px-4 py-3 flex flex-wrap items-center justify-between gap-2 sm:gap-3">
                         <div className="min-w-0 flex-1">
                           <p className="text-sm font-medium text-gray-900 truncate">{name}</p>
-                          <p className="text-xs text-gray-500 mt-0.5">
-                            {formatCurrency(unitPrice)} × {item.quantity}
-                          </p>
+                          <p className="text-xs text-gray-500 mt-0.5">{formatCurrency(unitPrice)} each</p>
                         </div>
-                        <span className="text-sm font-semibold text-gray-900 whitespace-nowrap">
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => qty > 1 ? updateQuantity(productId, qty - 1) : removeFromCart(productId)}
+                            disabled={submitting}
+                            className="w-8 h-8 rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center font-medium transition-colors"
+                            aria-label={qty > 1 ? 'Decrease quantity' : 'Remove item'}
+                          >
+                            −
+                          </button>
+                          <span className="min-w-[2rem] text-center text-sm font-semibold text-gray-900 px-1">{qty}</span>
+                          <button
+                            type="button"
+                            onClick={() => canIncrease && updateQuantity(productId, qty + 1)}
+                            disabled={!canIncrease || submitting}
+                            className="w-8 h-8 rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center font-medium transition-colors"
+                            aria-label="Increase quantity"
+                          >
+                            +
+                          </button>
+                        </div>
+                        <span className="text-sm font-semibold text-gray-900 whitespace-nowrap w-20 text-right">
                           {formatCurrency(lineTotal)}
                         </span>
                       </div>
