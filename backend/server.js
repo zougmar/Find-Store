@@ -57,6 +57,7 @@ app.use('/api/pages', require('./routes/pages'));
 app.use('/api/messages', require('./routes/messages'));
 app.use('/api/cart', require('./routes/cart'));
 app.use('/api/product-inquiries', require('./routes/productInquiries'));
+app.use('/api/requests', require('./routes/requests'));
 app.use('/api/admin', require('./routes/admin'));
 app.use('/api/payments', require('./routes/payments'));
 app.use('/api/delivery', require('./routes/delivery'));

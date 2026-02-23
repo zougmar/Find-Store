@@ -8,7 +8,7 @@ import { formatCurrency } from '../utils/currency'
 
 const ProductCard = ({ product }) => {
   const { toggleFavorite, isFavorited } = useFavorites()
-  const { addToCart } = useCart()
+  const { openBuyNow } = useCart()
   const { user } = useAuth()
   const { t, isRTL } = useLanguage()
   const favorited = isFavorited(product._id)
@@ -27,33 +27,14 @@ const ProductCard = ({ product }) => {
     await toggleFavorite(product._id)
   }
 
-  const handleAddToCart = (e) => {
+  const handleBuyNow = (e) => {
     e.preventDefault()
     e.stopPropagation()
-    
     if (product.stock <= 0) {
       toast.error(t('outOfStock') || 'Product is out of stock')
       return
     }
-    
-    addToCart(product, 1)
-    toast.success(t('addedToCart') || 'Added to cart!', {
-      icon: '✅',
-      duration: 3000,
-      style: {
-        background: '#10b981',
-        color: '#ffffff',
-        fontWeight: '600',
-        fontSize: '15px',
-        padding: '14px 18px',
-        borderRadius: '12px',
-        boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)'
-      },
-      iconTheme: {
-        primary: '#ffffff',
-        secondary: '#10b981'
-      }
-    })
+    openBuyNow(product, 1)
   }
 
   return (
@@ -113,10 +94,10 @@ const ProductCard = ({ product }) => {
             </button>
           )}
           
-          {/* Add to Cart Button - Shows on hover (desktop) and always visible (mobile) */}
+          {/* Buy now Button - Shows on hover (desktop) and always visible (mobile) */}
           <div className="absolute bottom-3 left-3 right-3 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300 z-10">
             <button
-              onClick={handleAddToCart}
+              onClick={handleBuyNow}
               disabled={product.stock <= 0}
               className={`w-full py-2.5 px-4 rounded-full font-semibold text-sm transition-all duration-200 shadow-lg ${
                 product.stock > 0
@@ -129,7 +110,7 @@ const ProductCard = ({ product }) => {
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
                   </svg>
-                  {t('addToCart')}
+                  {t('buyNow') || 'Buy now'}
                 </span>
               ) : (
                 'Out of Stock'

@@ -10,7 +10,7 @@ import { formatCurrency } from '../utils/currency'
 const ProductDetail = () => {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { addToCart, getFinalPrice } = useCart()
+  const { openBuyNow, getFinalPrice } = useCart()
   const { user } = useAuth()
   const { t, isRTL, language } = useLanguage()
   const [product, setProduct] = useState(null)
@@ -51,29 +51,12 @@ const ProductDetail = () => {
     }
   }
 
-  const handleAddToCart = () => {
+  const handleBuyNow = () => {
     if (product.stock < quantity) {
       toast.error(t('outOfStock') || 'Insufficient stock')
       return
     }
-    addToCart(product, quantity)
-    toast.success(t('addedToCart') || 'Added to cart!', {
-      icon: '✅',
-      duration: 3000,
-      style: {
-        background: '#10b981',
-        color: '#ffffff',
-        fontWeight: '600',
-        fontSize: '15px',
-        padding: '14px 18px',
-        borderRadius: '12px',
-        boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)'
-      },
-      iconTheme: {
-        primary: '#ffffff',
-        secondary: '#10b981'
-      }
-    })
+    openBuyNow(product, quantity)
   }
 
   const handleSubmitReview = async (e) => {
@@ -414,11 +397,11 @@ I would like to know more about this product. Can you help me?`
               {/* CTA Buttons */}
               <div className={`flex flex-col sm:flex-row gap-3 pt-2 ${isRTL ? 'sm:flex-row-reverse' : ''}`}>
                 <button
-                  onClick={handleAddToCart}
+                  onClick={handleBuyNow}
                   disabled={product.stock === 0}
                   className="flex-1 bg-white text-slate-900 hover:bg-gray-50 disabled:bg-slate-700 disabled:text-slate-400 font-semibold py-4 px-8 rounded-xl transition-all duration-200 hover:scale-[1.02] shadow-xl text-base"
                 >
-                  {product.stock > 0 ? (t('addToCartButton') || t('addToCart')) : (t('outOfStockLabel') || 'Out of Stock')}
+                  {product.stock > 0 ? (t('buyNow') || 'Buy now') : (t('outOfStockLabel') || 'Out of Stock')}
                 </button>
                 <button
                   onClick={handleWhatsApp}
@@ -709,11 +692,11 @@ I would like to know more about this product. Can you help me?`
             </p>
             <div className={`flex flex-col sm:flex-row gap-4 justify-center max-w-md mx-auto ${isRTL ? 'sm:flex-row-reverse' : ''}`}>
               <button
-                onClick={handleAddToCart}
+                onClick={handleBuyNow}
                 disabled={product.stock === 0}
                 className="flex-1 bg-white text-slate-900 hover:bg-gray-50 disabled:bg-slate-700 disabled:text-slate-400 font-semibold py-4 px-8 rounded-xl transition-all duration-200 hover:scale-[1.02] shadow-xl text-base"
               >
-                {product.stock > 0 ? (t('addToCartButton') || t('addToCart')) : (t('outOfStockLabel') || 'Out of Stock')}
+                {product.stock > 0 ? (t('buyNow') || 'Buy now') : (t('outOfStockLabel') || 'Out of Stock')}
               </button>
               <button
                 onClick={handleWhatsApp}

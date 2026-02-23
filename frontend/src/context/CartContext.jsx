@@ -16,6 +16,7 @@ export const CartProvider = ({ children }) => {
   const [cartItems, setCartItems] = useState([])
   const [loading, setLoading] = useState(false)
   const [showGuestCheckoutModal, setShowGuestCheckoutModal] = useState(false)
+  const [buyNowProduct, setBuyNowProduct] = useState(null) // { product, quantity } or null
   const { user } = useAuth()
 
   // Load cart from backend when user logs in
@@ -284,6 +285,8 @@ export const CartProvider = ({ children }) => {
 
   const openGuestCheckoutModal = () => setShowGuestCheckoutModal(true)
   const closeGuestCheckoutModal = () => setShowGuestCheckoutModal(false)
+  const openBuyNow = (product, quantity = 1) => setBuyNowProduct({ product, quantity })
+  const closeBuyNow = () => setBuyNowProduct(null)
 
   const value = {
     cartItems,
@@ -299,7 +302,10 @@ export const CartProvider = ({ children }) => {
     showGuestCheckoutModal,
     openGuestCheckoutModal,
     closeGuestCheckoutModal,
-    setShowGuestCheckoutModal
+    setShowGuestCheckoutModal,
+    buyNowProduct,
+    openBuyNow,
+    closeBuyNow
   }
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>

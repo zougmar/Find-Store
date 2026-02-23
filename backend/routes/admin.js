@@ -5,6 +5,7 @@ const fs = require('fs');
 const User = require('../models/User');
 const Product = require('../models/Product');
 const Order = require('../models/Order');
+const OrderRequest = require('../models/OrderRequest');
 const Favorite = require('../models/Favorite');
 const Page = require('../models/Page');
 const ProductInquiry = require('../models/ProductInquiry');
@@ -430,6 +431,20 @@ router.get('/orders', hasPermission('manageOrders'), async (req, res, next) => {
       .sort({ createdAt: -1 });
     
     res.json(orders);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// @route   GET /api/admin/requests
+// @desc    Get all buy-now order requests
+// @access  Private/Admin or Moderator with manageOrders permission
+router.get('/requests', hasPermission('manageOrders'), async (req, res, next) => {
+  try {
+    const requests = await OrderRequest.find()
+      .populate('product', 'name price images')
+      .sort({ createdAt: -1 });
+    res.json(requests);
   } catch (error) {
     next(error);
   }

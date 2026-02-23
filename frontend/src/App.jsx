@@ -18,6 +18,7 @@ import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminUsers from './pages/admin/AdminUsers'
 import AdminProducts from './pages/admin/AdminProducts'
 import AdminOrders from './pages/admin/AdminOrders'
+import AdminRequests from './pages/admin/AdminRequests'
 import AdminPages from './pages/admin/AdminPages'
 import AdminMessages from './pages/admin/AdminMessages'
 import AdminProductInquiries from './pages/admin/AdminProductInquiries'
@@ -31,15 +32,17 @@ import ModeratorOrders from './pages/moderator/ModeratorOrders'
 import ModeratorProductInquiries from './pages/moderator/ModeratorProductInquiries'
 import ProtectedRoute from './components/ProtectedRoute'
 import GuestCheckoutModal from './components/GuestCheckoutModal'
+import BuyNowModal from './components/BuyNowModal'
 import { useCart } from './context/CartContext'
 
 const AppContent = () => {
   const { isRTL } = useLanguage()
-  const { showGuestCheckoutModal } = useCart()
+  const { showGuestCheckoutModal, buyNowProduct } = useCart()
 
   return (
     <Router>
       {showGuestCheckoutModal ? <GuestCheckoutModal /> : null}
+      {buyNowProduct ? <BuyNowModal /> : null}
       <div className="min-h-screen bg-gray-50">
         <Routes>
               {/* Public routes with Navbar */}
@@ -123,6 +126,14 @@ const AppContent = () => {
                 element={
                   <ProtectedRoute adminOnly>
                     <AdminOrders />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/requests"
+                element={
+                  <ProtectedRoute adminOnly>
+                    <AdminRequests />
                   </ProtectedRoute>
                 }
               />
