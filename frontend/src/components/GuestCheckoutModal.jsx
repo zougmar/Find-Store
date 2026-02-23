@@ -122,7 +122,7 @@ const GuestCheckoutModal = () => {
             </div>
 
             <div className="p-6 space-y-6">
-              {/* Client / delivery information form only */}
+              {/* Client / delivery information form only – no product prices */}
               <form onSubmit={handleSubmit} className="space-y-5">
                 <div className="px-1">
                   <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wider mb-4">

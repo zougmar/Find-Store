@@ -155,7 +155,7 @@ export const CartProvider = ({ children }) => {
         })
       }
     } else {
-      // Save to localStorage for guests and open guest checkout form
+      // Save to localStorage for guests (modal not shown on add to cart – open from Cart page)
       setCartItems(prevItems => {
         const existingItem = prevItems.find(item => 
           item.product && (item.product._id || item.product) === product._id
@@ -171,7 +171,6 @@ export const CartProvider = ({ children }) => {
         
         return [...prevItems, { product, quantity }]
       })
-      setShowGuestCheckoutModal(true)
     }
   }
 
