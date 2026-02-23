@@ -57,26 +57,23 @@ const ProductDetail = () => {
       return
     }
     addToCart(product, quantity)
-    if (user) {
-      toast.success(t('addedToCart') || 'Added to cart!', {
-        icon: '✅',
-        duration: 3000,
-        style: {
-          background: '#10b981',
-          color: '#ffffff',
-          fontWeight: '600',
-          fontSize: '15px',
-          padding: '14px 18px',
-          borderRadius: '12px',
-          boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)'
-        },
-        iconTheme: {
-          primary: '#ffffff',
-          secondary: '#10b981'
-        }
-      })
-    }
-    // Guest: CartContext will open the order details form modal
+    toast.success(t('addedToCart') || 'Added to cart!', {
+      icon: '✅',
+      duration: 3000,
+      style: {
+        background: '#10b981',
+        color: '#ffffff',
+        fontWeight: '600',
+        fontSize: '15px',
+        padding: '14px 18px',
+        borderRadius: '12px',
+        boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)'
+      },
+      iconTheme: {
+        primary: '#ffffff',
+        secondary: '#10b981'
+      }
+    })
   }
 
   const handleSubmitReview = async (e) => {
