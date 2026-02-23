@@ -51,7 +51,6 @@ const translations = {
     filter: 'Filter',
     sortBy: 'Sort By',
     clearFilters: 'Clear Filters',
-    product: 'product',
     available: 'available',
     page: 'Page',
     of: 'of',
@@ -243,7 +242,7 @@ const translations = {
     manageAccount: 'Manage your account information and view order history',
     personalInformation: 'Personal Information',
     editProfile: 'Edit Profile',
-    save: 'Save',
+    saveButton: 'Save',
     cancel: 'Cancel',
     orderHistory: 'Order History',
     totalOrders: 'total orders',
@@ -255,7 +254,6 @@ const translations = {
     // Contact page
     getInTouch: 'Get in Touch',
     contactHelp: "Have questions or need help? We're here to assist you. Reach out to us through any of the following channels.",
-    email: 'Email',
     phone: 'Phone',
     address: 'Address',
     phoneHours: 'Mon-Fri: 9am - 6pm EST',
@@ -274,7 +272,6 @@ const translations = {
     // Footer
     helpCenter: 'Help Center',
     browseProducts: 'Browse Products',
-    contactUs: 'Contact Us',
     aboutUs: 'About Us',
     careers: 'Careers',
     privacyPolicy: 'Privacy Policy',
@@ -291,7 +288,6 @@ const translations = {
     street: 'Street',
     state: 'State',
     zipCode: 'Zip Code',
-    country: 'Country',
     // Placeholders
     placeholderEmail: 'you@example.com',
     placeholderName: 'John Doe',
@@ -302,8 +298,7 @@ const translations = {
     placeholderSubject: "What's this about?",
     placeholderMessage: 'Your message here...',
     placeholderImageUrl: 'https://example.com/image.jpg',
-    // Products page
-    activeFilters: 'Active filters:',
+    // Products page (filters)
     categoryFilter: 'Category:',
     searchFilter: 'Search:',
     priceFilter: 'Price:',
@@ -361,7 +356,6 @@ const translations = {
     filter: 'تصفية',
     sortBy: 'ترتيب حسب',
     clearFilters: 'مسح الفلاتر',
-    product: 'منتج',
     available: 'متاح',
     page: 'صفحة',
     of: 'من',
@@ -553,7 +547,7 @@ const translations = {
     manageAccount: 'إدارة معلومات حسابك وعرض سجل الطلبات',
     personalInformation: 'المعلومات الشخصية',
     editProfile: 'تعديل الملف الشخصي',
-    save: 'حفظ',
+    saveButton: 'حفظ',
     cancel: 'إلغاء',
     orderHistory: 'سجل الطلبات',
     totalOrders: 'إجمالي الطلبات',
@@ -565,7 +559,6 @@ const translations = {
     // Contact page
     getInTouch: 'تواصل معنا',
     contactHelp: 'هل لديك أسئلة أو تحتاج إلى مساعدة؟ نحن هنا لمساعدتك. تواصل معنا من خلال أي من القنوات التالية.',
-    email: 'البريد الإلكتروني',
     phone: 'الهاتف',
     address: 'العنوان',
     phoneHours: 'الإثنين-الجمعة: 9 صباحاً - 6 مساءً',
@@ -584,7 +577,6 @@ const translations = {
     // Footer
     helpCenter: 'مركز المساعدة',
     browseProducts: 'تصفح المنتجات',
-    contactUs: 'اتصل بنا',
     aboutUs: 'من نحن',
     careers: 'الوظائف',
     privacyPolicy: 'سياسة الخصوصية',
@@ -601,7 +593,6 @@ const translations = {
     street: 'الشارع',
     state: 'الحالة',
     zipCode: 'الرمز البريدي',
-    country: 'الدولة',
     // Placeholders
     placeholderEmail: 'you@example.com',
     placeholderName: 'جون دو',
@@ -612,8 +603,7 @@ const translations = {
     placeholderSubject: 'ما هذا الموضوع؟',
     placeholderMessage: 'رسالتك هنا...',
     placeholderImageUrl: 'https://example.com/image.jpg',
-    // Products page
-    activeFilters: 'الفلاتر النشطة:',
+    // Products page (filters)
     categoryFilter: 'الفئة:',
     searchFilter: 'البحث:',
     priceFilter: 'السعر:',
@@ -671,7 +661,6 @@ const translations = {
     filter: 'Filtrer',
     sortBy: 'Trier par',
     clearFilters: 'Effacer les filtres',
-    product: 'produit',
     available: 'disponible',
     page: 'Page',
     of: 'de',
@@ -863,7 +852,7 @@ const translations = {
     manageAccount: 'Gérez les informations de votre compte et consultez l\'historique des commandes',
     personalInformation: 'Informations personnelles',
     editProfile: 'Modifier le profil',
-    save: 'Enregistrer',
+    saveButton: 'Enregistrer',
     cancel: 'Annuler',
     orderHistory: 'Historique des commandes',
     totalOrders: 'commandes au total',
@@ -875,7 +864,6 @@ const translations = {
     // Contact page
     getInTouch: 'Contactez-nous',
     contactHelp: 'Vous avez des questions ou besoin d\'aide? Nous sommes là pour vous aider. Contactez-nous via l\'un des canaux suivants.',
-    email: 'E-mail',
     phone: 'Téléphone',
     address: 'Adresse',
     phoneHours: 'Lun-Ven: 9h - 18h',
@@ -894,7 +882,6 @@ const translations = {
     // Footer
     helpCenter: 'Centre d\'aide',
     browseProducts: 'Parcourir les produits',
-    contactUs: 'Contactez-nous',
     aboutUs: 'À propos',
     careers: 'Carrières',
     privacyPolicy: 'Politique de confidentialité',
@@ -911,7 +898,6 @@ const translations = {
     street: 'Rue',
     state: 'État',
     zipCode: 'Code postal',
-    country: 'Pays',
     // Placeholders
     placeholderEmail: 'you@example.com',
     placeholderName: 'Jean Dupont',
@@ -922,8 +908,7 @@ const translations = {
     placeholderSubject: 'De quoi s\'agit-il?',
     placeholderMessage: 'Votre message ici...',
     placeholderImageUrl: 'https://example.com/image.jpg',
-    // Products page
-    activeFilters: 'Filtres actifs:',
+    // Products page (filters)
     categoryFilter: 'Catégorie:',
     searchFilter: 'Recherche:',
     priceFilter: 'Prix:',
