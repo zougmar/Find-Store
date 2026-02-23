@@ -243,15 +243,20 @@ const Cart = () => {
 
   if (displayItems.length === 0) {
     return (
-      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-white rounded-lg shadow-md p-8 text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Your Cart is Empty</h2>
-          <p className="text-gray-600 mb-6">Add some products to your cart!</p>
+      <div className="min-h-[60vh] flex items-center justify-center px-4 sm:px-6 lg:px-8 py-12">
+        <div className="max-w-md w-full text-center">
+          <div className="mx-auto w-20 h-20 rounded-2xl bg-gray-100 flex items-center justify-center mb-6">
+            <svg className="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+            </svg>
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Your cart is empty</h2>
+          <p className="text-gray-500 mb-8">Add items you like and they’ll show up here.</p>
           <button
-            onClick={() => navigate('/')}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold"
+            onClick={() => navigate('/products')}
+            className="inline-flex items-center justify-center gap-2 bg-[#FF385C] hover:bg-[#E61E4D] text-white font-semibold py-3.5 px-6 rounded-xl transition-all shadow-lg hover:shadow-xl"
           >
-            {t('continueShopping')}
+            {t('continueShopping') || 'Continue shopping'}
           </button>
         </div>
       </div>
@@ -259,167 +264,146 @@ const Cart = () => {
   }
 
   return (
-    <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8">
-      <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4 md:mb-8">Shopping Cart</h1>
-      
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2">
-          <div className="bg-white rounded-lg shadow-md overflow-hidden">
-            {displayItems.map((item) => {
-              // Ensure images is always an array
-              let images = item.product.images || []
-              if (typeof images === 'string') {
-                images = images.split(',').map(img => img.trim()).filter(img => img)
-              }
-              if (!Array.isArray(images)) {
-                images = []
-              }
-              
-              return (
-              <div
-                key={getProductId(item.product)}
-                className="border-b last:border-b-0 p-4 md:p-6 flex flex-col sm:flex-row gap-4"
-              >
-                <div className="flex-shrink-0 mx-auto sm:mx-0">
-                  {(() => {
-                    const hasImages = images.length > 0
-                    
-                    if (!hasImages) {
-                      return (
-                        <div className="w-24 h-24 md:w-32 md:h-32 bg-gray-200 rounded-lg flex items-center justify-center text-gray-400 text-xs">
-                          No Image
-                        </div>
-                      )
-                    }
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-10">
+      <div className="mb-6 md:mb-8">
+        <h1 className="text-2xl md:text-3xl font-bold text-gray-900 tracking-tight">
+          {t('shoppingCart') || 'Shopping Cart'}
+        </h1>
+        <p className="text-gray-500 mt-1">
+          {displayItems.length} {displayItems.length === 1 ? 'item' : 'items'}
+        </p>
+      </div>
 
-                    // Show only the selected image (or first image by default)
-                    const productId = getProductId(item.product)
-                    const currentIndex = selectedImageIndex[productId] || 0
-                    const displayImage = images[currentIndex] || images[0]
-                    
-                    return (
-                      <div className="w-24 h-24 md:w-32 md:h-32">
-                        <img
-                          src={displayImage}
-                          alt={item.product.name}
-                          className="w-full h-full object-cover rounded-lg border border-gray-200 shadow-sm"
-                          onError={(e) => {
-                            e.target.src = 'https://via.placeholder.com/200?text=No+Image'
-                          }}
-                        />
-                      </div>
-                    )
-                  })()}
-                </div>
-                
-                <div className="flex-grow flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                  <div className="flex-grow">
-                    <h3 className="text-base md:text-lg font-semibold text-gray-900 mb-1 md:mb-2">
-                      {item.product.name}
-                    </h3>
-                    {/* Price with Discount */}
-                    <div className="mb-2">
-                      {(() => {
-                        const finalPrice = getFinalPrice(item.product)
-                        const discountPercentage = item.product.discountPercentage || 0
-                        const hasDiscount = discountPercentage > 0
-                        
-                        if (hasDiscount) {
-                          return (
-                            <div className="flex flex-col gap-1">
-                              <div className="flex items-center gap-2">
-                                <span className="text-sm md:text-base font-semibold text-gray-900">
-                                  {formatCurrency(finalPrice)}
-                                </span>
-                                <span className="px-2 py-0.5 bg-red-500 text-white text-xs font-bold rounded">
-                                  -{discountPercentage}%
-                                </span>
-                              </div>
-                              <span className="text-xs text-gray-400 line-through">
-                                {formatCurrency(item.product.price)}
-                              </span>
-                            </div>
-                          )
-                        }
-                        return (
-                          <p className="text-sm md:text-base text-gray-600">
-                            {formatCurrency(finalPrice)}
-                          </p>
-                        )
-                      })()}
-                    </div>
-                    
-                    <div className="flex items-center space-x-4">
-                      <div className="flex items-center space-x-2">
-                        <button
-                          onClick={() => updateQuantity(getProductId(item.product), item.quantity - 1)}
-                          className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 text-sm md:text-base"
-                        >
-                          -
-                        </button>
-                        <span className="font-semibold text-sm md:text-base">{item.quantity}</span>
-                        <button
-                          onClick={() => updateQuantity(getProductId(item.product), item.quantity + 1)}
-                          className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 text-sm md:text-base"
-                        >
-                          +
-                        </button>
-                      </div>
-                      
-                      <button
-                        onClick={() => removeFromCart(getProductId(item.product))}
-                        className="text-red-600 hover:text-red-700 text-xs md:text-sm font-medium"
-                      >
-                        {t('remove')}
-                      </button>
-                    </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+        <div className="lg:col-span-2 space-y-4">
+          {displayItems.map((item) => {
+            let images = item.product.images || []
+            if (typeof images === 'string') {
+              images = images.split(',').map(img => img.trim()).filter(img => img)
+            }
+            if (!Array.isArray(images)) images = []
+            const productId = getProductId(item.product)
+            const currentIndex = selectedImageIndex[productId] || 0
+            const displayImage = images[currentIndex] || images[0]
+            const finalPrice = getFinalPrice(item.product)
+            const lineTotal = finalPrice * item.quantity
+            const hasDiscount = (item.product.discountPercentage || 0) > 0
+
+            return (
+              <div
+                key={productId}
+                className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md transition-shadow"
+              >
+                <div className="p-4 md:p-5 flex flex-col sm:flex-row gap-4">
+                  <div className="flex-shrink-0 w-full sm:w-28 aspect-square bg-gray-50 rounded-xl overflow-hidden">
+                    {images.length > 0 ? (
+                      <img
+                        src={displayImage}
+                        alt={item.product.name}
+                        className="w-full h-full object-cover"
+                        onError={(e) => { e.target.src = 'https://via.placeholder.com/200?text=No+Image' }}
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-gray-300 text-sm">No image</div>
+                    )}
                   </div>
-                  
-                  <div className={`text-left sm:${isRTL ? 'text-left' : 'text-right'}`}>
-                    <p className="text-base md:text-lg font-bold text-gray-900">
-                      {formatCurrency(getFinalPrice(item.product) * item.quantity)}
-                    </p>
+
+                  <div className="flex-grow min-w-0 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <div>
+                      <h3 className="font-semibold text-gray-900 text-base md:text-lg mb-1">
+                        {item.product.name}
+                      </h3>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-base font-semibold text-gray-900">
+                          {formatCurrency(finalPrice)}
+                        </span>
+                        {hasDiscount && (
+                          <span className="px-2 py-0.5 bg-red-500/10 text-red-600 text-xs font-semibold rounded-lg">
+                            -{item.product.discountPercentage}%
+                          </span>
+                        )}
+                        {hasDiscount && (
+                          <span className="text-sm text-gray-400 line-through">
+                            {formatCurrency(item.product.price)}
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-3 mt-3">
+                        <div className="inline-flex items-center rounded-xl border border-gray-200 bg-gray-50/50">
+                          <button
+                            type="button"
+                            onClick={() => updateQuantity(productId, item.quantity - 1)}
+                            className="w-9 h-9 flex items-center justify-center text-gray-600 hover:bg-gray-100 rounded-l-xl transition-colors font-medium"
+                          >
+                            −
+                          </button>
+                          <span className="w-10 text-center text-sm font-semibold text-gray-900">{item.quantity}</span>
+                          <button
+                            type="button"
+                            onClick={() => updateQuantity(productId, item.quantity + 1)}
+                            className="w-9 h-9 flex items-center justify-center text-gray-600 hover:bg-gray-100 rounded-r-xl transition-colors font-medium"
+                          >
+                            +
+                          </button>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removeFromCart(productId)}
+                          className="text-sm text-red-600 hover:text-red-700 font-medium"
+                        >
+                          {t('remove') || 'Remove'}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className={`sm:text-right ${isRTL ? 'sm:text-left' : ''}`}>
+                      <p className="text-lg font-bold text-gray-900">
+                        {formatCurrency(lineTotal)}
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
-              )
-            })}
-          </div>
+            )
+          })}
         </div>
 
         <div className="lg:col-span-1">
-          <div className="bg-white rounded-lg shadow-md p-6 sticky top-20">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">{t('orderSummary') || 'Order Summary'}</h2>
-            
-            <div className="space-y-2 mb-4">
-              <div className={`flex justify-between text-gray-600 ${isRTL ? 'flex-row-reverse' : ''}`}>
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 sticky top-24">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">
+              {t('orderSummary') || 'Order Summary'}
+            </h2>
+            <div className="space-y-3 mb-6">
+              <div className={`flex justify-between text-sm text-gray-600 ${isRTL ? 'flex-row-reverse' : ''}`}>
                 <span>{t('subtotal') || 'Subtotal'}</span>
-                <span>{formatCurrency(getCartTotal())}</span>
+                <span className="font-medium text-gray-900">{formatCurrency(getCartTotal())}</span>
               </div>
-              <div className={`flex justify-between text-gray-600 ${isRTL ? 'flex-row-reverse' : ''}`}>
+              <div className={`flex justify-between text-sm text-gray-600 ${isRTL ? 'flex-row-reverse' : ''}`}>
                 <span>{t('shipping') || 'Shipping'}</span>
-                <span>{t('free') || 'Free'}</span>
+                <span className="text-gray-500">{t('free') || 'Free'}</span>
               </div>
-              <div className="border-t pt-2 mt-2">
-                <div className={`flex justify-between text-xl font-bold text-gray-900 ${isRTL ? 'flex-row-reverse' : ''}`}>
-                  <span>{t('total')}</span>
+              <div className="border-t border-gray-100 pt-4 mt-4">
+                <div className={`flex justify-between text-base font-bold text-gray-900 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                  <span>{t('total') || 'Total'}</span>
                   <span>{formatCurrency(getCartTotal())}</span>
                 </div>
               </div>
             </div>
 
             <button
+              type="button"
               onClick={handleCheckout}
-              className="w-full bg-[#FF385C] hover:bg-[#E61E4D] text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-[1.02] mb-4"
+              className="w-full bg-[#FF385C] hover:bg-[#E61E4D] text-white font-semibold py-3.5 px-5 rounded-xl transition-all shadow-lg hover:shadow-xl mb-3"
             >
               {t('proceedToCheckout') || 'Proceed to Checkout'}
             </button>
-
             <button
+              type="button"
               onClick={handleContinueShopping}
-              className="w-full bg-white border-2 border-gray-300 hover:border-gray-400 text-gray-800 font-semibold py-3 px-6 rounded-lg transition-all duration-200 hover:bg-gray-50"
+              className="w-full bg-white border border-gray-200 text-gray-700 font-semibold py-3 px-5 rounded-xl hover:bg-gray-50 transition-colors"
             >
-              {t('continueShopping')}
+              {t('continueShopping') || 'Continue shopping'}
             </button>
           </div>
         </div>
