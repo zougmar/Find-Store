@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
 import { useAuth } from '../context/AuthContext'
 import { useLanguage } from '../context/LanguageContext'
@@ -15,6 +16,7 @@ const GuestCheckoutModal = () => {
   } = useCart()
   const { user } = useAuth()
   const { t, isRTL } = useLanguage()
+  const navigate = useNavigate()
 
   const [form, setForm] = useState({
     customerName: '',
@@ -219,7 +221,7 @@ const GuestCheckoutModal = () => {
                 <div className="flex flex-col-reverse sm:flex-row gap-3 pt-1">
                   <button
                     type="button"
-                    onClick={handleClose}
+                    onClick={() => { navigate('/'); handleClose(); }}
                     disabled={submitting}
                     className="flex-1 py-3.5 px-5 rounded-xl font-semibold border border-gray-200 text-gray-700 bg-white hover:bg-gray-50 transition-all disabled:opacity-50 shadow-sm"
                   >
@@ -260,7 +262,7 @@ const GuestCheckoutModal = () => {
             )}
             <button
               type="button"
-              onClick={handleClose}
+              onClick={() => { navigate('/'); handleClose(); }}
               className="w-full py-3.5 px-5 rounded-xl font-semibold bg-[#FF385C] hover:bg-[#E61E4D] text-white shadow-lg hover:shadow-xl transition-all"
             >
               {tr('continueShopping', 'Continue shopping')}

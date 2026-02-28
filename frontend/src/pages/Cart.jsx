@@ -215,9 +215,9 @@ const Cart = () => {
       setCheckoutStep(1)
       setPaymentMethod('')
       setCardData({ cardNumber: '', cardName: '', expiryDate: '', cvv: '' })
-      navigate('/products')
+      navigate('/')
     } else {
-      navigate('/products')
+      navigate('/')
     }
   }
 
@@ -253,7 +253,7 @@ const Cart = () => {
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Your cart is empty</h2>
           <p className="text-gray-500 mb-8">Add items you like and they’ll show up here.</p>
           <button
-            onClick={() => navigate('/products')}
+            onClick={() => navigate('/')}
             className="inline-flex items-center justify-center gap-2 bg-[#FF385C] hover:bg-[#E61E4D] text-white font-semibold py-3.5 px-6 rounded-xl transition-all shadow-lg hover:shadow-xl"
           >
             {t('continueShopping') || 'Continue shopping'}

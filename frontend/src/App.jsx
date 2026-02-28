@@ -18,7 +18,6 @@ import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminUsers from './pages/admin/AdminUsers'
 import AdminProducts from './pages/admin/AdminProducts'
 import AdminOrders from './pages/admin/AdminOrders'
-import AdminRequests from './pages/admin/AdminRequests'
 import AdminPages from './pages/admin/AdminPages'
 import AdminMessages from './pages/admin/AdminMessages'
 import AdminProductInquiries from './pages/admin/AdminProductInquiries'
@@ -126,14 +125,6 @@ const AppContent = () => {
                 element={
                   <ProtectedRoute adminOnly>
                     <AdminOrders />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/requests"
-                element={
-                  <ProtectedRoute adminOnly>
-                    <AdminRequests />
                   </ProtectedRoute>
                 }
               />

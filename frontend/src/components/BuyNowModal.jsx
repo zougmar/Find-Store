@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
 import { useLanguage } from '../context/LanguageContext'
 import api from '../utils/api'
@@ -7,6 +8,7 @@ import toast from 'react-hot-toast'
 const BuyNowModal = () => {
   const { buyNowProduct, closeBuyNow } = useCart()
   const { t, isRTL } = useLanguage()
+  const navigate = useNavigate()
 
   const [form, setForm] = useState({
     customerName: '',
@@ -201,7 +203,7 @@ const BuyNowModal = () => {
             </p>
             <button
               type="button"
-              onClick={handleClose}
+              onClick={() => { navigate('/'); handleClose(); }}
               className="w-full py-3.5 px-5 rounded-xl font-semibold bg-[#FF385C] hover:bg-[#E61E4D] text-white transition-all"
             >
               {tr('continueShopping', 'Continue shopping')}
