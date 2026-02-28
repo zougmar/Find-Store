@@ -20,38 +20,18 @@ const copyToClipboard = async (text, successMessage = 'Copied to clipboard!') =>
 
 const AdminOrders = () => {
   const [orders, setOrders] = useState([])
-  const [requests, setRequests] = useState([])
   const [deliveryMen, setDeliveryMen] = useState([])
   const [loading, setLoading] = useState(true)
-  const [requestsLoading, setRequestsLoading] = useState(false)
-  const [activeTab, setActiveTab] = useState('orders') // 'orders' | 'buyNow'
   const [expandedOrders, setExpandedOrders] = useState(new Set())
   const [selectedOrders, setSelectedOrders] = useState(new Set())
   const [searchQuery, setSearchQuery] = useState('')
   const [orderStatusFilter, setOrderStatusFilter] = useState('all')
   const [paymentStatusFilter, setPaymentStatusFilter] = useState('all')
-  const [requestSearchQuery, setRequestSearchQuery] = useState('')
-  const [requestStatusFilter, setRequestStatusFilter] = useState('all')
-  const [updatingRequestId, setUpdatingRequestId] = useState(null)
-  const [deletingRequestId, setDeletingRequestId] = useState(null)
-
-  const REQUEST_STATUS_OPTIONS = [
-    { value: 'new', label: 'New' },
-    { value: 'contacted', label: 'Contacted' },
-    { value: 'completed', label: 'Completed' },
-    { value: 'cancelled', label: 'Cancelled' }
-  ]
 
   useEffect(() => {
     fetchOrders()
     fetchDeliveryMen()
   }, [])
-
-  useEffect(() => {
-    if (activeTab === 'buyNow') {
-      fetchRequests()
-    }
-  }, [activeTab])
 
   const fetchOrders = async () => {
     try {
@@ -73,46 +53,7 @@ const AdminOrders = () => {
     }
   }
 
-  const fetchRequests = async () => {
-    setRequestsLoading(true)
-    try {
-      const res = await api.get('/admin/requests')
-      setRequests(res.data)
-    } catch (error) {
-      toast.error('Failed to load buy now requests')
-    } finally {
-      setRequestsLoading(false)
-    }
-  }
-
-  const handleRequestStatusChange = async (id, newStatus) => {
-    setUpdatingRequestId(id)
-    try {
-      const res = await api.put(`/admin/requests/${id}`, { status: newStatus })
-      setRequests((prev) => prev.map((r) => (r._id === id ? res.data : r)))
-      toast.success('Status updated')
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to update status')
-    } finally {
-      setUpdatingRequestId(null)
-    }
-  }
-
-  const handleDeleteRequest = async (id) => {
-    if (!window.confirm('Delete this buy now request? This cannot be undone.')) return
-    setDeletingRequestId(id)
-    try {
-      await api.delete(`/admin/requests/${id}`)
-      setRequests((prev) => prev.filter((r) => r._id !== id))
-      toast.success('Request deleted')
-    } catch (error) {
-      toast.error('Failed to delete request')
-    } finally {
-      setDeletingRequestId(null)
-    }
-  }
-
-  const handleUpdateStatus = async (orderId, orderStatus, paymentStatus, assignedDeliveryMan = undefined) => {
+  const fetchDeliveryMen = async () => {
     try {
       const updateData = { orderStatus, paymentStatus }
       if (assignedDeliveryMan !== undefined) {
@@ -472,18 +413,6 @@ const AdminOrders = () => {
 
     return matchesSearch && matchesOrderStatus && matchesPaymentStatus
   })
-
-  const filteredRequests = requests.filter((req) => {
-    const matchSearch =
-      !requestSearchQuery ||
-      [req.customerName, req.customerPhone, req.city, req.address, req.product?.name]
-        .filter(Boolean)
-        .some((v) => String(v).toLowerCase().includes(requestSearchQuery.toLowerCase()))
-    const matchStatus = requestStatusFilter === 'all' || req.status === requestStatusFilter
-    return matchSearch && matchStatus
-  })
-
-  const newRequestsCount = requests.filter((r) => r.status === 'new').length
 
   if (loading) {
     return (
