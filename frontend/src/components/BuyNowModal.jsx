@@ -197,7 +197,7 @@ const BuyNowModal = () => {
             </div>
             <h3 className="text-2xl font-bold text-gray-900 mb-2">Thank you!</h3>
             <p className="text-gray-600 mb-6">
-              We have received your request. Our team will contact you shortly to confirm and complete your order.
+              Your order request has been sent to our team. We will contact you shortly to confirm details and arrange delivery.
             </p>
             <button
               type="button"

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { useLanguage } from '../context/LanguageContext'
 import api from '../utils/api'
 import ProductCard from '../components/ProductCard'
+import ProductCardSkeleton from '../components/ProductCardSkeleton'
 import Footer from '../components/Footer'
 import Chatbot from '../components/Chatbot'
 import toast from 'react-hot-toast'
@@ -276,19 +277,28 @@ const Home = () => {
       </section>
 
       {/* Product Gallery Section - Scrolling Images */}
-      {galleryProducts.length > 0 && (
-        <section 
+      {(loading || galleryProducts.length > 0) && (
+        <section
           id="gallery-section"
           ref={el => sectionRefs.current['gallery-section'] = el}
           className={`py-6 sm:py-8 md:py-12 bg-gray-50 overflow-hidden transition-all duration-700 ease-out ${
             visibleSections.has('gallery-section')
-              ? 'opacity-100 translate-y-0' 
+              ? 'opacity-100 translate-y-0'
               : 'opacity-0 translate-y-8'
           }`}
         >
           <div className="relative">
-            {/* Scrolling Gallery */}
-            <div className="flex animate-scroll gap-3 sm:gap-4 md:gap-6">
+            {loading ? (
+              <div className="flex gap-3 sm:gap-4 md:gap-6 overflow-hidden px-2">
+                {[...Array(6)].map((_, i) => (
+                  <div
+                    key={i}
+                    className="flex-shrink-0 w-32 h-32 sm:w-48 sm:h-48 md:w-64 md:h-64 lg:w-80 lg:h-80 rounded-lg sm:rounded-xl md:rounded-2xl bg-gray-200 animate-pulse"
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="flex animate-scroll gap-3 sm:gap-4 md:gap-6">
               {/* First set of images */}
               {galleryProducts.map((product, index) => (
                 <Link
@@ -342,6 +352,7 @@ const Home = () => {
                 </Link>
               ))}
             </div>
+            )}
           </div>
         </section>
       )}
@@ -350,8 +361,24 @@ const Home = () => {
       <section id="products" className="py-8 sm:py-12 md:py-16 bg-white">
         <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
           {loading ? (
-            <div className="flex justify-center items-center py-12 sm:py-16 md:py-24">
-              <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-b-2 border-[#FF385C]"></div>
+            /* Skeleton loader - 2 category blocks with product cards */
+            <div className="space-y-12 sm:space-y-16 md:space-y-20">
+              {[1, 2].map((block) => (
+                <div key={block} className="animate-pulse">
+                  <div className="flex items-center justify-between mb-6 sm:mb-8">
+                    <div className="space-y-2">
+                      <div className="h-8 sm:h-9 bg-gray-200 rounded-lg w-48 sm:w-56" />
+                      <div className="h-4 bg-gray-100 rounded-lg w-36" />
+                    </div>
+                    <div className="hidden sm:block h-5 bg-gray-200 rounded-lg w-20" />
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 md:gap-8">
+                    {[...Array(8)].map((_, i) => (
+                      <ProductCardSkeleton key={i} />
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
           ) : Object.keys(productsByCategory).length === 0 ? (
             <div className="text-center py-12 sm:py-16 md:py-24">

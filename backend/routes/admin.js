@@ -450,6 +450,45 @@ router.get('/requests', hasPermission('manageOrders'), async (req, res, next) =>
   }
 });
 
+// @route   PUT /api/admin/requests/:id
+// @desc    Update buy-now request status (for moderators)
+// @access  Private/Admin or Moderator with manageOrders permission
+router.put('/requests/:id', hasPermission('manageOrders'), async (req, res, next) => {
+  try {
+    const { status } = req.body;
+    if (!status || !['new', 'contacted', 'completed', 'cancelled'].includes(status)) {
+      return res.status(400).json({ message: 'Valid status required: new, contacted, completed, or cancelled' });
+    }
+    const request = await OrderRequest.findByIdAndUpdate(
+      req.params.id,
+      { status },
+      { new: true, runValidators: true }
+    ).populate('product', 'name price images');
+
+    if (!request) {
+      return res.status(404).json({ message: 'Request not found' });
+    }
+    res.json(request);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// @route   DELETE /api/admin/requests/:id
+// @desc    Delete a buy-now request
+// @access  Private/Admin or Moderator with manageOrders permission
+router.delete('/requests/:id', hasPermission('manageOrders'), async (req, res, next) => {
+  try {
+    const request = await OrderRequest.findByIdAndDelete(req.params.id);
+    if (!request) {
+      return res.status(404).json({ message: 'Request not found' });
+    }
+    res.json({ message: 'Request deleted successfully' });
+  } catch (error) {
+    next(error);
+  }
+});
+
 // @route   GET /api/admin/delivery-men
 // @desc    Get all delivery men
 // @access  Private/Admin or Moderator with manageOrders permission

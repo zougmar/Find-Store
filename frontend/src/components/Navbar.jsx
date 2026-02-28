@@ -9,28 +9,10 @@ import logoImage from '../images/logo.png'
 
 // Helper function to get image URL
 const getImageUrl = (imagePath) => {
-  if (!imagePath || imagePath.trim() === '') {
-    console.log('getImageUrl: No image path provided')
-    return null
-  }
-  
-  // If it's already a full URL, return as is
-  if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
-    console.log('getImageUrl: Full URL detected:', imagePath)
-    return imagePath
-  }
-  
-  // If it starts with /uploads, Vite proxy will handle it directly
-  if (imagePath.startsWith('/uploads/')) {
-    const url = imagePath // Vite proxy handles /uploads directly
-    console.log('getImageUrl: Upload path detected:', imagePath, '->', url)
-    return url
-  }
-  
-  // Otherwise, assume it's a relative path
-  const url = imagePath.startsWith('/') ? imagePath : `/uploads/${imagePath}`
-  console.log('getImageUrl: Relative path:', imagePath, '->', url)
-  return url
+  if (!imagePath || imagePath.trim() === '') return null
+  if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) return imagePath
+  if (imagePath.startsWith('/uploads/')) return imagePath
+  return imagePath.startsWith('/') ? imagePath : `/uploads/${imagePath}`
 }
 
 const Navbar = () => {
@@ -62,28 +44,27 @@ const Navbar = () => {
   // Listen for user updates and refresh user data
   useEffect(() => {
     const handleUserUpdate = async () => {
-      console.log('User update event received, refreshing user data...')
       setImageKey(prev => prev + 1)
-      // Refresh user data from AuthContext
-      if (fetchUser) {
-        await fetchUser()
-      }
+      if (fetchUser) await fetchUser()
     }
     window.addEventListener('userUpdated', handleUserUpdate)
     return () => window.removeEventListener('userUpdated', handleUserUpdate)
   }, [fetchUser])
 
-  // Debug: Log user data when it changes
+  // Close mobile menu on route change
   useEffect(() => {
-    if (user) {
-      console.log('Navbar - User data:', { 
-        name: user.name, 
-        email: user.email, 
-        image: user.image,
-        hasImage: !!user.image && user.image.trim() !== ''
-      })
+    setShowMobileMenu(false)
+  }, [location.pathname])
+
+  // Lock body scroll when mobile menu open
+  useEffect(() => {
+    if (showMobileMenu) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
     }
-  }, [user])
+    return () => { document.body.style.overflow = '' }
+  }, [showMobileMenu])
 
   // Update selected category based on URL
   useEffect(() => {
@@ -196,49 +177,47 @@ const Navbar = () => {
   }, [showCategoriesMenu, showLanguageMenu])
 
   return (
-    <nav className={`bg-white border-b border-gray-200 sticky top-0 z-50 ${isRTL ? 'text-right' : 'text-left'}`} dir={isRTL ? 'rtl' : 'ltr'}>
-      <div className="max-w-[1600px] mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
-        <div className={`flex justify-between items-center h-14 sm:h-16 md:h-20 ${isRTL ? 'flex-row-reverse' : ''}`}>
+    <nav className={`bg-white border-b border-gray-100 sticky top-0 z-50 shadow-sm ${isRTL ? 'text-right' : 'text-left'}`} dir={isRTL ? 'rtl' : 'ltr'}>
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-5 md:px-6 lg:px-8">
+        <div className={`flex justify-between items-center h-14 sm:h-16 md:h-[72px] ${isRTL ? 'flex-row-reverse' : ''}`}>
           {/* Logo */}
           <Link to="/" className={`flex items-center group flex-shrink-0 ${isRTL ? 'order-last' : 'order-first'}`}>
-            <div className="relative">
-              <img 
-                src={logoImage} 
-                alt="Find Store Logo" 
-                className="h-8 w-8 sm:h-10 sm:w-10 md:h-12 md:w-12 lg:h-14 lg:w-14 rounded-full object-cover border-2 border-gray-200 group-hover:border-[#FF385C] transition-all duration-200 shadow-sm group-hover:shadow-md"
-              />
-              <div className="absolute inset-0 rounded-full bg-gradient-to-br from-transparent via-transparent to-black/5 opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
-            </div>
+            <img
+              src={logoImage}
+              alt="Find Store Logo"
+              className="h-9 w-9 sm:h-10 sm:w-10 md:h-11 md:w-11 rounded-full object-cover border-2 border-gray-200 group-hover:border-[#FF385C] transition-all duration-200 shadow-sm"
+            />
           </Link>
           
-          {/* Mobile Menu Button */}
+          {/* Mobile Menu Button - visible only on small screens */}
           <button
             onClick={() => setShowMobileMenu(!showMobileMenu)}
-            className={`md:hidden p-1.5 sm:p-2 rounded-lg hover:bg-gray-100 active:bg-gray-200 transition-colors ${isRTL ? 'mr-2' : 'ml-2'}`}
-            aria-label="Toggle menu"
+            className="md:hidden p-2.5 rounded-xl hover:bg-gray-100 active:bg-gray-200 transition-colors touch-manipulation"
+            aria-label={showMobileMenu ? 'Close menu' : 'Open menu'}
+            aria-expanded={showMobileMenu}
           >
-            <svg className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
               {showMobileMenu ? (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
               ) : (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
               )}
             </svg>
           </button>
           
-          {/* Search Bar (Airbnb style) - Functional */}
-          <div className={`hidden md:flex flex-1 max-w-2xl ${isRTL ? 'mx-8' : 'mx-8'}`}>
-            <form 
-              className={`flex items-center w-full border border-gray-300 rounded-full px-2 py-1 shadow-sm hover:shadow-md transition-all bg-white ${isRTL ? 'flex-row-reverse' : ''}`}
+          {/* Search Bar - Desktop */}
+          <div className={`hidden md:flex flex-1 max-w-2xl ${isRTL ? 'mr-6 ml-4' : 'ml-6 mr-4'}`}>
+            <form
+              className={`flex items-center w-full bg-gray-50 border border-gray-200 rounded-full pl-4 pr-2 py-2 shadow-sm hover:shadow-md hover:border-gray-300 focus-within:ring-2 focus-within:ring-[#FF385C]/20 focus-within:border-[#FF385C] transition-all ${isRTL ? 'flex-row-reverse' : ''}`}
               onSubmit={handleSearch}
             >
-              <div 
+              <div
                 className={`flex-1 text-center px-4 py-2 hover:bg-gray-50 rounded-full transition-colors cursor-pointer ${isRTL ? 'text-right' : 'text-left'}`}
                 onClick={handleHomepageClick}
               >
-                <span className="text-sm font-bold text-gray-900">{t('homepage')}</span>
+                <span className="text-sm font-semibold text-gray-900">{t('homepage')}</span>
               </div>
-              <div className="w-px h-6 bg-gray-300"></div>
+              <div className="w-px h-6 bg-gray-200" />
               <div className={`category-dropdown-container flex-1 text-center px-4 py-2 hover:bg-gray-50 rounded-full transition-colors relative cursor-pointer ${isRTL ? 'text-right' : 'text-left'}`}>
                 <div onClick={handleCategoryToggle} className="w-full">
                   <span className="text-sm font-bold text-gray-900">{selectedCategory}</span>
@@ -289,20 +268,17 @@ const Navbar = () => {
                   </div>
                 )}
               </div>
-              <div className="w-px h-6 bg-gray-300"></div>
-              <div className={`flex items-center flex-1 px-4 ${isRTL ? 'flex-row-reverse' : ''}`}>
+              <div className="w-px h-6 bg-gray-200" />
+              <div className={`flex items-center flex-1 min-w-0 px-4 ${isRTL ? 'flex-row-reverse' : ''}`}>
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder={t('searchProducts')}
-                  className={`flex-1 outline-none text-sm text-gray-900 placeholder-gray-500 ${isRTL ? 'text-right' : 'text-left'}`}
+                  className={`flex-1 min-w-0 outline-none text-sm text-gray-900 placeholder-gray-400 bg-transparent ${isRTL ? 'text-right' : 'text-left'}`}
                   dir={isRTL ? 'rtl' : 'ltr'}
                 />
-                <button
-                  type="submit"
-                  className={`p-2 rounded-full hover:bg-gray-100 transition-colors ${isRTL ? 'order-last' : ''}`}
-                >
+                <button type="submit" className={`p-2 rounded-full hover:bg-gray-200 transition-colors flex-shrink-0 ${isRTL ? 'order-last' : ''}`} aria-label="Search">
                   <svg className="w-5 h-5 text-[#FF385C]" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
                   </svg>
@@ -312,12 +288,12 @@ const Navbar = () => {
           </div>
 
           {/* Right Menu */}
-          <div className={`flex items-center gap-1.5 sm:gap-2 md:gap-3 lg:gap-4 ${isRTL ? 'flex-row-reverse' : ''}`}>
-            {/* Language Selector */}
+          <div className={`flex items-center gap-2 sm:gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
+            {/* Language - always visible */}
             <div className="relative" ref={languageMenuRef}>
               <button
                 onClick={() => setShowLanguageMenu(!showLanguageMenu)}
-                className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-full hover:bg-gray-100 active:bg-gray-200 transition-colors border border-gray-200 hover:border-gray-300"
+                className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-2 rounded-full hover:bg-gray-100 transition-colors border border-gray-200 hover:border-gray-300 touch-manipulation"
                 aria-label="Change language"
               >
                 {language === 'en' ? (
@@ -333,7 +309,7 @@ const Navbar = () => {
               </button>
               
               {showLanguageMenu && (
-                <div className={`absolute top-full ${isRTL ? 'left-0' : 'right-0'} mt-2 w-40 bg-white rounded-xl shadow-lg border border-gray-200 py-2 z-50`}>
+                <div className={`absolute top-full ${isRTL ? 'left-0' : 'right-0'} mt-2 w-44 bg-white rounded-xl shadow-xl border border-gray-100 py-1.5 z-[100]`}>
                   <button
                     onClick={() => {
                       changeLanguage('en')
@@ -389,8 +365,8 @@ const Navbar = () => {
               )}
             </div>
 
-            {/* Categories Dropdown for Mobile/Tablet */}
-            <div className="md:hidden relative">
+            {/* Categories dropdown - only in search bar (desktop) and slide menu (mobile) */}
+            <div className="hidden relative category-dropdown-container">
               <button
                 onClick={() => setShowCategoriesMenu(!showCategoriesMenu)}
                 className="text-xs sm:text-sm font-medium text-gray-700 hover:text-gray-900 px-2 sm:px-3 py-1.5 sm:py-2 rounded-full hover:bg-gray-100 active:bg-gray-200 transition-colors"
@@ -500,12 +476,10 @@ const Navbar = () => {
                             alt={user.name || 'User'}
                             className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full object-cover border-2 sm:border-[3px] border-white shadow-lg ring-1 sm:ring-2 ring-gray-200 group-hover:ring-[#FF385C] transition-all duration-200"
                             onError={(e) => {
-                              console.error('Image load error - Original path:', user.image, 'Resolved URL:', getImageUrl(user.image))
                               e.target.style.display = 'none'
                               const fallback = e.target.parentElement.parentElement.querySelector('.profile-fallback')
                               if (fallback) fallback.style.display = 'flex'
                             }}
-                            onLoad={() => console.log('Image loaded successfully - Original path:', user.image, 'Resolved URL:', getImageUrl(user.image))}
                           />
                           <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-transparent via-transparent to-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
                         </div>
@@ -590,85 +564,198 @@ const Navbar = () => {
         </div>
       </div>
       
-      {/* Mobile Menu */}
-      {showMobileMenu && (
-        <div className={`md:hidden border-t border-gray-200 bg-white max-h-[calc(100vh-3.5rem)] overflow-y-auto ${isRTL ? 'text-right' : 'text-left'}`}>
-          <div className={`px-3 sm:px-4 py-3 sm:py-4 space-y-1 sm:space-y-2 ${isRTL ? 'text-right' : 'text-left'}`}>
-            <Link
-              to="/products"
-              onClick={() => setShowMobileMenu(false)}
-              className="block px-3 sm:px-4 py-2 text-sm font-bold text-gray-900 hover:bg-gray-100 active:bg-gray-200 rounded-lg transition-colors"
-            >
-              {t('products')}
-            </Link>
-            <Link
-              to="/about"
-              onClick={() => setShowMobileMenu(false)}
-              className="block px-3 sm:px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 active:bg-gray-200 rounded-lg transition-colors"
-            >
-              {t('about')}
-            </Link>
-            <Link
-              to="/contact"
-              onClick={() => setShowMobileMenu(false)}
-              className="block px-3 sm:px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 active:bg-gray-200 rounded-lg transition-colors"
-            >
-              {t('contact')}
-            </Link>
-            {user ? (
-              <>
-                {isAdmin && (
-                  <>
+      {/* Mobile menu backdrop + slide panel */}
+      <>
+        {/* Backdrop */}
+        <div
+          className={`md:hidden fixed inset-0 bg-black/40 backdrop-blur-sm z-40 transition-opacity duration-300 ${
+            showMobileMenu ? 'opacity-100' : 'opacity-0 pointer-events-none'
+          }`}
+          onClick={() => setShowMobileMenu(false)}
+          aria-hidden="true"
+        />
+        {/* Slide panel */}
+        <div
+          className={`md:hidden fixed top-0 bottom-0 w-full max-w-sm bg-white shadow-2xl z-50 overflow-y-auto transition-transform duration-300 ease-out ${
+            isRTL ? 'right-0' : 'left-0'
+          } ${showMobileMenu ? 'translate-x-0' : isRTL ? 'translate-x-full' : '-translate-x-full'}`}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Menu"
+        >
+          <div className={`flex flex-col h-full ${isRTL ? 'text-right' : 'text-left'}`} dir={isRTL ? 'rtl' : 'ltr'}>
+            {/* Mobile menu header */}
+            <div className="flex items-center justify-between p-4 border-b border-gray-100">
+              <span className="text-lg font-bold text-gray-900">{t('homepage')}</span>
+              <button
+                onClick={() => setShowMobileMenu(false)}
+                className="p-2.5 rounded-xl hover:bg-gray-100 transition-colors"
+                aria-label="Close menu"
+              >
+                <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Search in mobile menu */}
+            <div className="p-4 border-b border-gray-100">
+              <form onSubmit={(e) => { handleSearch(e); setShowMobileMenu(false); }} className="flex gap-2">
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder={t('searchProducts')}
+                  className="flex-1 px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#FF385C]/20 focus:border-[#FF385C] outline-none text-sm"
+                  dir={isRTL ? 'rtl' : 'ltr'}
+                />
+                <button type="submit" className="p-3 rounded-xl bg-[#FF385C] text-white">
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
+                  </svg>
+                </button>
+              </form>
+            </div>
+
+            {/* Nav links - large touch targets */}
+            <nav className="flex-1 p-4 space-y-1">
+              <Link
+                to="/products"
+                onClick={() => setShowMobileMenu(false)}
+                className="flex items-center gap-3 px-4 py-3.5 rounded-xl text-gray-900 font-semibold hover:bg-gray-100 active:bg-gray-100 transition-colors"
+              >
+                <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                </svg>
+                {t('products')}
+              </Link>
+              <Link
+                to="/cart"
+                onClick={() => setShowMobileMenu(false)}
+                className="flex items-center justify-between gap-3 px-4 py-3.5 rounded-xl text-gray-900 font-semibold hover:bg-gray-100 active:bg-gray-100 transition-colors"
+              >
+                <span className="flex items-center gap-3">
+                  <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg>
+                  {t('cart')}
+                </span>
+                {getCartItemsCount() > 0 && (
+                  <span className="bg-[#FF385C] text-white text-xs font-bold rounded-full min-w-[1.25rem] h-5 px-1.5 flex items-center justify-center">
+                    {getCartItemsCount() > 99 ? '99+' : getCartItemsCount()}
+                  </span>
+                )}
+              </Link>
+              <Link
+                to="/about"
+                onClick={() => setShowMobileMenu(false)}
+                className="flex items-center gap-3 px-4 py-3.5 rounded-xl text-gray-700 font-medium hover:bg-gray-100 transition-colors"
+              >
+                <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                {t('about')}
+              </Link>
+              <Link
+                to="/contact"
+                onClick={() => setShowMobileMenu(false)}
+                className="flex items-center gap-3 px-4 py-3.5 rounded-xl text-gray-700 font-medium hover:bg-gray-100 transition-colors"
+              >
+                <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+                {t('contact')}
+              </Link>
+
+              {/* Categories in mobile menu */}
+              <div className="pt-2 pb-1">
+                <p className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('categories')}</p>
+                <button
+                  type="button"
+                  onClick={() => { navigate('/products'); setShowMobileMenu(false); }}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-gray-100 transition-colors text-left"
+                >
+                  {t('allCategories')}
+                </button>
+                {categories.slice(0, 8).map((category) => {
+                  const subcategories = categorySubcategories[category] || []
+                  return (
+                    <div key={category}>
+                      <button
+                        type="button"
+                        onClick={() => { handleCategoryClick(category); setShowMobileMenu(false); }}
+                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-gray-100 transition-colors ${isRTL ? 'text-right flex-row-reverse' : 'text-left'}`}
+                      >
+                        {category}
+                      </button>
+                      {subcategories.slice(0, 4).map((subcategory) => (
+                        <button
+                          key={subcategory}
+                          type="button"
+                          onClick={() => { handleSubcategoryClick(category, subcategory); setShowMobileMenu(false); }}
+                          className={`w-full py-2.5 px-4 ${isRTL ? 'pr-8' : 'pl-8'} text-sm text-gray-600 hover:bg-gray-50 rounded-lg transition-colors ${isRTL ? 'text-right' : 'text-left'}`}
+                        >
+                          {subcategory}
+                        </button>
+                      ))}
+                    </div>
+                  )
+                })}
+              </div>
+            </nav>
+
+            {/* User / Auth at bottom */}
+            <div className="p-4 border-t border-gray-100 space-y-2">
+              {user ? (
+                <>
+                  {isAdmin && (
                     <Link
                       to="/admin"
                       onClick={() => setShowMobileMenu(false)}
-                      className="block px-3 sm:px-4 py-2 text-sm font-bold text-gray-700 hover:bg-gray-100 active:bg-gray-200 rounded-lg transition-colors"
+                      className="flex items-center gap-3 px-4 py-3.5 rounded-xl font-semibold text-gray-900 hover:bg-gray-100 transition-colors"
                     >
                       {t('admin')}
                     </Link>
-                    <Link
-                      to="/profile"
-                      onClick={() => setShowMobileMenu(false)}
-                      className="block px-3 sm:px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 active:bg-gray-200 rounded-lg transition-colors"
-                    >
-                      {t('profile')}
-                    </Link>
-                  </>
-                )}
-                <button
-                  onClick={() => {
-                    handleLogout()
-                    setShowMobileMenu(false)
-                  }}
-                  className={`flex items-center gap-2 w-full ${isRTL ? 'text-right flex-row-reverse' : 'text-left'} px-3 sm:px-4 py-2 sm:py-2.5 text-sm font-semibold text-red-600 hover:text-red-700 active:text-red-800 hover:bg-red-50 active:bg-red-100 rounded-lg transition-all duration-200 border border-red-200 hover:border-red-300 mt-2`}
-                >
-                  <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                  </svg>
-                  <span>{t('logout')}</span>
-                </button>
-              </>
-            ) : (
-              <>
-                <Link
-                  to="/login"
-                  onClick={() => setShowMobileMenu(false)}
-                  className="block px-3 sm:px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 active:bg-gray-200 rounded-lg transition-colors"
-                >
-                  {t('login')}
-                </Link>
-                <Link
-                  to="/register"
-                  onClick={() => setShowMobileMenu(false)}
-                  className="block px-3 sm:px-4 py-2 text-sm font-semibold text-white bg-[#FF385C] hover:bg-[#E61E4D] active:bg-[#D91A47] rounded-lg transition-colors text-center"
-                >
-                  {t('signup')}
-                </Link>
-              </>
-            )}
+                  )}
+                  <Link
+                    to="/profile"
+                    onClick={() => setShowMobileMenu(false)}
+                    className="flex items-center gap-3 px-4 py-3.5 rounded-xl font-medium text-gray-700 hover:bg-gray-100 transition-colors"
+                  >
+                    {t('profile')}
+                  </Link>
+                  <button
+                    onClick={() => { handleLogout(); setShowMobileMenu(false); }}
+                    className={`flex items-center gap-3 w-full px-4 py-3.5 rounded-xl font-semibold text-red-600 hover:bg-red-50 transition-colors ${isRTL ? 'flex-row-reverse' : ''}`}
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
+                    {t('logout')}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Link
+                    to="/login"
+                    onClick={() => setShowMobileMenu(false)}
+                    className="block w-full px-4 py-3.5 rounded-xl font-medium text-gray-700 hover:bg-gray-100 transition-colors text-center"
+                  >
+                    {t('login')}
+                  </Link>
+                  <Link
+                    to="/register"
+                    onClick={() => setShowMobileMenu(false)}
+                    className="block w-full px-4 py-3.5 rounded-xl font-semibold text-white bg-[#FF385C] hover:bg-[#E61E4D] transition-colors text-center"
+                  >
+                    {t('signup')}
+                  </Link>
+                </>
+              )}
+            </div>
           </div>
         </div>
-      )}
+      </>
     </nav>
   )
 }
