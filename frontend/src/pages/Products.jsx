@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom'
 import { useLanguage } from '../context/LanguageContext'
 import api from '../utils/api'
 import ProductCard from '../components/ProductCard'
+import ProductCardSkeleton from '../components/ProductCardSkeleton'
 import Footer from '../components/Footer'
 import toast from 'react-hot-toast'
 import { formatCurrency } from '../utils/currency'
@@ -558,9 +559,19 @@ const Products = () => {
       <section className="py-8 sm:py-12 bg-gray-50 min-h-screen">
         <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
           {loading ? (
-            <div className="flex flex-col justify-center items-center py-24 bg-white rounded-xl">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#FF385C] mb-4"></div>
-              <p className="text-gray-500">Loading products...</p>
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+              {/* Skeleton category header */}
+              <div className="bg-gradient-to-r from-gray-50 to-white border-b border-gray-200 px-6 py-4 sm:py-5 animate-pulse">
+                <div className="h-8 bg-gray-200 rounded-lg w-1/3 mb-2" />
+                <div className="h-4 bg-gray-200 rounded-lg w-1/4" />
+              </div>
+              <div className="p-4 sm:p-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                  {Array.from({ length: 9 }).map((_, i) => (
+                    <ProductCardSkeleton key={i} />
+                  ))}
+                </div>
+              </div>
             </div>
           ) : products.length === 0 ? (
             <div className="text-center py-24 bg-white rounded-xl shadow-sm border border-gray-200">
