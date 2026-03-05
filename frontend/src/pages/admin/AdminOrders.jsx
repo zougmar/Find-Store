@@ -1635,7 +1635,6 @@ const AdminOrders = () => {
                 </table>
               </div>
             </div>
-          </div>
           </>
         )}
       </div>
