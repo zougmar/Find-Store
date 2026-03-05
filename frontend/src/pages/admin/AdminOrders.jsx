@@ -889,7 +889,7 @@ const AdminOrders = () => {
                                   {order.user?.name || order.paymentDetails?.customerName || 'N/A'}
                                   {!order.user && <span className="ml-1.5 text-xs font-normal text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded">Guest</span>}
                                 </p>
-                                <p className="text-xs text-gray-500">{order.user?.email || order.paymentDetails?.customerPhone || ''}</p>
+                                <p className="text-xs text-gray-500">{order.user?.email || order.paymentDetails?.customerEmail || order.paymentDetails?.customerPhone || ''}</p>
                                 {!order.user && order.paymentDetails?.city && (
                                   <p className="text-xs text-gray-400">{order.paymentDetails.city}{order.paymentDetails?.address ? ` · ${order.paymentDetails.address.slice(0, 20)}${order.paymentDetails.address.length > 20 ? '…' : ''}` : ''}</p>
                                 )}

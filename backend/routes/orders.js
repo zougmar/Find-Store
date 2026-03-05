@@ -12,7 +12,7 @@ const router = express.Router();
 // @access  Public
 router.post('/guest', async (req, res, next) => {
   try {
-    const { items, customerName, customerPhone, city, address } = req.body;
+    const { items, customerName, customerPhone, customerEmail, city, address, country } = req.body;
 
     if (!items || items.length === 0) {
       return res.status(400).json({ message: 'No order items' });
@@ -53,14 +53,16 @@ router.post('/guest', async (req, res, next) => {
       shippingAddress: {
         street: address,
         city,
-        country: req.body.country || ''
+        country: country || ''
       },
       paymentMethod: 'cash',
       paymentDetails: {
         customerName,
         customerPhone,
+        customerEmail: customerEmail || '',
         city,
-        address
+        address,
+        country: country || ''
       },
       paymentStatus: 'pending',
       orderStatus: 'new',
