@@ -13,10 +13,8 @@ const BuyNowModal = () => {
 
   const [form, setForm] = useState({
     customerName: '',
-    customerEmail: '',
     customerPhone: '',
     city: '',
-    country: '',
     address: ''
   })
   const [submitting, setSubmitting] = useState(false)
@@ -32,10 +30,8 @@ const BuyNowModal = () => {
       setThankYou(false)
       setForm({
         customerName: '',
-        customerEmail: '',
         customerPhone: '',
         city: '',
-        country: '',
         address: ''
       })
     }
@@ -64,9 +60,7 @@ const BuyNowModal = () => {
         customerName: form.customerName.trim(),
         customerPhone: form.customerPhone.trim(),
         city: form.city.trim(),
-        address: form.address.trim(),
-        ...(form.country?.trim() && { country: form.country.trim() }),
-        ...(form.customerEmail?.trim() && { customerEmail: form.customerEmail.trim() })
+        address: form.address.trim()
       })
       setThankYou(true)
     } catch (err) {
@@ -168,24 +162,6 @@ const BuyNowModal = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('email') || 'Email'}</label>
-                  <div className="relative">
-                    <span className={`absolute ${iconPos} top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none`}>
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
-                    </span>
-                    <input
-                      type="email"
-                      name="customerEmail"
-                      value={form.customerEmail}
-                      onChange={handleChange}
-                      placeholder="email@example.com"
-                      className={`w-full ${inputPad} py-3 border border-gray-200 rounded-xl focus:border-[#FF385C] focus:ring-2 focus:ring-[#FF385C]/20 outline-none transition-all text-gray-900`}
-                      disabled={submitting}
-                    />
-                  </div>
-                </div>
-
-                <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">
                     {t('phoneNumber') || 'Phone number'} <span className="text-red-500">*</span>
                   </label>
@@ -206,43 +182,24 @@ const BuyNowModal = () => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                      {t('city') || 'City'} <span className="text-red-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <span className={`absolute ${iconPos} top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none`}>
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /></svg>
-                      </span>
-                      <input
-                        type="text"
-                        name="city"
-                        value={form.city}
-                        onChange={handleChange}
-                        placeholder={t('city') || 'City'}
-                        className={`w-full ${inputPad} py-3 border border-gray-200 rounded-xl focus:border-[#FF385C] focus:ring-2 focus:ring-[#FF385C]/20 outline-none transition-all text-gray-900`}
-                        required
-                        disabled={submitting}
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('country') || 'Country'}</label>
-                    <div className="relative">
-                      <span className={`absolute ${iconPos} top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none`}>
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1.61c0 .823.15 1.64.444 2.41.295.77.723 1.465 1.272 2.06.548.595 1.202 1.065 1.879 1.388.677.323 1.366.5 2.056.5h.006a2 2 0 012 2v.5" /></svg>
-                      </span>
-                      <input
-                        type="text"
-                        name="country"
-                        value={form.country}
-                        onChange={handleChange}
-                        placeholder={t('country') || 'Country'}
-                        className={`w-full ${inputPad} py-3 border border-gray-200 rounded-xl focus:border-[#FF385C] focus:ring-2 focus:ring-[#FF385C]/20 outline-none transition-all text-gray-900`}
-                        disabled={submitting}
-                      />
-                    </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                    {t('city') || 'City'} <span className="text-red-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <span className={`absolute ${iconPos} top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none`}>
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /></svg>
+                    </span>
+                    <input
+                      type="text"
+                      name="city"
+                      value={form.city}
+                      onChange={handleChange}
+                      placeholder={t('city') || 'City'}
+                      className={`w-full ${inputPad} py-3 border border-gray-200 rounded-xl focus:border-[#FF385C] focus:ring-2 focus:ring-[#FF385C]/20 outline-none transition-all text-gray-900`}
+                      required
+                      disabled={submitting}
+                    />
                   </div>
                 </div>
 
