@@ -219,380 +219,555 @@ I would like to know more about this product. Can you help me?`
   }
 
   return (
-    <div className={`min-h-screen bg-white ${isRTL ? 'text-right' : 'text-left'}`} dir={isRTL ? 'rtl' : 'ltr'} lang={isRTL ? 'ar' : language}>
-      {/* Hero Section */}
-    
-{/* Modern Product Hero — replace your existing Hero Section */}
-<section
-  className="bg-white text-gray-900"
-  dir={isRTL ? 'rtl' : 'ltr'}
-  lang={language}
->
-  <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-16">
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center">
+   
+return (
+  <div
+    className="min-h-screen bg-white text-gray-900"
+    dir={isRTL ? 'rtl' : 'ltr'}
+    lang={language}
+  >
+    {/* HERO / PRODUCT DETAILS */}
+    <section className="bg-white">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-14">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-start">
 
-      {/* Product Gallery */}
-      <div className="min-w-0">
-        <div className="relative bg-gray-50 rounded-3xl overflow-hidden">
-          {product.images?.length > 0 ? (
-            <img
-              src={product.images[selectedImageIndex]}
-              alt={product.name}
-              className="w-full aspect-square object-contain p-5 md:p-10"
-              onError={(e) => {
-                e.currentTarget.src =
-                  'https://via.placeholder.com/800x800?text=Product'
-              }}
-            />
-          ) : (
-            <div className="aspect-square flex items-center justify-center text-gray-400">
-              {t('noImageAvailable')}
-            </div>
-          )}
-
-          {hasDiscount && (
-            <span className="absolute top-4 left-4 bg-[#FF385C] text-white text-sm font-bold px-4 py-2 rounded-full">
-              -{discountPercentage}%
-            </span>
-          )}
-
-          {product.stock > 0 && (
-            <span className="absolute bottom-4 left-4 bg-white text-green-700 text-xs font-semibold px-3 py-2 rounded-full shadow-sm">
-              ✓ {t('inStockLabel')}
-            </span>
-          )}
-        </div>
-
-        {product.images?.length > 1 && (
-          <div className="flex gap-3 mt-4 overflow-x-auto pb-2">
-            {product.images.map((image, index) => (
-              <button
-                key={index}
-                type="button"
-                onClick={() => setSelectedImageIndex(index)}
-                aria-label={`View product image ${index + 1}`}
-                className={`w-20 h-20 flex-shrink-0 rounded-xl overflow-hidden border-2 ${
-                  selectedImageIndex === index
-                    ? 'border-[#FF385C]'
-                    : 'border-gray-100 hover:border-gray-300'
-                }`}
-              >
+          {/* PRODUCT GALLERY */}
+          <div className="lg:sticky lg:top-8">
+            <div className="relative bg-gray-50 rounded-3xl overflow-hidden border border-gray-100">
+              {product.images?.length > 0 ? (
                 <img
-                  src={image}
-                  alt={`${product.name} ${index + 1}`}
-                  className="w-full h-full object-cover"
+                  src={product.images[selectedImageIndex]}
+                  alt={product.name}
+                  className="w-full aspect-square object-contain p-5 md:p-10"
+                  onError={(e) => {
+                    e.currentTarget.src =
+                      'https://via.placeholder.com/800x800?text=Product'
+                  }}
                 />
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
+              ) : (
+                <div className="aspect-square flex items-center justify-center text-gray-400">
+                  {t('noImageAvailable')}
+                </div>
+              )}
 
-      {/* Product Information */}
-      <div className="space-y-5">
-        <div className="flex flex-wrap gap-2 items-center">
-          <span className="text-xs font-semibold uppercase tracking-wider text-[#FF385C] bg-rose-50 px-3 py-2 rounded-full">
-            {product.category}
-          </span>
-          {product.subcategory && (
-            <span className="text-xs text-gray-500 bg-gray-100 px-3 py-2 rounded-full">
-              {product.subcategory}
-            </span>
-          )}
-        </div>
-
-        <h1 className="text-3xl md:text-5xl font-bold tracking-tight leading-tight">
-          {product.name}
-        </h1>
-
-        <div className="flex items-center gap-2 text-sm">
-          <span className="text-amber-500 tracking-wider">★★★★★</span>
-          <span className="font-semibold">
-            {product.averageRating?.toFixed(1) || '0.0'}
-          </span>
-          <span className="text-gray-500">
-            ({product.numReviews || 0} {t('reviews')})
-          </span>
-        </div>
-
-        {product.description && (
-          <p className="text-gray-600 leading-7 line-clamp-4">
-            {product.description}
-          </p>
-        )}
-
-        <div className="border-y border-gray-100 py-5">
-          <div className="flex flex-wrap items-center gap-3">
-            <span className="text-3xl md:text-4xl font-bold text-gray-900">
-              {formatCurrency(discountedPrice)}
-            </span>
-
-            {hasDiscount && (
-              <>
-                <span className="text-lg text-gray-400 line-through">
-                  {formatCurrency(originalPrice)}
+              {hasDiscount && (
+                <span className="absolute top-5 left-5 bg-[#FF385C] text-white text-sm font-bold px-4 py-2 rounded-full shadow-sm">
+                  -{discountPercentage}%
                 </span>
-                <span className="bg-rose-50 text-[#FF385C] text-xs font-bold px-3 py-2 rounded-full">
-                  {t('save')} {discountPercentage}%
+              )}
+
+              {product.stock > 0 && (
+                <span className="absolute bottom-5 left-5 bg-white text-green-700 text-xs font-semibold px-4 py-2 rounded-full shadow-sm">
+                  ● {t('inStockLabel')}
                 </span>
-              </>
+              )}
+            </div>
+
+            {/* THUMBNAILS */}
+            {product.images?.length > 1 && (
+              <div className="flex gap-3 mt-4 overflow-x-auto pb-2">
+                {product.images.map((image, index) => (
+                  <button
+                    key={index}
+                    type="button"
+                    onClick={() => setSelectedImageIndex(index)}
+                    aria-label={`View image ${index + 1}`}
+                    className={`w-20 h-20 flex-shrink-0 rounded-xl overflow-hidden border-2 transition ${
+                      selectedImageIndex === index
+                        ? 'border-[#FF385C]'
+                        : 'border-gray-100 hover:border-gray-300'
+                    }`}
+                  >
+                    <img
+                      src={image}
+                      alt={`${product.name} ${index + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                  </button>
+                ))}
+              </div>
             )}
           </div>
 
-          {hasDiscount && (
-            <p className="text-sm text-green-700 mt-2">
-              {t('youSaveAmount')} {formatCurrency(originalPrice - discountedPrice)}
-            </p>
-          )}
-        </div>
-
-        {product.stock > 0 && (
-          <div className="flex items-center justify-between gap-4">
-            <span className="text-sm font-medium text-gray-700">
-              {t('quantity')}
-            </span>
-            <div className="flex items-center gap-4 border border-gray-200 rounded-full px-3 py-2">
-              <button
-                type="button"
-                onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                className="w-8 h-8 rounded-full hover:bg-gray-100 font-semibold"
-                aria-label="Decrease quantity"
-              >
-                −
-              </button>
-              <span className="font-semibold min-w-5 text-center">
-                {quantity}
+          {/* PRODUCT INFORMATION */}
+          <div className="space-y-5">
+            <div className="flex flex-wrap gap-2 items-center">
+              <span className="text-xs font-semibold uppercase tracking-wide text-[#FF385C] bg-rose-50 px-3 py-2 rounded-full">
+                {product.category}
               </span>
+              {product.subcategory && (
+                <span className="text-xs text-gray-500 bg-gray-100 px-3 py-2 rounded-full">
+                  {product.subcategory}
+                </span>
+              )}
+            </div>
+
+            <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight leading-tight">
+              {product.name}
+            </h1>
+
+            {/* RATING */}
+            <div className="flex items-center gap-2 text-sm">
+              <span className="text-amber-400 tracking-wider text-lg">
+                {'★'.repeat(Math.min(5, Math.max(0, Math.floor(product.averageRating || 0))))}
+                <span className="text-gray-200">
+                  {'★'.repeat(5 - Math.min(5, Math.max(0, Math.floor(product.averageRating || 0))))}
+                </span>
+              </span>
+              <span className="font-semibold">
+                {product.averageRating?.toFixed(1) || '0.0'}
+              </span>
+              <span className="text-gray-500">
+                ({product.numReviews || 0} {t('reviews')})
+              </span>
+            </div>
+
+            {/* DESCRIPTION */}
+            {product.description && (
+              <p className="text-gray-600 leading-7 text-base">
+                {product.description}
+              </p>
+            )}
+
+            {/* PRICE */}
+            <div className="border-y border-gray-100 py-5">
+              <div className="flex flex-wrap items-center gap-3">
+                <span className="text-3xl md:text-4xl font-bold">
+                  {formatCurrency(discountedPrice)}
+                </span>
+
+                {hasDiscount && (
+                  <>
+                    <span className="text-lg text-gray-400 line-through">
+                      {formatCurrency(originalPrice)}
+                    </span>
+                    <span className="bg-rose-50 text-[#FF385C] text-xs font-bold px-3 py-2 rounded-full">
+                      -{discountPercentage}%
+                    </span>
+                  </>
+                )}
+              </div>
+
+              {hasDiscount && (
+                <p className="text-sm text-green-700 mt-2">
+                  {t('youSaveAmount')} {formatCurrency(originalPrice - discountedPrice)}
+                </p>
+              )}
+            </div>
+
+            {/* QUANTITY */}
+            {product.stock > 0 && (
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="font-semibold text-sm">
+                    {t('quantity')}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {product.stock} {t('available')}
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-4 border border-gray-200 rounded-full p-2">
+                  <button
+                    type="button"
+                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                    className="w-9 h-9 rounded-full hover:bg-gray-100 font-semibold"
+                    aria-label="Decrease quantity"
+                  >
+                    −
+                  </button>
+                  <span className="font-bold min-w-5 text-center">
+                    {quantity}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setQuantity(Math.min(product.stock, quantity + 1))}
+                    className="w-9 h-9 rounded-full hover:bg-gray-100 font-semibold"
+                    aria-label="Increase quantity"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* PURCHASE BUTTONS */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
               <button
                 type="button"
-                onClick={() => setQuantity(Math.min(product.stock, quantity + 1))}
-                className="w-8 h-8 rounded-full hover:bg-gray-100 font-semibold"
-                aria-label="Increase quantity"
+                onClick={handleBuyNow}
+                disabled={product.stock === 0}
+                className="w-full bg-[#FF385C] hover:bg-[#E61E4D] text-white font-bold py-4 px-5 rounded-xl transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                +
+                {product.stock > 0
+                  ? t('buyNow') || 'Buy now'
+                  : t('outOfStockLabel') || 'Out of Stock'}
+              </button>
+
+              <button
+                type="button"
+                onClick={handleWhatsApp}
+                className="w-full bg-[#25D366] hover:bg-[#20BA5A] text-white font-semibold py-4 px-5 rounded-xl transition-colors"
+              >
+                {t('contactViaWhatsApp')}
               </button>
             </div>
-          </div>
-        )}
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-          <button
-            type="button"
-            onClick={handleBuyNow}
-            disabled={product.stock === 0}
-            className="w-full bg-[#FF385C] hover:bg-[#E61E4D] text-white font-bold py-4 px-6 rounded-xl transition-colors disabled:opacity-50 shadow-sm"
-          >
-            {product.stock > 0
-              ? t('buyNow') || 'Buy now'
-              : t('outOfStockLabel') || 'Out of Stock'}
-          </button>
-
-          <button
-            type="button"
-            onClick={handleWhatsApp}
-            className="w-full border border-gray-200 hover:bg-gray-50 text-gray-900 font-semibold py-4 px-5 rounded-xl transition-colors"
-          >
-            {t('contactViaWhatsApp')}
-          </button>
-        </div>
-
-        <div className="grid grid-cols-2 gap-3 pt-3">
-          <div className="bg-gray-50 rounded-xl p-4">
-            <p className="text-sm font-semibold text-gray-800">
-              ✓ {language === 'ar' ? 'طلب سهل' : language === 'fr' ? 'Commande facile' : 'Easy ordering'}
-            </p>
-            <p className="text-xs text-gray-500 mt-1">
-              {language === 'ar' ? 'معلومات بسيطة لإرسال الطلب' : language === 'fr' ? 'Informations simples' : 'Simple order form'}
-            </p>
-          </div>
-          <div className="bg-gray-50 rounded-xl p-4">
-            <p className="text-sm font-semibold text-gray-800">
-              ✓ WhatsApp
-            </p>
-            <p className="text-xs text-gray-500 mt-1">
-              {language === 'ar' ? 'تواصل معنا بسهولة' : language === 'fr' ? 'Contactez-nous facilement' : 'Contact us directly'}
-            </p>
+            {/* TRUST INFORMATION */}
+            <div className="grid grid-cols-2 gap-3 pt-3">
+              <div className="bg-gray-50 rounded-xl p-4">
+                <p className="font-semibold text-sm">
+                  ✓ {language === 'ar' ? 'طلب سهل' : language === 'fr' ? 'Commande facile' : 'Easy ordering'}
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  {language === 'ar' ? 'معلومات بسيطة لإرسال الطلب' : language === 'fr' ? 'Commande en quelques étapes' : 'Simple order process'}
+                </p>
+              </div>
+              <div className="bg-gray-50 rounded-xl p-4">
+                <p className="font-semibold text-sm">
+                  ✓ WhatsApp
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  {language === 'ar' ? 'تواصل معنا بسهولة' : language === 'fr' ? 'Contactez-nous facilement' : 'Contact us directly'}
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  </div>
-</section>
+    </section>
 
+    {/* DESCRIPTION AND ORDER FORM */}
+    <section className="bg-gray-50 border-y border-gray-100 py-12 md:py-16">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
-      {/* Product Features Section */}
-      {product.features && product.features.length > 0 && (
-        <section className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-20 ${isRTL ? 'text-right' : 'text-left'}`} dir={isRTL ? 'rtl' : 'ltr'} lang={isRTL ? 'ar' : language}>
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-lg p-8 md:p-12">
-            <div className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-10 pb-8 border-b-2 border-gray-100 ${isRTL ? 'sm:flex-row-reverse' : ''}`}>
-              <div className={isRTL ? 'text-right' : 'text-left'}>
-                <h2 className={`text-3xl md:text-4xl font-bold text-gray-900 mb-3 ${isRTL ? 'text-right' : 'text-left'} ${isRTL ? 'font-semibold' : ''}`}>{t('productFeatures') || 'Product Features'}</h2>
-                <p className={`text-gray-600 text-base md:text-lg ${isRTL ? 'text-right' : 'text-left'} ${isRTL ? 'leading-relaxed' : ''}`}>{t('productFeaturesSubtitle') || 'Key features and benefits of this product'}</p>
-              </div>
+          <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 p-6 md:p-9">
+            <p className="text-sm font-semibold text-[#FF385C] mb-2">
+              {t('productOverview')}
+            </p>
+            <h2 className="text-2xl md:text-3xl font-bold mb-5">
+              {t('productOverviewSubtitle') || 'Discover the product'}
+            </h2>
+            <div className="text-gray-600 leading-8 whitespace-pre-line">
+              {product.description || t('noImageAvailable')}
             </div>
-            <div className="space-y-6">
-              {product.features.map((feature, index) => (
-                <div key={index} className={`p-6 md:p-8 bg-gradient-to-br ${isRTL ? 'from-gray-50 to-gray-100/50' : 'from-gray-50 to-gray-100/50'} rounded-xl border-2 border-gray-200 hover:border-[#FF385C]/30 transition-all duration-300 shadow-sm hover:shadow-md`}>
-                  <div className={`flex items-start gap-4 md:gap-6 ${isRTL ? 'flex-row-reverse' : ''}`}>
-                    <div className={`flex-shrink-0 w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-[#FF385C] to-[#FF6B8A] rounded-full flex items-center justify-center text-white font-bold text-base md:text-lg shadow-lg ${isRTL ? 'ml-4' : 'mr-0'}`}>
-                      {index + 1}
-                    </div>
-                    <p className={`text-gray-700 leading-relaxed text-base md:text-lg flex-1 ${isRTL ? 'text-right font-medium' : 'text-left'} ${isRTL ? 'leading-loose' : ''}`} dir={isRTL ? 'rtl' : 'ltr'} lang={isRTL ? 'ar' : language}>
-                      {feature}
-                    </p>
-                  </div>
+          </div>
+
+          {/* ORDER FORM */}
+          <div className="bg-white rounded-2xl border border-gray-100 p-6 md:p-7 shadow-sm">
+            <h3 className="text-xl font-bold mb-2">
+              {language === 'ar'
+                ? 'اطلب الآن'
+                : language === 'fr'
+                ? 'Commander maintenant'
+                : 'Order now'}
+            </h3>
+
+            <p className="text-sm text-gray-500 mb-6">
+              {language === 'ar'
+                ? 'أدخل معلوماتك وسنتصل بك لتأكيد الطلب.'
+                : language === 'fr'
+                ? 'Entrez vos informations pour confirmer votre commande.'
+                : 'Enter your details and we will contact you to confirm your order.'}
+            </p>
+
+            <form onSubmit={handleSubmitLead} className="space-y-4">
+              {[
+                {
+                  key: 'fullName',
+                  type: 'text',
+                  label: language === 'ar' ? 'الاسم الكامل' : language === 'fr' ? 'Nom complet' : 'Full name',
+                  placeholder: language === 'ar' ? 'أدخل اسمك الكامل' : language === 'fr' ? 'Votre nom complet' : 'Your full name'
+                },
+                {
+                  key: 'phone',
+                  type: 'tel',
+                  label: language === 'ar' ? 'رقم الهاتف' : language === 'fr' ? 'Téléphone' : 'Phone number',
+                  placeholder: '+212...'
+                },
+                {
+                  key: 'city',
+                  type: 'text',
+                  label: language === 'ar' ? 'المدينة' : language === 'fr' ? 'Ville' : 'City',
+                  placeholder: language === 'ar' ? 'مدينتك' : language === 'fr' ? 'Votre ville' : 'Your city'
+                }
+              ].map((field) => (
+                <div key={field.key}>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    {field.label} *
+                  </label>
+                  <input
+                    type={field.type}
+                    required
+                    value={lead[field.key]}
+                    onChange={(e) =>
+                      setLead({ ...lead, [field.key]: e.target.value })
+                    }
+                    placeholder={field.placeholder}
+                    className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-[#FF385C] focus:ring-2 focus:ring-rose-100 transition"
+                  />
                 </div>
               ))}
-            </div>
-          </div>
-        </section>
-      )}
 
-      {/* Reviews Section */}
-      <section className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-20 ${isRTL ? 'text-right' : 'text-left'}`} dir={isRTL ? 'rtl' : 'ltr'} lang={isRTL ? 'ar' : language}>
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-8 md:p-12">
-          <div className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-10 pb-8 border-b-2 border-gray-100 ${isRTL ? 'sm:flex-row-reverse' : ''}`}>
-            <div className={isRTL ? 'text-right' : 'text-left'}>
-              <h2 className={`text-3xl md:text-4xl font-bold text-gray-900 mb-3 ${isRTL ? 'text-right' : 'text-left'} ${isRTL ? 'font-semibold' : ''}`}>{t('customerReviews') || t('reviews') || 'Customer Reviews'}</h2>
-              <p className={`text-gray-600 text-base md:text-lg ${isRTL ? 'text-right' : 'text-left'} ${isRTL ? 'leading-relaxed' : ''}`}>{t('seeWhatCustomersSaying')}</p>
-            </div>
-            <div className={`flex items-center gap-3 bg-gray-50 px-6 py-4 rounded-xl border border-gray-200 ${isRTL ? 'flex-row-reverse' : ''}`}>
-              <div className="flex items-center gap-1">
-                {[...Array(5)].map((_, i) => (
-                  <span key={i} className={`text-xl ${i < Math.floor(product.averageRating || 0) ? 'text-amber-400' : 'text-gray-300'}`}>
-                    ★
-                  </span>
-                ))}
-              </div>
-              <div className={isRTL ? 'mr-2' : 'ml-2'}>
-                <span className="text-2xl font-bold text-gray-900 block leading-none">
-                  {product.averageRating?.toFixed(1) || '0.0'}
-                </span>
-                <span className="text-xs text-gray-500 font-medium">
-                  {product.numReviews || 0} {t('reviews')}
-                </span>
-              </div>
-            </div>
-          </div>
-          
-          {/* Add Review Form */}
-          {user && (
-            <form onSubmit={handleSubmitReview} className={`mb-12 p-8 bg-gradient-to-br from-gray-50 to-gray-100/50 rounded-xl border border-gray-200 ${isRTL ? 'text-right' : 'text-left'}`} dir={isRTL ? 'rtl' : 'ltr'} lang={isRTL ? 'ar' : language}>
-              <h3 className="text-xl font-bold text-gray-900 mb-6">{t('writeReview') || 'Write a Review'}</h3>
-              <div className="mb-6">
-                <label className={`block text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wide ${isRTL ? 'text-right' : 'text-left'}`}>
-                  {t('yourRating') || t('rating') || 'Your Rating'}
-                </label>
-                <select
-                  value={review.rating}
-                  onChange={(e) => setReview({ ...review, rating: Number(e.target.value) })}
-                  className={`w-full max-w-xs px-4 py-3 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 font-medium ${isRTL ? 'text-right' : 'text-left'}`}
-                  dir={isRTL ? 'rtl' : 'ltr'}
-                >
-                  <option value={5}>{t('ratingExcellent') || '5 - Excellent'}</option>
-                  <option value={4}>{t('ratingVeryGood') || '4 - Very Good'}</option>
-                  <option value={3}>{t('ratingGood') || '3 - Good'}</option>
-                  <option value={2}>{t('ratingFair') || '2 - Fair'}</option>
-                  <option value={1}>{t('ratingPoor') || '1 - Poor'}</option>
-                </select>
-              </div>
-              <div className="mb-6">
-                <label className={`block text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wide ${isRTL ? 'text-right' : 'text-left'}`}>
-                  {t('yourComment') || t('comment') || 'Your Comment'}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  {language === 'ar' ? 'العنوان الكامل' : language === 'fr' ? 'Adresse complète' : 'Full address'} *
                 </label>
                 <textarea
-                  value={review.comment}
-                  onChange={(e) => setReview({ ...review, comment: e.target.value })}
-                  rows="5"
-                  className={`w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 resize-none ${isRTL ? 'text-right' : 'text-left'}`}
-                  placeholder={t('shareYourExperience')}
-                  dir={isRTL ? 'rtl' : 'ltr'}
                   required
+                  rows={2}
+                  value={lead.address}
+                  onChange={(e) =>
+                    setLead({ ...lead, address: e.target.value })
+                  }
+                  placeholder={language === 'ar' ? 'أدخل عنوانك' : language === 'fr' ? 'Votre adresse' : 'Your full address'}
+                  className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-[#FF385C] focus:ring-2 focus:ring-rose-100 resize-none transition"
                 />
               </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  {language === 'ar' ? 'ملاحظة (اختياري)' : language === 'fr' ? 'Note (facultatif)' : 'Note (optional)'}
+                </label>
+                <textarea
+                  rows={2}
+                  value={lead.note}
+                  onChange={(e) =>
+                    setLead({ ...lead, note: e.target.value })
+                  }
+                  className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-[#FF385C] focus:ring-2 focus:ring-rose-100 resize-none transition"
+                />
+              </div>
+
               <button
                 type="submit"
-                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold px-8 py-3 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl"
+                disabled={submittingLead}
+                className="w-full bg-[#FF385C] hover:bg-[#E61E4D] text-white font-bold py-4 rounded-xl transition-colors disabled:opacity-60"
               >
-                {t('submitReview') || 'Submit Review'}
+                {submittingLead
+                  ? language === 'ar'
+                    ? 'جاري الإرسال...'
+                    : language === 'fr'
+                    ? 'Envoi...'
+                    : 'Sending...'
+                  : language === 'ar'
+                  ? 'تأكيد الطلب'
+                  : language === 'fr'
+                  ? 'Envoyer ma commande'
+                  : 'Submit order'}
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    {/* FEATURES */}
+    {product.features?.length > 0 && (
+      <section className="py-12 md:py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="max-w-2xl mb-8">
+            <p className="text-sm font-semibold text-[#FF385C] mb-2">
+              {t('productFeatures') || 'Product features'}
+            </p>
+            <h2 className="text-2xl md:text-3xl font-bold">
+              {t('productFeaturesSubtitle') || 'Why choose this product?'}
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {product.features.map((feature, index) => (
+              <div
+                key={index}
+                className="p-6 rounded-2xl border border-gray-100 bg-white hover:border-rose-200 hover:shadow-md transition-all"
+              >
+                <div className="w-10 h-10 flex items-center justify-center rounded-xl bg-rose-50 text-[#FF385C] font-bold mb-4">
+                  {String(index + 1).padStart(2, '0')}
+                </div>
+                <p className="text-gray-700 leading-7">{feature}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    )}
+
+    {/* CUSTOMER REVIEWS */}
+    <section className="bg-gray-50 border-y border-gray-100 py-12 md:py-16">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="bg-white rounded-2xl border border-gray-100 p-6 md:p-9">
+
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-5 border-b border-gray-100 pb-6 mb-8">
+            <div>
+              <p className="text-sm font-semibold text-[#FF385C] mb-2">
+                {t('customerReviews') || 'Customer reviews'}
+              </p>
+              <h2 className="text-2xl md:text-3xl font-bold">
+                {t('seeWhatCustomersSaying')}
+              </h2>
+            </div>
+
+            <div className="bg-gray-50 rounded-xl p-4">
+              <p className="text-2xl font-bold">
+                {product.averageRating?.toFixed(1) || '0.0'}
+                <span className="text-amber-400 ml-2">★</span>
+              </p>
+              <p className="text-xs text-gray-500 mt-1">
+                {product.numReviews || 0} {t('reviews')}
+              </p>
+            </div>
+          </div>
+
+          {/* REVIEW FORM */}
+          {user && (
+            <form
+              onSubmit={handleSubmitReview}
+              className="bg-gray-50 rounded-2xl p-5 md:p-7 mb-8"
+            >
+              <h3 className="text-lg font-bold mb-5">
+                {t('writeReview') || 'Write a review'}
+              </h3>
+
+              <label className="block text-sm font-medium mb-2">
+                {t('yourRating') || 'Your rating'}
+              </label>
+              <select
+                value={review.rating}
+                onChange={(e) =>
+                  setReview({ ...review, rating: Number(e.target.value) })
+                }
+                className="w-full sm:w-64 p-3 bg-white border border-gray-200 rounded-xl mb-5 outline-none focus:border-[#FF385C]"
+              >
+                <option value={5}>5 - Excellent</option>
+                <option value={4}>4 - Very Good</option>
+                <option value={3}>3 - Good</option>
+                <option value={2}>2 - Fair</option>
+                <option value={1}>1 - Poor</option>
+              </select>
+
+              <label className="block text-sm font-medium mb-2">
+                {t('yourComment') || 'Your comment'}
+              </label>
+              <textarea
+                required
+                rows={4}
+                value={review.comment}
+                onChange={(e) =>
+                  setReview({ ...review, comment: e.target.value })
+                }
+                placeholder={t('shareYourExperience')}
+                className="w-full p-4 bg-white border border-gray-200 rounded-xl mb-5 outline-none focus:border-[#FF385C] resize-none"
+              />
+
+              <button
+                type="submit"
+                className="bg-[#FF385C] hover:bg-[#E61E4D] text-white font-semibold px-7 py-3 rounded-xl transition-colors"
+              >
+                {t('submitReview') || 'Submit review'}
               </button>
             </form>
           )}
 
-          {/* Reviews List */}
-          <div className="space-y-6">
-            {product.ratings && product.ratings.length > 0 ? (
+          {/* EXISTING REVIEWS */}
+          <div className="space-y-4">
+            {product.ratings?.length > 0 ? (
               product.ratings.map((rating, index) => (
-                <div key={index} className={`p-6 bg-gray-50 rounded-xl border border-gray-200 hover:border-gray-300 transition-all duration-200 ${isRTL ? 'text-right' : 'text-left'}`} dir={isRTL ? 'rtl' : 'ltr'} lang={isRTL ? 'ar' : language}>
-                  <div className={`flex items-start justify-between mb-4 ${isRTL ? 'flex-row-reverse' : ''}`}>
-                    <div className={`flex items-center gap-4 ${isRTL ? 'flex-row-reverse' : ''}`}>
-                      <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-md">
+                <article
+                  key={rating._id || index}
+                  className="border border-gray-100 rounded-2xl p-5"
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-11 h-11 rounded-full bg-rose-50 text-[#FF385C] flex items-center justify-center font-bold">
                         {rating.user?.name?.charAt(0)?.toUpperCase() || 'U'}
                       </div>
                       <div>
-                        <p className="font-semibold text-gray-900 text-base">{rating.user?.name || t('anonymousUser')}</p>
-                        <p className="text-sm text-gray-500 font-medium">{new Date(rating.createdAt).toLocaleDateString(isRTL ? 'ar-SA' : (language === 'fr' ? 'fr-FR' : 'en-US'), { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                        <p className="font-semibold">
+                          {rating.user?.name || t('anonymousUser')}
+                        </p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          {new Date(rating.createdAt).toLocaleDateString(
+                            language === 'ar' ? 'ar-MA' : language === 'fr' ? 'fr-FR' : 'en-US',
+                            { year: 'numeric', month: 'long', day: 'numeric' }
+                          )}
+                        </p>
                       </div>
                     </div>
-                    <div className={`flex items-center gap-1 ${isRTL ? 'flex-row-reverse' : ''}`}>
-                      {[...Array(5)].map((_, i) => (
-                        <span key={i} className={`text-lg ${i < rating.rating ? 'text-amber-400' : 'text-gray-300'}`}>
-                          ★
-                        </span>
-                      ))}
-                    </div>
+
+                    <span className="text-amber-400 whitespace-nowrap">
+                      {'★'.repeat(Math.min(5, Math.max(0, rating.rating || 0)))}
+                      <span className="text-gray-200">
+                        {'★'.repeat(5 - Math.min(5, Math.max(0, rating.rating || 0)))}
+                      </span>
+                    </span>
                   </div>
+
                   {rating.comment && (
-                    <p className={`text-gray-700 leading-relaxed ${isRTL ? 'pr-16 text-right font-medium leading-loose' : 'pl-16 text-left'}`} dir={isRTL ? 'rtl' : 'ltr'} lang={isRTL ? 'ar' : language}>{rating.comment}</p>
+                    <p className="text-gray-600 leading-7 mt-4">
+                      {rating.comment}
+                    </p>
                   )}
-                </div>
+                </article>
               ))
             ) : (
-              <div className="text-center py-16">
-                <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <svg className="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                  </svg>
-                </div>
-                <p className="text-xl font-semibold text-gray-700 mb-2">{t('noReviews') || 'No reviews yet'}</p>
-                <p className="text-gray-500">{t('beFirstReview') || 'Be the first to review this product!'}</p>
+              <div className="text-center py-12">
+                <div className="text-4xl text-gray-300 mb-4">☆</div>
+                <p className="font-semibold text-gray-700">
+                  {t('noReviews') || 'No reviews yet'}
+                </p>
+                <p className="text-sm text-gray-500 mt-2">
+                  {t('beFirstReview') || 'Be the first to review this product!'}
+                </p>
               </div>
             )}
           </div>
         </div>
-      </section>
+      </div>
+    </section>
 
-      {/* Final CTA Section */}
-      <section className={`bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border-t border-slate-700/50 ${isRTL ? 'text-right' : 'text-left'}`} dir={isRTL ? 'rtl' : 'ltr'} lang={isRTL ? 'ar' : language}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-20">
-          <div className={`bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 p-8 md:p-12 ${isRTL ? 'text-right' : 'text-center'} text-white`} dir={isRTL ? 'rtl' : 'ltr'} lang={isRTL ? 'ar' : language}>
-            <h2 className={`text-3xl md:text-4xl font-bold mb-4 ${isRTL ? 'text-right' : 'text-center'} ${isRTL ? 'font-semibold' : ''}`}>{t('readyToMakePurchase')}</h2>
-            <p className={`text-lg text-white/80 mb-8 max-w-2xl mx-auto leading-relaxed ${isRTL ? 'text-right' : 'text-center'} ${isRTL ? 'leading-loose' : ''}`} dir={isRTL ? 'rtl' : 'ltr'} lang={isRTL ? 'ar' : language}>
-              {t('dontMissOut')}
-            </p>
-            <div className={`flex flex-col sm:flex-row gap-4 justify-center max-w-md mx-auto ${isRTL ? 'sm:flex-row-reverse' : ''}`}>
-              <button
-                onClick={handleBuyNow}
-                disabled={product.stock === 0}
-                className="flex-1 bg-white text-slate-900 hover:bg-gray-50 disabled:bg-slate-700 disabled:text-slate-400 font-semibold py-4 px-8 rounded-xl transition-all duration-200 hover:scale-[1.02] shadow-xl text-base"
-              >
-                {product.stock > 0 ? (t('buyNow') || 'Buy now') : (t('outOfStockLabel') || 'Out of Stock')}
-              </button>
-              <button
-                onClick={handleWhatsApp}
-                className={`flex-1 bg-[#25D366] hover:bg-[#20BA5A] text-white font-semibold py-4 px-8 rounded-xl transition-all duration-200 hover:scale-[1.02] shadow-xl text-base flex items-center justify-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}
-              >
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
-                </svg>
-                {t('contactViaWhatsApp')}
-              </button>
-            </div>
+    {/* FINAL CTA */}
+    <section className="bg-white py-12 md:py-16">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="bg-gray-900 text-white rounded-3xl p-8 md:p-12 text-center">
+          <p className="text-sm font-semibold text-rose-300 mb-3">
+            FINDSTORE
+          </p>
+
+          <h2 className="text-2xl md:text-4xl font-bold mb-4">
+            {t('readyToMakePurchase')}
+          </h2>
+
+          <p className="text-gray-300 max-w-xl mx-auto mb-8 leading-7">
+            {t('dontMissOut')}
+          </p>
+
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <button
+              type="button"
+              onClick={handleBuyNow}
+              disabled={product.stock === 0}
+              className="bg-[#FF385C] hover:bg-[#E61E4D] disabled:opacity-50 text-white font-bold px-8 py-4 rounded-xl transition-colors"
+            >
+              {product.stock > 0
+                ? t('buyNow') || 'Buy now'
+                : t('outOfStockLabel') || 'Out of Stock'}
+            </button>
+
+            <button
+              type="button"
+              onClick={handleWhatsApp}
+              className="bg-white/10 hover:bg-white/20 border border-white/20 text-white font-semibold px-8 py-4 rounded-xl transition-colors"
+            >
+              {t('contactViaWhatsApp')}
+            </button>
           </div>
         </div>
-      </section>
-    </div>
-  )
+      </div>
+    </section>
+  </div>
+)
+
 }
 
 export default ProductDetail
