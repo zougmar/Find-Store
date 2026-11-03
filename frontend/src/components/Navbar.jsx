@@ -1,4 +1,5 @@
 ﻿import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useCart } from '../context/CartContext'
@@ -290,23 +291,24 @@ const Navbar = () => {
         </div>
       </div>
 
-      {/* Mobile menu backdrop + slide panel */}
-      <>
-        {/* Backdrop */}
+      {createPortal(
+        <>
         <div
-          className={`lg:hidden fixed inset-0 bg-black/40 backdrop-blur-sm z-[70] transition-opacity duration-300 ${
-            showMobileMenu ? 'opacity-100' : 'opacity-0 pointer-events-none'
+          className={`fixed inset-0 z-[80] bg-black/40 backdrop-blur-sm transition-opacity duration-300 lg:hidden ${
+            showMobileMenu ? 'opacity-100' : 'pointer-events-none opacity-0'
           }`}
           onClick={() => setShowMobileMenu(false)}
           aria-hidden="true"
         />
-        {/* Slide panel */}
         <div
-          className={`lg:hidden fixed top-0 bottom-0 z-[80] w-full max-w-sm overflow-y-auto bg-white shadow-2xl transition-transform duration-300 ease-out ${
-            isRTL ? 'right-0' : 'left-0'
-          } ${showMobileMenu ? 'translate-x-0' : isRTL ? 'translate-x-full' : '-translate-x-full'}`}
+          className={`fixed inset-y-0 z-[90] w-full max-w-sm overflow-y-auto bg-white shadow-2xl transition-transform duration-300 ease-out lg:hidden ${
+            isRTL ? 'left-0' : 'right-0'
+          } ${showMobileMenu ? 'translate-x-0' : isRTL ? '-translate-x-full' : 'translate-x-full'} ${
+            showMobileMenu ? '' : 'pointer-events-none'
+          }`}
           role="dialog"
-          aria-modal="true"
+          aria-modal={showMobileMenu}
+          aria-hidden={!showMobileMenu}
           aria-label={t('openMenu')}
         >
           <div className={`flex flex-col h-full ${isRTL ? 'text-right' : 'text-left'}`} dir={isRTL ? 'rtl' : 'ltr'}>
@@ -481,7 +483,9 @@ const Navbar = () => {
             </div>
           </div>
         </div>
-      </>
+        </>,
+        document.body
+      )}
     </nav>
   )
 }
