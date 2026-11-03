@@ -84,6 +84,9 @@ router.post('/login', [
     if (!isMatch) {
       return res.status(401).json({ message: 'Invalid credentials. Wrong password.' });
     }
+    if (user.active === false) {
+      return res.status(403).json({ message: 'Account is inactive' });
+    }
 
     // Now check if user has delivery role (only if password is correct)
     if (user.role !== 'delivery') {

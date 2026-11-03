@@ -123,8 +123,11 @@ const connectDB = async () => {
   }
 };
 
-// Initialize DB connection
-connectDB().catch(console.error);
+// Vercel imports this file without starting the listener, so connect there.
+// Local startup connects once inside startServer.
+if (require.main !== module) {
+  connectDB().catch(console.error);
+}
 
 // Export app for Vercel serverless functions
 module.exports = app;

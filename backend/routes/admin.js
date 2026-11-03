@@ -341,6 +341,7 @@ router.post('/users', hasPermission('manageUsers'), async (req, res, next) => {
 
     announceEmployeeAction(`${req.user.name} created ${userResponse.role} ${userResponse.name}`, userResponse._id)
       .catch((error) => console.error('User notification failed:', error.message));
+    emitSync('users', { action: 'created', id: userResponse._id });
     res.status(201).json(userResponse);
   } catch (error) {
     next(error);
@@ -380,6 +381,9 @@ router.put('/users/:id', hasPermission('manageUsers'), async (req, res, next) =>
     if (req.user.role !== 'admin' && req.body.role === 'admin') {
       return res.status(403).json({ message: 'Only admins can assign admin role' });
     }
+    if (req.body.active === false && req.user._id.toString() === req.params.id) {
+      return res.status(400).json({ message: 'You cannot deactivate your own account' });
+    }
 
     const updates = { ...req.body };
     delete updates.password;
@@ -400,6 +404,7 @@ router.put('/users/:id', hasPermission('manageUsers'), async (req, res, next) =>
 
     announceEmployeeAction(`${req.user.name} updated ${user.name}`, user._id)
       .catch((error) => console.error('User notification failed:', error.message));
+    emitSync('users', { action: 'updated', id: user._id });
     res.json(user);
   } catch (error) {
     next(error);
@@ -423,6 +428,7 @@ router.delete('/users/:id', hasPermission('manageUsers'), async (req, res, next)
     
     announceEmployeeAction(`${req.user.name} removed ${user.name}`, user._id)
       .catch((error) => console.error('User notification failed:', error.message));
+    emitSync('users', { action: 'deleted', id: user._id });
     res.json({ message: 'User deleted successfully' });
   } catch (error) {
     next(error);

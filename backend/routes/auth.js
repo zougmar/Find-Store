@@ -86,6 +86,9 @@ router.post('/login', [
       console.log(`Login attempt failed: Incorrect password for email: ${email}`);
       return res.status(401).json({ message: 'Invalid credentials' });
     }
+    if (user.active === false) {
+      return res.status(403).json({ message: 'Account is inactive' });
+    }
 
     res.json({
       _id: user._id,

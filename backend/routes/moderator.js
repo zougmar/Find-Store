@@ -71,6 +71,9 @@ router.post('/login', [
     if (!isMatch) {
       return res.status(401).json({ message: 'Invalid credentials. Wrong password.' });
     }
+    if (user.active === false) {
+      return res.status(403).json({ message: 'Account is inactive' });
+    }
 
     // For moderators, check if they have manageOrders or manageProductInquiries permission
     // Allow access if permissions object doesn't exist (legacy) or if at least one is true

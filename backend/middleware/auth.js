@@ -23,6 +23,9 @@ exports.protect = async (req, res, next) => {
         console.error('User not found in database for token:', decoded.id);
         return res.status(401).json({ message: 'User not found' });
       }
+      if (req.user.active === false) {
+        return res.status(403).json({ message: 'Account is inactive' });
+      }
       
       // Log user info for debugging (without sensitive data)
       console.log('User authenticated:', {

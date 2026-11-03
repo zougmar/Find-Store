@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useLocation } from 'react-router-dom'
+import { useAuth } from '../../context/AuthContext'
 import AdminLayout from '../../components/AdminLayout'
 import api from '../../utils/api'
 import toast from 'react-hot-toast'
@@ -21,7 +22,9 @@ const emptyPermissions = {
 
 const AdminUsers = () => {
   const location = useLocation()
-  const { t } = useAdminI18n()
+  const { user: currentUser } = useAuth()
+  const { t, language } = useAdminI18n()
+  const dateLocale = language === 'ar' ? 'ar-MA' : language === 'fr' ? 'fr-FR' : 'en-US'
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
@@ -41,6 +44,8 @@ const AdminUsers = () => {
   const [showPermissionsModal, setShowPermissionsModal] = useState(false)
   const [editingUser, setEditingUser] = useState(null)
   const [updating, setUpdating] = useState(false)
+  const [pendingDelete, setPendingDelete] = useState(null)
+  const [openMenuId, setOpenMenuId] = useState(null)
 
   const fetchUsers = useCallback(async ({ silent = false } = {}) => {
     if (silent) setRefreshing(true)
@@ -63,10 +68,6 @@ const AdminUsers = () => {
   useAutoRefresh(() => fetchUsers({ silent: true }), { scopes: ['users', 'all'] })
 
   const handleDeleteUser = async (userId) => {
-    if (!window.confirm(t('users.confirmDelete'))) {
-      return
-    }
-
     const previous = users
     setUsers((current) => current.filter((user) => user._id !== userId))
     if (selectedUser?._id === userId) setSelectedUser(null)
@@ -74,10 +75,36 @@ const AdminUsers = () => {
     try {
       await api.delete(`/admin/users/${userId}`)
       toast.success(t('users.deleted'))
+      setPendingDelete(null)
       notifyAdminChange('users')
     } catch (error) {
       setUsers(previous)
       toast.error(error.response?.data?.message || t('users.deleteFailed'))
+    }
+  }
+
+  const handleToggleActive = async (account) => {
+    if (String(currentUser?._id) === String(account._id)) return
+    const nextActive = account.active === false
+    const previous = users
+    const previousSelected = selectedUser
+    setUsers((current) => current.map((item) => (
+      item._id === account._id ? { ...item, active: nextActive } : item
+    )))
+    if (selectedUser?._id === account._id) {
+      setSelectedUser((current) => ({ ...current, active: nextActive }))
+    }
+    try {
+      const res = await api.put(`/admin/users/${account._id}`, { active: nextActive })
+      setUsers((current) => current.map((item) => (
+        item._id === res.data._id ? { ...item, ...res.data } : item
+      )))
+      toast.success(t('users.updated'))
+      notifyAdminChange('users')
+    } catch (error) {
+      setUsers(previous)
+      setSelectedUser(previousSelected)
+      toast.error(error.response?.data?.message || t('users.updateFailed'))
     }
   }
 
@@ -86,7 +113,7 @@ const AdminUsers = () => {
       const res = await api.get(`/admin/users/${userId}`)
       setSelectedUser(res.data)
     } catch (error) {
-      toast.error('Failed to fetch user details')
+      toast.error(t('users.fetchFailed'))
     }
   }
 
@@ -94,12 +121,12 @@ const AdminUsers = () => {
     e.preventDefault()
     
     if (!formData.name || !formData.email || !formData.password) {
-      toast.error('Please fill in all required fields')
+      toast.error(t('users.createFailed'))
       return
     }
 
     if (formData.password.length < 6) {
-      toast.error('Password must be at least 6 characters')
+      toast.error(t('users.passwordHint'))
       return
     }
 
@@ -125,7 +152,7 @@ const AdminUsers = () => {
       })
       notifyAdminChange('users')
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to create admin user')
+      toast.error(error.response?.data?.message || t('users.createFailed'))
     } finally {
       setCreating(false)
     }
@@ -177,6 +204,8 @@ const AdminUsers = () => {
     setUpdating(true)
     try {
       const res = await api.put(`/admin/users/${editingUser._id}`, {
+        name: formData.name,
+        phone: formData.phone,
         role: formData.role,
         permissions: formData.permissions
       })
@@ -186,12 +215,12 @@ const AdminUsers = () => {
       if (selectedUser?._id === res.data._id) {
         setSelectedUser((current) => ({ ...current, ...res.data }))
       }
-      toast.success('User permissions updated successfully!')
+      toast.success(t('users.updated'))
       setShowPermissionsModal(false)
       setEditingUser(null)
       notifyAdminChange('users')
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to update permissions')
+      toast.error(error.response?.data?.message || t('users.updateFailed'))
     } finally {
       setUpdating(false)
     }
@@ -209,6 +238,25 @@ const AdminUsers = () => {
     return matchesSearch && matchesRole
   })
 
+  const roleLabel = (role) => {
+    if (role === 'admin') return t('users.roleAdmin')
+    if (role === 'moderator') return t('users.roleModerator')
+    if (role === 'delivery') return t('users.roleDelivery')
+    return t('users.roleUser')
+  }
+
+  const formatDate = (value) => (
+    value
+      ? new Date(value).toLocaleDateString(dateLocale, { year: 'numeric', month: 'short', day: 'numeric' })
+      : '—'
+  )
+
+  const enabledPermissions = (account) => (
+    Object.entries(account.permissions || {}).filter(([, enabled]) => enabled).map(([key]) => key)
+  )
+
+  const isSelf = (account) => String(currentUser?._id) === String(account._id)
+
   if (loading) {
     return (
       <AdminLayout>
@@ -224,17 +272,17 @@ const AdminUsers = () => {
     <AdminLayout>
       <div className="space-y-6">
         {/* Page Header */}
-        <div className="mb-6 flex items-center justify-between">
-          <div>
-          <h1 className="text-3xl font-bold text-gray-900">{t('users.title')}</h1>
-          <p className="text-gray-600 mt-1">
+        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
+          <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">{t('users.title')}</h1>
+          <p className="mt-1 text-gray-600">
             {users.length} · {t('users.subtitle')}
             {refreshing ? ` · ${t('users.updating')}` : ''}
           </p>
           </div>
           <button
             onClick={() => setShowCreateModal(true)}
-            className="px-6 py-3 bg-[#FF385C] text-white font-semibold rounded-lg hover:bg-[#E61E4D] transition-colors flex items-center gap-2 shadow-lg hover:shadow-xl"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#FF385C] px-5 py-3 font-semibold text-white shadow-lg transition-colors hover:bg-[#E61E4D] hover:shadow-xl sm:w-auto"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -259,7 +307,7 @@ const AdminUsers = () => {
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search by Name, Email, Phone..."
+                  placeholder={t('users.searchPlaceholder')}
                   className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 />
                 {searchQuery && (
@@ -295,7 +343,9 @@ const AdminUsers = () => {
           {/* Results Count */}
           <div className="mt-4 flex items-center justify-between text-sm text-gray-600">
             <span>
-              Showing <span className="font-semibold text-gray-900">{filteredUsers.length}</span> of <span className="font-semibold text-gray-900">{users.length}</span> users
+              <span className="font-semibold text-gray-900">{filteredUsers.length}</span>
+              <span> / </span>
+              <span className="font-semibold text-gray-900">{users.length}</span>
             </span>
             {(searchQuery || roleFilter !== 'all') && (
               <button
@@ -308,7 +358,7 @@ const AdminUsers = () => {
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
-                Clear Filters
+                {t('users.clearFilters')}
               </button>
             )}
           </div>
@@ -322,102 +372,143 @@ const AdminUsers = () => {
                 <h2 className="text-lg font-semibold text-gray-900">{t('users.title')}</h2>
                 <p className="text-sm text-gray-600 mt-1">{filteredUsers.length} users</p>
               </div>
-              <div className="overflow-x-auto">
+              <div className="divide-y divide-gray-100 lg:hidden">
+                {filteredUsers.length === 0 ? (
+                  <p className="px-4 py-10 text-center text-sm text-gray-500">
+                    {users.length === 0 ? t('users.empty') : t('users.emptyHint')}
+                  </p>
+                ) : filteredUsers.map((user) => {
+                  const permissions = enabledPermissions(user)
+                  const active = user.active !== false
+                  return (
+                    <article key={user._id} className="p-4">
+                      <div className="flex items-start gap-3">
+                        {user.image ? (
+                          <img src={user.image} alt="" className="h-12 w-12 shrink-0 rounded-full object-cover" />
+                        ) : (
+                          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gray-800 text-sm font-semibold text-white">
+                            {(user.name || '?').charAt(0).toUpperCase()}
+                          </div>
+                        )}
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate font-semibold text-gray-900">{user.name}</p>
+                          <p className="truncate text-sm text-gray-500" dir="ltr">{user.email}</p>
+                          <div className="mt-2 flex flex-wrap gap-1.5">
+                            <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-700">{roleLabel(user.role)}</span>
+                            <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${active ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-200 text-gray-600'}`}>
+                              {active ? t('users.active') : t('users.inactive')}
+                            </span>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setOpenMenuId(openMenuId === user._id ? null : user._id)}
+                          className="shrink-0 rounded-lg border border-gray-200 px-2.5 py-1.5 text-xs font-semibold text-gray-700"
+                          aria-expanded={openMenuId === user._id}
+                        >
+                          {t('users.actions')}
+                        </button>
+                      </div>
+                      <dl className="mt-3 grid grid-cols-2 gap-2 text-xs text-gray-600">
+                        <div>
+                          <dt className="text-gray-400">{t('users.phone')}</dt>
+                          <dd className="break-all font-medium text-gray-800" dir="ltr">{user.phone || t('users.noPhone')}</dd>
+                        </div>
+                        <div>
+                          <dt className="text-gray-400">{t('users.orders')}</dt>
+                          <dd className="font-medium text-gray-800">{user.totalOrders || 0}</dd>
+                        </div>
+                        <div>
+                          <dt className="text-gray-400">{t('users.createdAt')}</dt>
+                          <dd className="font-medium text-gray-800">{formatDate(user.createdAt)}</dd>
+                        </div>
+                        <div>
+                          <dt className="text-gray-400">{t('users.permissions')}</dt>
+                          <dd className="break-words font-medium text-gray-800">{permissions.length ? permissions.map((key) => t(`perm.${key}`)).join(' · ') : '—'}</dd>
+                        </div>
+                      </dl>
+                      {openMenuId === user._id && (
+                        <div className="mt-3 grid grid-cols-2 gap-2">
+                          <button type="button" onClick={() => { setOpenMenuId(null); handleViewDetails(user._id) }} className="rounded-lg bg-gray-900 px-3 py-2 text-sm font-semibold text-white">{t('users.view')}</button>
+                          <button type="button" onClick={() => { setOpenMenuId(null); handleEditPermissions(user) }} className="rounded-lg border border-gray-300 px-3 py-2 text-sm font-semibold text-gray-800">{t('users.editRole')}</button>
+                          {!isSelf(user) && (
+                            <button type="button" onClick={() => { setOpenMenuId(null); handleToggleActive(user) }} className="rounded-lg border border-gray-300 px-3 py-2 text-sm font-semibold text-gray-800">{active ? t('users.deactivate') : t('users.activate')}</button>
+                          )}
+                          {!isSelf(user) && (
+                            <button type="button" onClick={() => { setOpenMenuId(null); setPendingDelete(user) }} className="rounded-lg border border-red-200 px-3 py-2 text-sm font-semibold text-red-700">{t('users.delete')}</button>
+                          )}
+                        </div>
+                      )}
+                    </article>
+                  )
+                })}
+              </div>
+              <div className="hidden overflow-x-auto lg:block">
                 <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
+                  <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                        User
-                      </th>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                        Email
-                      </th>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                        Phone
-                      </th>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                        Orders
-                      </th>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                        Actions
-                      </th>
+                      {[t('users.user'), t('users.email'), t('users.role'), t('users.status'), t('users.permissions'), t('users.createdAt'), t('users.actions')].map((label) => (
+                        <th key={label} className="px-4 py-3 text-start text-xs font-semibold uppercase tracking-wide text-gray-500">{label}</th>
+                      ))}
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+                  <tbody className="divide-y divide-gray-100 bg-white">
                     {filteredUsers.length === 0 ? (
                       <tr>
-                        <td colSpan="5" className="px-6 py-12 text-center">
-                          <div className="flex flex-col items-center justify-center text-gray-400">
-                            <svg className="w-12 h-12 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                            </svg>
-                            <p className="text-sm">
-                              {users.length === 0 ? 'No users found' : 'No users match your filters'}
-                            </p>
-                            {users.length > 0 && (
-                              <p className="text-xs text-gray-400 mt-1">{t('users.emptyHint')}</p>
-                            )}
-                          </div>
+                        <td colSpan="7" className="px-4 py-12 text-center text-sm text-gray-500">
+                          {users.length === 0 ? t('users.empty') : t('users.emptyHint')}
                         </td>
                       </tr>
-                    ) : (
-                      filteredUsers.map(user => (
-                        <tr key={user._id} className="hover:bg-gray-50 transition-colors">
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="flex items-center">
+                    ) : filteredUsers.map((user) => {
+                      const permissions = enabledPermissions(user)
+                      const active = user.active !== false
+                      return (
+                        <tr key={user._id} className="align-top hover:bg-gray-50">
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-3">
                               {user.image ? (
-                                <img
-                                  src={user.image}
-                                  alt={user.name}
-                                  className="h-10 w-10 rounded-full object-cover mr-3 border-2 border-gray-200"
-                                />
+                                <img src={user.image} alt="" className="h-10 w-10 rounded-full object-cover" />
                               ) : (
-                                <div className="h-10 w-10 rounded-full bg-gradient-to-br from-gray-400 to-gray-500 flex items-center justify-center mr-3 border-2 border-gray-200">
-                                  <span className="text-white font-semibold text-sm">
-                                    {user.name.charAt(0).toUpperCase()}
-                                  </span>
+                                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-800 text-sm font-semibold text-white">
+                                  {(user.name || '?').charAt(0).toUpperCase()}
                                 </div>
                               )}
-                              <div>
-                                <p className="text-sm font-semibold text-gray-900">{user.name}</p>
-                                <p className="text-xs text-gray-500 capitalize">{user.role || 'user'}</p>
+                              <div className="min-w-0">
+                                <p className="truncate text-sm font-semibold text-gray-900">{user.name}</p>
+                                <p className="text-xs text-gray-500" dir="ltr">{user.phone || t('users.noPhone')}</p>
                               </div>
                             </div>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <p className="text-sm text-gray-600">{user.email}</p>
+                          <td className="px-4 py-3 text-sm text-gray-600" dir="ltr">{user.email}</td>
+                          <td className="px-4 py-3">
+                            <span className="rounded-full bg-gray-100 px-2 py-1 text-xs font-semibold text-gray-700">{roleLabel(user.role)}</span>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <p className="text-sm text-gray-600">{user.phone || 'N/A'}</p>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className="px-2 py-1 text-xs font-semibold bg-blue-100 text-blue-800 rounded-full">
-                              {user.totalOrders || 0}
+                          <td className="px-4 py-3">
+                            <span className={`rounded-full px-2 py-1 text-xs font-semibold ${active ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-200 text-gray-600'}`}>
+                              {active ? t('users.active') : t('users.inactive')}
                             </span>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                            <button
-                              onClick={() => handleViewDetails(user._id)}
-                              className="text-[#FF385C] hover:text-[#E61E4D] font-semibold transition-colors"
-                            >
-                              View
-                            </button>
-                            <button
-                              onClick={() => handleEditPermissions(user)}
-                              className="text-blue-600 hover:text-blue-700 font-semibold transition-colors"
-                            >
-                              {user.role === 'admin' || user.role === 'moderator' ? 'Permissions' : user.role === 'delivery' ? 'Edit Role' : 'Edit Role'}
-                            </button>
-                            <button
-                              onClick={() => handleDeleteUser(user._id)}
-                              className="text-red-600 hover:text-red-700 font-semibold transition-colors"
-                            >
-                              Delete
-                            </button>
+                          <td className="max-w-[14rem] px-4 py-3 text-xs text-gray-600">
+                            {permissions.length ? permissions.map((key) => t(`perm.${key}`)).join(' · ') : '—'}
+                          </td>
+                          <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-600">{formatDate(user.createdAt)}</td>
+                          <td className="px-4 py-3">
+                            <div className="flex flex-wrap gap-2">
+                              <button type="button" onClick={() => handleViewDetails(user._id)} className="text-sm font-semibold text-gray-900 hover:underline">{t('users.view')}</button>
+                              <button type="button" onClick={() => handleEditPermissions(user)} className="text-sm font-semibold text-blue-700 hover:underline">{t('users.editRole')}</button>
+                              {!isSelf(user) && (
+                                <button type="button" onClick={() => handleToggleActive(user)} className="text-sm font-semibold text-gray-700 hover:underline">
+                                  {active ? t('users.deactivate') : t('users.activate')}
+                                </button>
+                              )}
+                              {!isSelf(user) && (
+                                <button type="button" onClick={() => setPendingDelete(user)} className="text-sm font-semibold text-red-600 hover:underline">{t('users.delete')}</button>
+                              )}
+                            </div>
                           </td>
                         </tr>
-                      ))
-                    )}
+                      )
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -425,9 +516,9 @@ const AdminUsers = () => {
           </div>
 
           {/* User Details */}
-          <div className="lg:col-span-1">
+          <div className={selectedUser ? 'fixed inset-0 z-40 overflow-y-auto bg-black/50 p-3 lg:static lg:col-span-1 lg:overflow-visible lg:bg-transparent lg:p-0' : 'hidden lg:block lg:col-span-1'}>
             {selectedUser ? (
-              <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 sticky top-6">
+              <div className="max-h-[calc(100vh-1.5rem)] overflow-y-auto rounded-xl border border-gray-200 bg-white p-6 shadow-lg lg:sticky lg:top-6 lg:max-h-none">
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-xl font-bold text-gray-900">{t('users.details')}</h2>
                   <button
@@ -455,7 +546,12 @@ const AdminUsers = () => {
                     </div>
                   )}
                   <h3 className="text-lg font-bold text-gray-900">{selectedUser.name}</h3>
-                  <p className="text-xs text-gray-500 capitalize">{selectedUser.role || 'user'}</p>
+                  <div className="mt-2 flex flex-wrap justify-center gap-2">
+                    <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-700">{roleLabel(selectedUser.role)}</span>
+                    <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${selectedUser.active === false ? 'bg-gray-200 text-gray-600' : 'bg-emerald-100 text-emerald-800'}`}>
+                      {selectedUser.active === false ? t('users.inactive') : t('users.active')}
+                    </span>
+                  </div>
                 </div>
 
                 <div className="space-y-4 mb-6">
@@ -487,7 +583,7 @@ const AdminUsers = () => {
                       <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                       </svg>
-                      Order History
+                      {t('users.orderHistory')}
                     </h3>
                     <div className="space-y-2 max-h-64 overflow-y-auto">
                       {selectedUser.orders.map(order => (
@@ -503,11 +599,7 @@ const AdminUsers = () => {
                             </span>
                           </div>
                           <p className="text-xs text-gray-600 mb-1">
-                            {formatCurrency(order.totalAmount)} - {new Date(order.createdAt).toLocaleDateString('en-US', { 
-                              year: 'numeric', 
-                              month: 'short', 
-                              day: 'numeric' 
-                            })}
+                            {formatCurrency(order.totalAmount)} - {formatDate(order.createdAt)}
                           </p>
                         </div>
                       ))}
@@ -529,8 +621,8 @@ const AdminUsers = () => {
 
       {/* Create Admin User Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-3 sm:items-center sm:p-4">
+          <div className="max-h-[92vh] w-full max-w-md overflow-y-auto rounded-xl bg-white shadow-2xl">
             <div className="p-6 border-b border-gray-200 flex items-center justify-between">
               <h2 className="text-2xl font-bold text-gray-900">{t('users.createTitle')}</h2>
               <button
@@ -549,7 +641,7 @@ const AdminUsers = () => {
             <form onSubmit={handleCreateAdmin} className="p-6 space-y-4">
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Full Name <span className="text-red-500">*</span>
+                  {t('users.fullName')} <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -564,7 +656,7 @@ const AdminUsers = () => {
 
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Email Address <span className="text-red-500">*</span>
+                  {t('users.emailAddress')} <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="email"
@@ -579,7 +671,7 @@ const AdminUsers = () => {
 
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Password <span className="text-red-500">*</span>
+                  {t('users.password')} <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="password"
@@ -596,7 +688,7 @@ const AdminUsers = () => {
 
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Phone Number <span className="text-gray-400">(Optional)</span>
+                  {t('users.phoneNumber')} <span className="text-gray-400">({t('users.optional')})</span>
                 </label>
                 <input
                   type="tel"
@@ -610,7 +702,7 @@ const AdminUsers = () => {
 
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Role <span className="text-red-500">*</span>
+                  {t('users.role')} <span className="text-red-500">*</span>
                 </label>
                 <select
                   name="role"
@@ -624,18 +716,18 @@ const AdminUsers = () => {
                   <option value="delivery">{t('users.roleDelivery')}</option>
                 </select>
                 <p className="text-xs text-gray-500 mt-1">
-                  {formData.role === 'delivery' 
-                    ? 'Delivery men can access the delivery portal and view assigned orders'
+                  {formData.role === 'delivery'
+                    ? t('users.roleHintDelivery')
                     : formData.role === 'moderator'
-                    ? 'Moderators can have specific permissions assigned'
-                    : 'Role permissions vary by type'}
+                    ? t('users.roleHintModerator')
+                    : t('users.roleHintDefault')}
                 </p>
               </div>
 
               {formData.role === 'moderator' && (
                 <div className="border-t border-gray-200 pt-4">
                   <label className="block text-sm font-semibold text-gray-700 mb-3">
-                    Permissions
+                    {t('users.permissions')}
                   </label>
                   <div className="space-y-2">
                     {Object.keys(formData.permissions).map(permission => (
@@ -646,8 +738,8 @@ const AdminUsers = () => {
                           onChange={() => handlePermissionChange(permission)}
                           className="w-4 h-4 text-[#FF385C] border-gray-300 rounded focus:ring-[#FF385C]"
                         />
-                        <span className="text-sm text-gray-700 capitalize">
-                          {permission.replace(/([A-Z])/g, ' $1').trim()}
+                        <span className="text-sm text-gray-700">
+                          {t(`perm.${permission}`)}
                         </span>
                       </label>
                     ))}
@@ -681,7 +773,7 @@ const AdminUsers = () => {
                   className="flex-1 px-4 py-2.5 border-2 border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-colors"
                   disabled={creating}
                 >
-                  Cancel
+                  {t('users.cancel')}
                 </button>
                 <button
                   type="submit"
@@ -691,10 +783,10 @@ const AdminUsers = () => {
                   {creating ? (
                     <>
                       <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                      Creating...
+                      {t('users.creating')}
                     </>
                   ) : (
-                    'Create User'
+                    t('users.create')
                   )}
                 </button>
               </div>
@@ -705,11 +797,11 @@ const AdminUsers = () => {
 
       {/* Edit Permissions/Role Modal */}
       {showPermissionsModal && editingUser && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-3 sm:items-center sm:p-4">
+          <div className="max-h-[92vh] w-full max-w-md overflow-y-auto rounded-xl bg-white shadow-2xl">
             <div className="p-6 border-b border-gray-200 flex items-center justify-between">
               <h2 className="text-2xl font-bold text-gray-900">
-                {editingUser.role === 'admin' || editingUser.role === 'moderator' ? 'Edit Permissions' : 'Edit Role'}
+                {t('users.editRole')}
               </h2>
               <button
                 onClick={() => {
@@ -726,8 +818,30 @@ const AdminUsers = () => {
 
             <form onSubmit={handleUpdatePermissions} className="p-6 space-y-4">
               <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">{t('users.fullName')}</label>
+                <input
+                  type="text"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleInputChange}
+                  required
+                  className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF385C] focus:border-[#FF385C]"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">{t('users.phoneNumber')}</label>
+                <input
+                  type="tel"
+                  name="phone"
+                  value={formData.phone || ''}
+                  onChange={handleInputChange}
+                  dir="ltr"
+                  className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF385C] focus:border-[#FF385C]"
+                />
+              </div>
+              <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Role <span className="text-red-500">*</span>
+                  {t('users.role')} <span className="text-red-500">*</span>
                 </label>
                 <select
                   name="role"
@@ -741,18 +855,18 @@ const AdminUsers = () => {
                   <option value="delivery">{t('users.roleDelivery')}</option>
                 </select>
                 <p className="text-xs text-gray-500 mt-1">
-                  {formData.role === 'delivery' 
-                    ? 'Delivery men can access the delivery portal and view assigned orders'
+                  {formData.role === 'delivery'
+                    ? t('users.roleHintDelivery')
                     : formData.role === 'moderator'
-                    ? 'Moderators can have specific permissions assigned'
-                    : 'Role permissions vary by type'}
+                    ? t('users.roleHintModerator')
+                    : t('users.roleHintDefault')}
                 </p>
               </div>
 
               {formData.role === 'moderator' && (
                 <div className="border-t border-gray-200 pt-4">
                   <label className="block text-sm font-semibold text-gray-700 mb-3">
-                    Permissions
+                    {t('users.permissions')}
                   </label>
                   <div className="space-y-2">
                     {Object.keys(formData.permissions).map(permission => (
@@ -763,8 +877,8 @@ const AdminUsers = () => {
                           onChange={() => handlePermissionChange(permission)}
                           className="w-4 h-4 text-[#FF385C] border-gray-300 rounded focus:ring-[#FF385C]"
                         />
-                        <span className="text-sm text-gray-700 capitalize">
-                          {permission.replace(/([A-Z])/g, ' $1').trim()}
+                        <span className="text-sm text-gray-700">
+                          {t(`perm.${permission}`)}
                         </span>
                       </label>
                     ))}
@@ -782,7 +896,7 @@ const AdminUsers = () => {
                   className="flex-1 px-4 py-2.5 border-2 border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-colors"
                   disabled={updating}
                 >
-                  Cancel
+                  {t('users.cancel')}
                 </button>
                 <button
                   type="submit"
@@ -792,14 +906,41 @@ const AdminUsers = () => {
                   {updating ? (
                     <>
                       <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                      Updating...
+                      {t('users.saving')}
                     </>
                   ) : (
-                    'Update User'
+                    t('users.save')
                   )}
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {pendingDelete && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-3 sm:items-center">
+          <div className="w-full max-w-md rounded-xl bg-white p-5 shadow-2xl" role="dialog" aria-modal="true">
+            <h2 className="text-lg font-bold text-gray-900">{t('users.confirmDeleteTitle')}</h2>
+            <p className="mt-2 break-all text-sm text-gray-700">{pendingDelete.name}</p>
+            <p className="break-all text-sm text-gray-500" dir="ltr">{pendingDelete.email}</p>
+            <p className="mt-3 text-sm text-gray-600">{t('users.confirmDelete')}</p>
+            <div className="mt-5 flex gap-3">
+              <button
+                type="button"
+                onClick={() => setPendingDelete(null)}
+                className="flex-1 rounded-lg border-2 border-gray-300 px-4 py-2.5 font-semibold text-gray-700"
+              >
+                {t('users.cancel')}
+              </button>
+              <button
+                type="button"
+                onClick={() => handleDeleteUser(pendingDelete._id)}
+                className="flex-1 rounded-lg bg-red-600 px-4 py-2.5 font-semibold text-white"
+              >
+                {t('users.delete')}
+              </button>
+            </div>
           </div>
         </div>
       )}

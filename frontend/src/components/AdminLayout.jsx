@@ -29,7 +29,7 @@ const AdminLayout = ({ children, title }) => {
   const isDashboard = location.pathname === '/admin' || location.pathname === '/admin/'
 
   return (
-    <div className="flex min-h-screen bg-[#f5f6fa]">
+    <div className="flex min-h-screen overflow-x-hidden bg-[#f5f6fa]">
       {/* Mobile Sidebar Overlay */}
       {sidebarOpen && (
         <div
@@ -44,7 +44,7 @@ const AdminLayout = ({ children, title }) => {
         {/* Top Bar - cPanel Style */}
         <div className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-30">
           <div className="px-4 md:px-6 lg:px-8 py-3 md:py-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-4">
                 <button
                   onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -65,11 +65,11 @@ const AdminLayout = ({ children, title }) => {
                       <svg className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                       </svg>
-                      <span className="font-medium text-sm">Dashboard</span>
+                      <span className="font-medium text-sm">{t('header.dashboard')}</span>
                     </button>
                   )}
                   <div>
-                    <h1 className="text-xl md:text-2xl font-bold text-gray-900">{getPageTitle()}</h1>
+                    <h1 className="max-w-[11rem] truncate text-lg font-bold text-gray-900 sm:max-w-none sm:text-xl md:text-2xl">{getPageTitle()}</h1>
                     <p className="text-xs text-gray-500 mt-0.5 hidden sm:block">
                       {new Date().toLocaleDateString(dateLocale, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                     </p>
@@ -125,7 +125,7 @@ const AdminLayout = ({ children, title }) => {
         </div>
 
         {/* Main Content */}
-        <main className="flex-1 p-4 md:p-6 lg:p-8">
+        <main className="min-w-0 flex-1 overflow-x-auto p-3 sm:p-4 md:p-6 lg:p-8">
           {children}
         </main>
       </div>

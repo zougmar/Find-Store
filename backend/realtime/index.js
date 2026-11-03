@@ -19,8 +19,8 @@ function attachRealtime(server) {
       }
       const secret = process.env.JWT_SECRET || 'your_jwt_secret_key_here';
       const decoded = jwt.verify(token, secret);
-      const user = await User.findById(decoded.id).select('role permissions');
-      if (!user || !['admin', 'moderator', 'delivery'].includes(user.role)) {
+      const user = await User.findById(decoded.id).select('role permissions active');
+      if (!user || user.active === false || !['admin', 'moderator', 'delivery'].includes(user.role)) {
         return next(new Error('forbidden'));
       }
       socket.user = user;
@@ -67,6 +67,9 @@ function emitSync(scope, extra = {}) {
   emit('admins', 'sync', payload);
   if (scope === 'products') {
     emit('store', 'sync', payload);
+  }
+  if (scope === 'users') {
+    emit('staff', 'sync', payload);
   }
   if (scope === 'orders') {
     emit('staff', 'sync', payload);
