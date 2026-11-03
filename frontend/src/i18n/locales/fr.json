@@ -188,5 +188,8 @@
   "mod.viewAll": "Toutes les commandes",
   "mod.viewAllHint": "Vérifier et gérer les commandes",
   "mod.newOrders": "Nouvelles commandes",
-  "mod.newOrdersHint": "Examiner les nouvelles commandes"
+  "mod.newOrdersHint": "Examiner les nouvelles commandes",
+  "notifications.title": "Notifications",
+  "notifications.readAll": "Tout marquer comme lu",
+  "notifications.empty": "Aucune notification"
 }

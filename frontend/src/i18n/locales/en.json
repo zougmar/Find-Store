@@ -188,5 +188,8 @@
   "mod.viewAll": "View all orders",
   "mod.viewAllHint": "Verify and manage orders",
   "mod.newOrders": "New orders",
-  "mod.newOrdersHint": "Review new orders"
+  "mod.newOrdersHint": "Review new orders",
+  "notifications.title": "Notifications",
+  "notifications.readAll": "Mark all as read",
+  "notifications.empty": "No notifications"
 }

@@ -1,4 +1,5 @@
 const express = require('express');
+const { announceOrderStatus } = require('../services/activity');
 const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
 const User = require('../models/User');
@@ -226,6 +227,7 @@ router.put('/orders/:id/verify', protect, isModerator, [
       .populate('verifiedBy', 'name email')
       .populate('changeHistory.changedBy', 'name email role');
 
+    announceOrderStatus(updatedOrder, req.user.name).catch((error) => console.error('Order notification failed:', error.message));
     res.json({
       message: orderStatus === 'confirmed' ? 'Order verified and confirmed successfully' : 'Order cancelled',
       order: updatedOrder
@@ -291,6 +293,7 @@ router.put('/orders/:id/status', protect, isModerator, [
       .populate('verifiedBy', 'name email')
       .populate('changeHistory.changedBy', 'name email role');
 
+    announceOrderStatus(updatedOrder, req.user.name).catch((error) => console.error('Order notification failed:', error.message));
     res.json({
       message: 'Order status updated successfully',
       order: updatedOrder
@@ -360,6 +363,7 @@ router.put('/orders/:id/assign', protect, isModerator, [
       .populate('verifiedBy', 'name email')
       .populate('changeHistory.changedBy', 'name email role');
 
+    announceOrderStatus(updatedOrder, req.user.name).catch((error) => console.error('Order notification failed:', error.message));
     res.json({
       message: 'Order assigned to delivery man successfully',
       order: updatedOrder

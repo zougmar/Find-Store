@@ -1,5 +1,6 @@
 const express = require('express');
 const Message = require('../models/Message');
+const { announceNewMessage } = require('../services/activity');
 
 const router = express.Router();
 
@@ -25,6 +26,7 @@ router.post('/', async (req, res, next) => {
       message: 'Message sent successfully',
       data: newMessage
     });
+    announceNewMessage(newMessage).catch((error) => console.error('Message notification failed:', error.message));
   } catch (error) {
     next(error);
   }

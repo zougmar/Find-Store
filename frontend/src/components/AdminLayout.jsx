@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import { useAdminI18n } from '../context/AdminLanguageContext'
 import AdminSidebar from './AdminSidebar'
 import LanguageSwitcher from './LanguageSwitcher'
+import NotificationBell from './NotificationBell'
 
 const AdminLayout = ({ children, title }) => {
   const { logout, user } = useAuth()
@@ -77,6 +78,7 @@ const AdminLayout = ({ children, title }) => {
               </div>
               
               <div className="flex items-center gap-2 sm:gap-3">
+                <NotificationBell />
                 <LanguageSwitcher />
                 <Link
                   to="/"

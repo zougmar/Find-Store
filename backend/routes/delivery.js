@@ -1,4 +1,5 @@
 const express = require('express');
+const { announceOrderStatus } = require('../services/activity');
 const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
 const User = require('../models/User');
@@ -264,6 +265,7 @@ router.put('/orders/:orderId/status', protect, isDeliveryMan, [
       .populate('assignedDeliveryMan', 'name email phone')
       .populate('changeHistory.changedBy', 'name email role');
 
+    announceOrderStatus(updatedOrder, req.user.name).catch((error) => console.error('Order notification failed:', error.message));
     res.json({
       message: 'Delivery status updated successfully',
       order: updatedOrder

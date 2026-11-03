@@ -11,6 +11,7 @@ const Page = require('../models/Page');
 const ProductInquiry = require('../models/ProductInquiry');
 const Message = require('../models/Message');
 const { protect, admin, hasPermission, hasAnyPermission } = require('../middleware/auth');
+const { emitSync, announceOrderStatus, announceEmployeeAction } = require('../services/activity');
 
 const router = express.Router();
 
@@ -349,6 +350,8 @@ router.post('/users', hasPermission('manageUsers'), async (req, res, next) => {
     const userResponse = user.toObject();
     delete userResponse.password;
 
+    announceEmployeeAction(`${req.user.name} created ${userResponse.role} ${userResponse.name}`, userResponse._id)
+      .catch((error) => console.error('User notification failed:', error.message));
     res.status(201).json(userResponse);
   } catch (error) {
     next(error);
@@ -405,7 +408,9 @@ router.put('/users/:id', hasPermission('manageUsers'), async (req, res, next) =>
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
-    
+
+    announceEmployeeAction(`${req.user.name} updated ${user.name}`, user._id)
+      .catch((error) => console.error('User notification failed:', error.message));
     res.json(user);
   } catch (error) {
     next(error);
@@ -427,6 +432,8 @@ router.delete('/users/:id', hasPermission('manageUsers'), async (req, res, next)
       return res.status(404).json({ message: 'User not found' });
     }
     
+    announceEmployeeAction(`${req.user.name} removed ${user.name}`, user._id)
+      .catch((error) => console.error('User notification failed:', error.message));
     res.json({ message: 'User deleted successfully' });
   } catch (error) {
     next(error);
@@ -549,7 +556,8 @@ router.put('/orders/:id', hasPermission('manageOrders'), async (req, res, next) 
     if (!order) {
       return res.status(404).json({ message: 'Order not found' });
     }
-    
+
+    announceOrderStatus(order, req.user.name).catch((error) => console.error('Order notification failed:', error.message));
     res.json(order);
   } catch (error) {
     next(error);
@@ -578,6 +586,7 @@ router.delete('/orders/:id', hasPermission('manageOrders'), async (req, res, nex
       }
     }
     
+    emitSync('orders', { action: 'deleted', id: order._id });
     res.json({ message: 'Order deleted successfully' });
   } catch (error) {
     next(error);

@@ -188,5 +188,8 @@
   "mod.viewAll": "كل الطلبات",
   "mod.viewAllHint": "مراجعة الطلبات وإدارتها",
   "mod.newOrders": "الطلبات الجديدة",
-  "mod.newOrdersHint": "مراجعة الطلبات الجديدة"
+  "mod.newOrdersHint": "مراجعة الطلبات الجديدة",
+  "notifications.title": "الإشعارات",
+  "notifications.readAll": "تعليم الكل كمقروء",
+  "notifications.empty": "لا توجد إشعارات"
 }

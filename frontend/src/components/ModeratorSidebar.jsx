@@ -54,8 +54,8 @@ const ModeratorSidebar = ({ isOpen = true, onClose, user }) => {
   }
 
   return (
-    <div className={`bg-gradient-to-b from-indigo-600 to-indigo-700 text-white w-64 min-h-screen fixed inset-y-0 start-0 flex flex-col z-50 transform transition-transform duration-300 ease-in-out lg:translate-x-0 shadow-2xl ${
-      isOpen ? 'translate-x-0' : 'ltr:-translate-x-full rtl:translate-x-full'
+    <div className={`bg-gradient-to-b from-indigo-600 to-indigo-700 text-white w-64 min-h-screen fixed inset-y-0 start-0 z-50 flex flex-col shadow-2xl transition-transform duration-300 ease-in-out lg:translate-x-0 ${
+      isOpen ? 'translate-x-0' : 'max-lg:-translate-x-full rtl:max-lg:translate-x-full'
     }`}>
       {/* Logo Header */}
       <div className="p-6 border-b border-indigo-500/50 flex justify-center items-center relative bg-indigo-700/50">

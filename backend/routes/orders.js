@@ -1,4 +1,5 @@
 const express = require('express');
+const { announceNewOrder } = require('../services/activity');
 const Order = require('../models/Order');
 const Product = require('../models/Product');
 const User = require('../models/User');
@@ -118,6 +119,7 @@ router.post('/guest', async (req, res, next) => {
 
     await order.populate('items.product', 'name images price');
     res.status(201).json(order);
+    announceNewOrder(order).catch((error) => console.error('Order notification failed:', error.message));
   } catch (error) {
     for (const entry of reserved) {
       try {
@@ -210,6 +212,7 @@ router.post('/', protect, async (req, res, next) => {
     }
     
     res.status(201).json(order);
+    announceNewOrder(order).catch((error) => console.error('Order notification failed:', error.message));
   } catch (error) {
     next(error);
   }

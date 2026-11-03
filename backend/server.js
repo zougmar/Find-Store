@@ -62,6 +62,7 @@ app.use('/api/admin', require('./routes/admin'));
 app.use('/api/payments', require('./routes/payments'));
 app.use('/api/delivery', require('./routes/delivery'));
 app.use('/api/moderator', require('./routes/moderator'));
+app.use('/api/notifications', require('./routes/notifications'));
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -132,8 +133,12 @@ if (require.main === module) {
   const startServer = async () => {
     try {
       await connectDB();
+      const http = require('http');
+      const { attachRealtime } = require('./realtime');
       const PORT = process.env.PORT || 5000;
-      app.listen(PORT, () => {
+      const server = http.createServer(app);
+      attachRealtime(server);
+      server.listen(PORT, () => {
         console.log(`✅ Server running on port ${PORT}`);
       });
     } catch (error) {

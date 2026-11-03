@@ -224,15 +224,6 @@ html[dir="ltr"] {
   border-bottom-left-radius: 0.25rem;
 }
 
-/* RTL support for transforms */
-[dir="rtl"] .transform {
-  transform: scaleX(-1);
-}
-
-[dir="rtl"] .transform svg {
-  transform: scaleX(-1);
-}
-
 /* Arabic Typography - Professional Styling */
 [dir="rtl"] {
   font-family: 'Segoe UI', 'Tahoma', 'Arial', 'Cairo', 'Noto Sans Arabic', 'Amiri', 'Almarai', sans-serif;

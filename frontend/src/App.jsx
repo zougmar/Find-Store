@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom'
 import { AdminLanguageProvider, useAdminI18n } from './context/AdminLanguageContext'
 import DocumentDirection from './components/DocumentDirection'
@@ -36,6 +37,7 @@ import ErrorBoundary from './components/ErrorBoundary'
 import GuestCheckoutModal from './components/GuestCheckoutModal'
 import BuyNowModal from './components/BuyNowModal'
 import { useCart } from './context/CartContext'
+import { connectRealtime, disconnectRealtime } from './realtime/socket'
 
 const ToastHost = () => {
   const { language } = useAdminI18n()
@@ -45,6 +47,26 @@ const ToastHost = () => {
   return <Toaster position={rtl ? 'top-left' : 'top-right'} />
 }
 
+const RealtimeBridge = () => {
+  const { pathname } = useLocation()
+
+  useEffect(() => {
+    const workspace = /^\/(admin|moderator|delivery)/.test(pathname)
+    if (!workspace) {
+      disconnectRealtime()
+      return undefined
+    }
+    const token = localStorage.getItem('token')
+      || localStorage.getItem('moderator_token')
+      || localStorage.getItem('delivery_token')
+    if (!token) return undefined
+    connectRealtime(token)
+    return undefined
+  }, [pathname])
+
+  return null
+}
+
 const AppContent = () => {
   const { showGuestCheckoutModal, buyNowProduct } = useCart()
 
@@ -52,6 +74,7 @@ const AppContent = () => {
     <Router>
       <AdminLanguageProvider>
       <DocumentDirection />
+      <RealtimeBridge />
       {showGuestCheckoutModal ? <GuestCheckoutModal /> : null}
       {buyNowProduct ? <BuyNowModal /> : null}
       <div className="min-h-screen bg-gray-50 overflow-x-hidden">

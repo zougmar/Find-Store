@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import AdminLayout from '../../components/AdminLayout'
 import api from '../../utils/api'
 import toast from 'react-hot-toast'
+import useAutoRefresh from '../../hooks/useAutoRefresh'
 
 const AdminMessages = () => {
   const [messages, setMessages] = useState([])
@@ -10,23 +11,25 @@ const AdminMessages = () => {
   const [selectedMessage, setSelectedMessage] = useState(null)
   const [searchQuery, setSearchQuery] = useState('')
 
-  useEffect(() => {
-    fetchMessages()
-  }, [filter])
-
-  const fetchMessages = async () => {
+  const fetchMessages = useCallback(async ({ silent = false } = {}) => {
     try {
-      setLoading(true)
+      if (!silent) setLoading(true)
       const params = filter === 'all' ? {} : { read: filter === 'read' }
       const res = await api.get('/admin/messages', { params })
       setMessages(res.data)
     } catch (error) {
       console.error('Error fetching messages:', error)
-      toast.error('Failed to fetch messages')
+      if (!silent) toast.error('Failed to fetch messages')
     } finally {
-      setLoading(false)
+      if (!silent) setLoading(false)
     }
-  }
+  }, [filter])
+
+  useEffect(() => {
+    fetchMessages()
+  }, [fetchMessages])
+
+  useAutoRefresh(() => fetchMessages({ silent: true }), { scopes: ['messages', 'all'] })
 
   const handleMarkAsRead = async (messageId) => {
     try {

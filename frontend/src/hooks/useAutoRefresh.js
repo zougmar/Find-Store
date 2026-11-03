@@ -1,7 +1,8 @@
 import { useEffect, useRef } from 'react'
 import { ADMIN_SYNC_EVENT } from '../utils/adminSync'
+import { isRealtimeConnected } from '../realtime/socket'
 
-export default function useAutoRefresh(callback, { interval = 20000, scopes = [] } = {}) {
+export default function useAutoRefresh(callback, { scopes = [] } = {}) {
   const callbackRef = useRef(callback)
   callbackRef.current = callback
   const scopesKey = scopes.join('|')
@@ -33,7 +34,9 @@ export default function useAutoRefresh(callback, { interval = 20000, scopes = []
     document.addEventListener('visibilitychange', onVisibility)
     window.addEventListener('focus', run)
     window.addEventListener(ADMIN_SYNC_EVENT, onAdmin)
-    const timer = window.setInterval(run, interval)
+    const timer = window.setInterval(() => {
+      if (!isRealtimeConnected()) run()
+    }, 45000)
 
     return () => {
       document.removeEventListener('visibilitychange', onVisibility)
@@ -41,5 +44,5 @@ export default function useAutoRefresh(callback, { interval = 20000, scopes = []
       window.removeEventListener(ADMIN_SYNC_EVENT, onAdmin)
       window.clearInterval(timer)
     }
-  }, [interval, scopesKey])
+  }, [scopesKey])
 }

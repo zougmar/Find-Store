@@ -1,4 +1,5 @@
 const express = require('express');
+const { emitSync } = require('../services/activity');
 const mongoose = require('mongoose');
 const Product = require('../models/Product');
 const { protect, admin } = require('../middleware/auth');
@@ -144,6 +145,7 @@ router.get('/:id', async (req, res, next) => {
 router.post('/', protect, admin, async (req, res, next) => {
   try {
     const product = await Product.create(sanitizeProductBody(req.body));
+    emitSync('products', { action: 'created', id: product._id });
     res.status(201).json(product);
   } catch (error) {
     next(error);
@@ -172,6 +174,7 @@ router.put('/:id', protect, admin, async (req, res, next) => {
     );
 
     await ensureSlug(product);
+    emitSync('products', { action: 'updated', id: product._id });
     res.json(product);
   } catch (error) {
     next(error);
@@ -190,6 +193,7 @@ router.delete('/:id', protect, admin, async (req, res, next) => {
       return res.status(404).json({ message: 'Product not found' });
     }
     
+    emitSync('products', { action: 'deleted', id: product._id });
     res.json({ message: 'Product deleted successfully' });
   } catch (error) {
     next(error);
