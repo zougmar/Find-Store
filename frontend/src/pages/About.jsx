@@ -1,134 +1,109 @@
+import { Link } from 'react-router-dom'
 import Footer from '../components/Footer'
 import { useLanguage } from '../context/LanguageContext'
+import usePageMeta from '../hooks/usePageMeta'
+
+const WHATSAPP_PHONE = '212707625535'
 
 const About = () => {
-  const { t, isRTL } = useLanguage()
-  
+  const { t } = useLanguage()
+
+  usePageMeta({
+    title: `${t('aboutFindStore')} | FINDSTORE`,
+    description: t('trustedMarketplace'),
+    url: `${window.location.origin}/about`
+  })
+
+  const reasons = [
+    { title: t('qualityGuaranteedTitle'), text: t('qualityGuaranteedText') },
+    { title: t('fastDeliveryTitle'), text: t('fastDeliveryText') },
+    { title: t('secureShoppingTitle'), text: t('secureShoppingText') },
+    { title: t('support247Title'), text: t('support247Text') }
+  ]
+
+  const mission = [
+    t('exceptionalService'),
+    t('productQuality'),
+    t('supportBusinesses'),
+    t('safeEnvironment'),
+    t('competitivePrices')
+  ]
+
   return (
-    <>
-      {/* Hero Section */}
-      <section className="bg-white py-12 md:py-20">
-        <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <h1 className={`text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-4 md:mb-6 ${isRTL ? 'text-right' : 'text-left'}`}>
-              {t('aboutFindStore')}
-            </h1>
-            <p className={`text-base md:text-xl text-gray-600 max-w-2xl mx-auto px-4 ${isRTL ? 'text-right' : 'text-left'}`}>
-              {t('trustedMarketplace')}
-            </p>
+    <div className="bg-white text-[#242424]" dir="rtl">
+      <section className="bg-[#F6F4F1]">
+        <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
+          <p className="text-sm font-semibold tracking-[0.18em] text-[#D97736]">FINDSTORE</p>
+          <h1 className="mt-4 max-w-3xl text-4xl font-semibold leading-tight sm:text-6xl">{t('aboutFindStore')}</h1>
+          <p className="mt-5 max-w-2xl text-lg leading-8 text-[#5c5c5c]">{t('trustedMarketplace')}</p>
+        </div>
+      </section>
+
+      <section className="mx-auto grid max-w-6xl gap-6 px-4 py-14 sm:px-6 lg:grid-cols-2 lg:px-8">
+        <article className="rounded-[28px] bg-[#F7F7F5] p-6 sm:p-8">
+          <h2 className="text-2xl font-semibold sm:text-3xl">{t('ourStory')}</h2>
+          <p className="mt-4 leading-8 text-[#555]">{t('ourStoryText')}</p>
+          <p className="mt-4 leading-8 text-[#555]">{t('ourStoryText2')}</p>
+        </article>
+        <article className="rounded-[28px] bg-[#171717] p-6 text-white sm:p-8">
+          <h2 className="text-2xl font-semibold sm:text-3xl">{t('ourMission')}</h2>
+          <p className="mt-4 leading-8 text-white/75">{t('ourMissionText')}</p>
+          <ul className="mt-6 space-y-3">
+            {mission.map((item) => (
+              <li key={item} className="flex items-start gap-3 leading-7">
+                <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[#D97736]" />
+                <span>{item}</span>
+              </li>
+            ))}
+          </ul>
+        </article>
+      </section>
+
+      <section className="bg-[#F7F7F5] py-14">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+          <h2 className="text-2xl font-semibold sm:text-3xl">{t('whyChooseUs')}</h2>
+          <div className="mt-8 grid gap-4 sm:grid-cols-2">
+            {reasons.map((reason) => (
+              <article key={reason.title} className="rounded-[28px] bg-white p-6 shadow-sm">
+                <span className="mb-4 block h-2 w-2 rounded-full bg-[#D97736]" />
+                <h3 className="text-xl font-semibold">{reason.title}</h3>
+                <p className="mt-3 leading-8 text-[#555]">{reason.text}</p>
+              </article>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* Main Content */}
-      <section className="py-8 md:py-16 bg-white">
-        <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="prose prose-lg max-w-none">
-            <div className={`mb-8 md:mb-12 ${isRTL ? 'text-right' : 'text-left'}`}>
-              <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3 md:mb-4">{t('ourStory')}</h2>
-              <p className="text-sm md:text-base text-gray-600 leading-relaxed mb-3 md:mb-4">
-                {t('ourStoryText')}
-              </p>
-              <p className="text-gray-600 leading-relaxed">
-                {t('ourStoryText2')}
-              </p>
+      <section className="px-4 py-16 sm:px-6">
+        <div className="mx-auto grid max-w-6xl gap-8 rounded-[32px] bg-[#171717] px-6 py-10 text-white sm:px-10 lg:grid-cols-[1.2fr_0.8fr] lg:items-center">
+          <div>
+            <h2 className="text-3xl font-semibold">{t('contactUs')}</h2>
+            <p className="mt-4 max-w-xl leading-8 text-white/70">{t('contactUsText')}</p>
+            <div className="mt-6 space-y-2 text-sm text-white/80">
+              <p>{t('contactCity')}</p>
+              <p dir="ltr" className="text-right">+212 707625535</p>
+              <p>{t('contactHours')}</p>
             </div>
-
-            <div className={`mb-8 md:mb-12 ${isRTL ? 'text-right' : 'text-left'}`}>
-              <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3 md:mb-4">{t('ourMission')}</h2>
-              <p className="text-sm md:text-base text-gray-600 leading-relaxed mb-3 md:mb-4">
-                {t('ourMissionText')}
-              </p>
-              <ul className={`list-disc list-inside text-gray-600 space-y-2 ${isRTL ? 'mr-4' : 'ml-4'}`}>
-                <li>{t('exceptionalService')}</li>
-                <li>{t('productQuality')}</li>
-                <li>{t('supportBusinesses')}</li>
-                <li>{t('safeEnvironment')}</li>
-                <li>{t('competitivePrices')}</li>
-              </ul>
-            </div>
-
-            <div className={`mb-8 md:mb-12 ${isRTL ? 'text-right' : 'text-left'}`}>
-              <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4 md:mb-6">{t('whyChooseUs')}</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-                <div className="p-6 bg-gray-50 rounded-xl">
-                  <div className="w-12 h-12 bg-[#FF385C] rounded-full flex items-center justify-center mb-4">
-                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                  </div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">{t('qualityGuaranteedTitle')}</h3>
-                  <p className="text-gray-600">
-                    {t('qualityGuaranteedText')}
-                  </p>
-                </div>
-
-                <div className="p-6 bg-gray-50 rounded-xl">
-                  <div className="w-12 h-12 bg-[#FF385C] rounded-full flex items-center justify-center mb-4">
-                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                  </div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">{t('fastDeliveryTitle')}</h3>
-                  <p className="text-gray-600">
-                    {t('fastDeliveryText')}
-                  </p>
-                </div>
-
-                <div className="p-6 bg-gray-50 rounded-xl">
-                  <div className="w-12 h-12 bg-[#FF385C] rounded-full flex items-center justify-center mb-4">
-                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                    </svg>
-                  </div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">{t('secureShoppingTitle')}</h3>
-                  <p className="text-gray-600">
-                    {t('secureShoppingText')}
-                  </p>
-                </div>
-
-                <div className="p-6 bg-gray-50 rounded-xl">
-                  <div className="w-12 h-12 bg-[#FF385C] rounded-full flex items-center justify-center mb-4">
-                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z" />
-                    </svg>
-                  </div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">{t('support247Title')}</h3>
-                  <p className="text-gray-600">
-                    {t('support247Text')}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className={`mb-8 md:mb-12 ${isRTL ? 'text-right' : 'text-left'}`}>
-              <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3 md:mb-4">{t('contactUs')}</h2>
-              <p className="text-sm md:text-base text-gray-600 leading-relaxed mb-3 md:mb-4">
-                {t('contactUsText')}
-              </p>
-              <div className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <svg className="w-5 h-5 text-[#FF385C]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                  </svg>
-                  <span className="text-gray-600">support@findstore.com</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <svg className="w-5 h-5 text-[#FF385C]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                  </svg>
-                  <span className="text-gray-600">+1 (555) 123-4567</span>
-                </div>
-              </div>
-            </div>
+          </div>
+          <div className="flex flex-col gap-3 sm:flex-row lg:flex-col">
+            <Link to="/contact" className="inline-flex h-12 items-center justify-center rounded-full bg-white px-6 font-semibold text-[#171717]">
+              {t('contactUs')}
+            </Link>
+            <a
+              href={`https://wa.me/${WHATSAPP_PHONE}`}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex h-12 items-center justify-center rounded-full bg-[#25D366] px-6 font-semibold text-white"
+            >
+              {t('contactViaWhatsApp')}
+            </a>
           </div>
         </div>
       </section>
 
       <Footer />
-    </>
+    </div>
   )
 }
 
 export default About
-

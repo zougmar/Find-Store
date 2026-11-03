@@ -287,6 +287,10 @@ export const CartProvider = ({ children }) => {
   const closeGuestCheckoutModal = () => setShowGuestCheckoutModal(false)
   const openBuyNow = (product, quantity = 1) => setBuyNowProduct({ product, quantity })
   const closeBuyNow = () => setBuyNowProduct(null)
+  const setBuyNowQuantity = (quantity) => {
+    const next = Math.min(50, Math.max(1, Number(quantity) || 1))
+    setBuyNowProduct((current) => current ? { ...current, quantity: next } : current)
+  }
 
   const value = {
     cartItems,
@@ -305,7 +309,8 @@ export const CartProvider = ({ children }) => {
     setShowGuestCheckoutModal,
     buyNowProduct,
     openBuyNow,
-    closeBuyNow
+    closeBuyNow,
+    setBuyNowQuantity
   }
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>

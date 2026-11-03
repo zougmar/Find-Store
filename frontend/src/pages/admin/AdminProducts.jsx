@@ -3,6 +3,7 @@ import AdminLayout from '../../components/AdminLayout'
 import api from '../../utils/api'
 import toast from 'react-hot-toast'
 import { formatCurrency } from '../../utils/currency'
+import { formatDecimalComma, normalizeDiscountInput, parseDecimal } from '../../utils/product'
 import useAutoRefresh from '../../hooks/useAutoRefresh'
 import { notifyAdminChange } from '../../utils/adminSync'
 import { useAdminI18n } from '../../context/AdminLanguageContext'
@@ -50,6 +51,7 @@ const AdminProducts = () => {
   const [editingProduct, setEditingProduct] = useState(null)
   const [formData, setFormData] = useState(emptyProductForm)
   const [uploadingImages, setUploadingImages] = useState(false)
+  const [imageUrl, setImageUrl] = useState('')
   const [categories, setCategories] = useState([])
   const [subcategories, setSubcategories] = useState([])
   const [availableSubcategories, setAvailableSubcategories] = useState([])
@@ -122,7 +124,7 @@ const AdminProducts = () => {
       const productData = {
         ...formData,
         price: Number(formData.price),
-        discountPercentage: formData.discountPercentage ? Number(formData.discountPercentage) : 0,
+        discountPercentage: formData.discountPercentage === '' ? 0 : parseDecimal(formData.discountPercentage),
         stock: Number(formData.stock),
         images: formData.images.filter(img => img && img.trim()),
         features: formData.features.filter(feature => feature && feature.trim()),
@@ -134,6 +136,10 @@ const AdminProducts = () => {
       delete productData.specificationsText
       delete productData.faqsText
       if (!String(productData.slug || '').trim()) delete productData.slug
+      if (!Number.isFinite(productData.discountPercentage) || productData.discountPercentage < 0 || productData.discountPercentage > 100) {
+        toast.error(t('products.discountInvalid'))
+        return
+      }
 
       if (editingProduct) {
         await api.put(`/products/${editingProduct._id}`, productData)
@@ -145,6 +151,7 @@ const AdminProducts = () => {
 
       setShowModal(false)
       setEditingProduct(null)
+      setImageUrl('')
       setFormData(emptyProductForm())
       notifyAdminChange('products')
       fetchProducts()
@@ -156,6 +163,7 @@ const AdminProducts = () => {
   }
 
   const handleEdit = (product) => {
+    setImageUrl('')
     setEditingProduct(product)
     const images = product.images || []
     const features = product.features || []
@@ -166,7 +174,7 @@ const AdminProducts = () => {
       headline: product.headline || '',
       slug: product.slug || '',
       price: product.price,
-      discountPercentage: product.discountPercentage || '',
+      discountPercentage: product.discountPercentage ? formatDecimalComma(product.discountPercentage) : '',
       category: product.category || '',
       subcategory: product.subcategory || '',
       stock: product.stock,
@@ -181,49 +189,48 @@ const AdminProducts = () => {
     setShowModal(true)
   }
 
+  const isWebUrl = (value) => {
+    try {
+      const url = new URL(value)
+      return url.protocol === 'http:' || url.protocol === 'https:'
+    } catch {
+      return false
+    }
+  }
+
   const handleImageUpload = async (e) => {
-    const files = Array.from(e.target.files)
+    const files = Array.from(e.target.files || [])
+    e.target.value = ''
     if (files.length === 0) return
 
     setUploadingImages(true)
     try {
-      const uploadPromises = files.map(async (file) => {
-        // Validate file type (images and videos)
-        const allowedImageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
-        const allowedVideoTypes = ['video/mp4', 'video/webm', 'video/ogg', 'video/quicktime', 'video/x-msvideo', 'video/x-matroska']
-        const isImage = file.type.startsWith('image/') || allowedImageTypes.includes(file.type)
-        const isVideo = file.type.startsWith('video/') || allowedVideoTypes.includes(file.type)
-        
+      const uploadedUrls = []
+      for (const file of files) {
+        const isImage = file.type.startsWith('image/')
+        const isVideo = file.type.startsWith('video/')
         if (!isImage && !isVideo) {
-          throw new Error(`${file.name} is not a valid image or video file`)
+          throw new Error(t('products.fileInvalid'))
+        }
+        if (file.size > 4 * 1024 * 1024) {
+          throw new Error(t('products.fileTooLarge'))
         }
 
-        // Validate file size (100MB max for videos, 10MB for images)
-        const maxSize = isVideo ? 100 * 1024 * 1024 : 10 * 1024 * 1024
-        if (file.size > maxSize) {
-          const maxSizeMB = Math.round(maxSize / (1024 * 1024))
-          throw new Error(`${file.name} is too large (max ${maxSizeMB}MB)`)
-        }
+        const body = new FormData()
+        body.append('image', file)
+        const res = await api.post('/admin/upload', body)
+        const url = res.data.imageUrl || res.data.fileUrl
+        if (url) uploadedUrls.push(url)
+      }
 
-        const formData = new FormData()
-        formData.append('image', file)
-
-        const res = await api.post('/admin/upload', formData)
-        return res.data.imageUrl || res.data.fileUrl
-      })
-
-      const uploadedUrls = await Promise.all(uploadPromises)
-      const newImages = [...formData.images, ...uploadedUrls]
-      setFormData({ ...formData, images: newImages })
-      toast.success(`${uploadedUrls.length} file(s) uploaded successfully!`)
+      setFormData((current) => ({ ...current, images: [...current.images, ...uploadedUrls] }))
+      toast.success(t('products.uploaded'))
     } catch (error) {
       console.error('Upload error:', error)
-      const errorMessage = error.response?.data?.message || error.response?.data?.error || error.message || 'Failed to upload files'
+      const errorMessage = error.response?.data?.message || error.message || t('products.uploadFailed')
       toast.error(errorMessage)
     } finally {
       setUploadingImages(false)
-      // Reset file input
-      e.target.value = ''
     }
   }
 
@@ -250,11 +257,18 @@ const AdminProducts = () => {
     setFormData({ ...formData, images: newImages })
   }
 
-  const handleImageUrlAdd = (url) => {
-    if (url.trim()) {
-      const newImages = [...formData.images, url.trim()]
-      setFormData({ ...formData, images: newImages })
+  const handleImageUrlAdd = () => {
+    const value = imageUrl.trim()
+    if (!isWebUrl(value)) {
+      toast.error(t('products.urlInvalid'))
+      return
     }
+    setFormData((current) => (
+      current.images.includes(value)
+        ? current
+        : { ...current, images: [...current.images, value] }
+    ))
+    setImageUrl('')
   }
 
   const handleAddFeature = (feature) => {
@@ -308,6 +322,8 @@ const AdminProducts = () => {
     if (name === 'category') {
       // Reset subcategory when category changes
       setFormData({ ...formData, category: value, subcategory: '' })
+    } else if (name === 'discountPercentage') {
+      setFormData({ ...formData, discountPercentage: normalizeDiscountInput(value) })
     } else {
       setFormData({ ...formData, [name]: value })
     }
@@ -621,6 +637,7 @@ const AdminProducts = () => {
                   onClick={() => {
                     setShowModal(false)
                     setEditingProduct(null)
+                    setImageUrl('')
                   }}
                   className="text-gray-400 hover:text-gray-600 transition-colors"
                 >
@@ -684,21 +701,20 @@ const AdminProducts = () => {
                     </label>
                     <div className="relative">
                       <input
-                        type="number"
+                        type="text"
+                        inputMode="decimal"
+                        dir="ltr"
                         name="discountPercentage"
                         value={formData.discountPercentage}
                         onChange={handleChange}
-                        min="0"
-                        max="100"
-                        step="1"
                         className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF385C] focus:border-[#FF385C] transition-all"
-                        placeholder="0"
+                        placeholder="20,24"
                       />
                       <span className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 font-medium">%</span>
                     </div>
-                    {formData.discountPercentage && formData.price && (
+                    {formData.discountPercentage && formData.price && Number.isFinite(parseDecimal(formData.discountPercentage)) && (
                       <p className="text-xs text-green-600 mt-1 font-medium">
-                        Discounted Price: {formatCurrency(formData.price * (1 - formData.discountPercentage / 100))}
+                        Discounted Price: {formatCurrency(formData.price * (1 - parseDecimal(formData.discountPercentage) / 100))}
                       </p>
                     )}
                   </div>
@@ -770,65 +786,49 @@ const AdminProducts = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Product Images
+                    {t('products.images')}
                   </label>
-                
-                  {/* Upload from Local */}
-                  <div className="mb-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Upload Images or Videos from Computer
-                    </label>
-                    <input
-                      type="file"
-                      accept="image/*,video/*"
-                      multiple
-                      onChange={handleImageUpload}
-                      disabled={uploadingImages}
-                      className="block w-full text-sm text-gray-500
-                        file:mr-4 file:py-2 file:px-4
-                        file:rounded-lg file:border-0
-                        file:text-sm file:font-semibold
-                        file:bg-[#FF385C] file:text-white
-                        hover:file:bg-[#E61E4D] file:cursor-pointer
-                        disabled:opacity-50"
-                    />
-                    {uploadingImages && (
-                      <p className="text-sm text-[#FF385C] mt-2 font-medium">{t('products.uploading')}</p>
-                    )}
-                    <p className="text-xs text-gray-500 mt-2">
-                      You can select multiple files. Max 10MB per image, 100MB per video.
-                    </p>
-                  </div>
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                      <p className="text-sm font-semibold text-gray-800">{t('products.fromComputer')}</p>
+                      <p className="mt-1 text-xs text-gray-500">{t('products.fromComputerHint')}</p>
+                      <label className={`mt-3 inline-flex cursor-pointer items-center rounded-lg bg-[#FF385C] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#E61E4D] ${uploadingImages ? 'pointer-events-none opacity-60' : ''}`}>
+                        {uploadingImages ? t('products.uploading') : t('products.chooseFiles')}
+                        <input
+                          type="file"
+                          accept="image/jpeg,image/png,image/gif,image/webp,video/mp4,video/webm"
+                          multiple
+                          onChange={handleImageUpload}
+                          disabled={uploadingImages}
+                          className="sr-only"
+                        />
+                      </label>
+                    </div>
 
-                  {/* Add Image URL */}
-                  <div className="mb-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Or Add Image URL
-                    </label>
-                    <div className="flex gap-2">
-                      <input
-                        type="url"
-                        placeholder="https://example.com/image.jpg"
-                        className="flex-1 px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF385C] focus:border-[#FF385C] transition-all"
-                        onKeyPress={(e) => {
-                          if (e.key === 'Enter') {
-                            e.preventDefault()
-                            handleImageUrlAdd(e.target.value)
-                            e.target.value = ''
-                          }
-                        }}
-                      />
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          const input = e.target.previousElementSibling
-                          handleImageUrlAdd(input.value)
-                          input.value = ''
-                        }}
-                        className="px-4 py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg font-semibold transition-colors"
-                      >
-                        Add URL
-                      </button>
+                    <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                      <p className="text-sm font-semibold text-gray-800">{t('products.orUrl')}</p>
+                      <div className="mt-3 flex gap-2">
+                        <input
+                          type="url"
+                          value={imageUrl}
+                          onChange={(e) => setImageUrl(e.target.value)}
+                          placeholder={t('products.urlPlaceholder')}
+                          className="min-w-0 flex-1 rounded-lg border-2 border-gray-300 px-3 py-2.5 focus:border-[#FF385C] focus:outline-none focus:ring-2 focus:ring-[#FF385C]"
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault()
+                              handleImageUrlAdd()
+                            }
+                          }}
+                        />
+                        <button
+                          type="button"
+                          onClick={handleImageUrlAdd}
+                          className="shrink-0 rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-gray-800"
+                        >
+                          {t('products.addUrl')}
+                        </button>
+                      </div>
                     </div>
                   </div>
 
@@ -836,7 +836,7 @@ const AdminProducts = () => {
                 {formData.images.length > 0 && (
                   <div className="mt-4">
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Image Previews ({formData.images.length})
+                      {t('products.previews')} ({formData.images.length})
                       <span className="text-xs text-gray-500 ms-2">{t('products.primaryImage')}</span>
                     </label>
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 md:gap-4">
@@ -852,8 +852,8 @@ const AdminProducts = () => {
                           />
                           {/* Primary Badge */}
                           {index === 0 && (
-                            <div className="absolute top-1 left-1 md:top-2 md:left-2 bg-[#FF385C] text-white text-xs font-bold px-2 py-1 rounded-md shadow-lg">
-                              Primary
+                            <div className="absolute top-1 start-1 md:top-2 md:start-2 bg-[#FF385C] text-white text-xs font-bold px-2 py-1 rounded-md shadow-lg">
+                              {t('products.primary')}
                             </div>
                           )}
                           {/* Position Number */}
@@ -1087,6 +1087,7 @@ const AdminProducts = () => {
                     onClick={() => {
                       setShowModal(false)
                       setEditingProduct(null)
+                      setImageUrl('')
                     }}
                     className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 px-6 py-3 rounded-lg font-semibold transition-colors"
                   >

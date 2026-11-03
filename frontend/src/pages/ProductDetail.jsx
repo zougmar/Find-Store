@@ -1,55 +1,64 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { useEffect, useMemo, useState } from 'react'
+import { createPortal } from 'react-dom'
+import { Link, useParams } from 'react-router-dom'
+import { io } from 'socket.io-client'
 import api from '../utils/api'
 import { useCart } from '../context/CartContext'
-import { useAuth } from '../context/AuthContext'
-import { useLanguage } from '../context/LanguageContext'
-import toast from 'react-hot-toast'
-import { formatCurrency } from '../utils/currency'
-import { getUnitPrice, isVideoUrl } from '../utils/product'
-import { normalizeMoroccanPhone } from '../utils/phone'
+import { formatDecimalComma, formatDirham, getUnitPrice, isVideoUrl } from '../utils/product'
 import usePageMeta from '../hooks/usePageMeta'
-import { notifyAdminChange } from '../utils/adminSync'
 
 const WHATSAPP_PHONE = '212707625535'
 
+const WhatsAppIcon = ({ className = 'h-5 w-5' }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" />
+  </svg>
+)
+
+const processFaqs = [
+  {
+    question: 'كيف يمكنني طلب المنتج؟',
+    answer: 'اضغط على «اطلب الآن»، أدخل اسمك ورقم هاتفك المغربي والمدينة والعنوان، ثم أكد الطلب. نتصل بك لتأكيد المعلومات قبل الشحن.'
+  },
+  {
+    question: 'واش كاين التوصيل لجميع المدن؟',
+    answer: 'نعم، FINDSTORE يوصل الطلبات إلى جميع مدن المغرب، والدفع عند الاستلام.'
+  },
+  {
+    question: 'كيفاش نأكد الطلب ديالي؟',
+    answer: 'بعد إرسال الطلب نتصل بك على الرقم الذي أدخلته لتأكيد العنوان والكمية قبل إرسال المنتج.'
+  },
+  {
+    question: 'شحال كتاخد مدة التوصيل؟',
+    answer: 'مدة التوصيل تختلف حسب المدينة. نخبرك بالموعد المتوقع أثناء مكالمة التأكيد.'
+  }
+]
+
 const ProductDetail = () => {
   const { slug } = useParams()
-  const navigate = useNavigate()
   const { openBuyNow } = useCart()
-  const { user } = useAuth()
-  const { t, isRTL, language } = useLanguage()
   const [product, setProduct] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [missing, setMissing] = useState(false)
   const [quantity, setQuantity] = useState(1)
   const [selectedImageIndex, setSelectedImageIndex] = useState(0)
   const [lightboxOpen, setLightboxOpen] = useState(false)
   const [openFaq, setOpenFaq] = useState(0)
-  const [review, setReview] = useState({ rating: 5, comment: '' })
-  const [submitting, setSubmitting] = useState(false)
-  const [orderSuccess, setOrderSuccess] = useState(null)
-  const [orderForm, setOrderForm] = useState({
-    fullName: '',
-    phone: '',
-    city: '',
-    address: ''
-  })
-  const submittingRef = useRef(false)
-
-  const tx = (_en, _fr, ar) => ar
 
   const unitPrice = product ? getUnitPrice(product) : 0
   const discountPercentage = Number(product?.discountPercentage) || 0
   const hasDiscount = discountPercentage > 0 && unitPrice < Number(product?.price || 0)
   const totalPrice = unitPrice * quantity
-  const images = product?.images?.filter(Boolean) || []
+  const images = useMemo(() => (product?.images || []).filter(Boolean), [product])
   const activeImage = images[selectedImageIndex] || ''
   const headline = product?.headline?.trim() || ''
   const benefits = (product?.benefits || []).filter(Boolean)
   const features = (product?.features || []).filter(Boolean)
+  const benefitItems = benefits.length > 0 ? benefits : features
   const specifications = (product?.specifications || []).filter((item) => item?.label && item?.value)
-  const faqs = (product?.faqs || []).filter((item) => item?.question && item?.answer)
-  const reviews = product?.ratings || []
+  const productFaqs = (product?.faqs || []).filter((item) => item?.question && item?.answer)
+  const faqs = [...productFaqs, ...processFaqs]
+  const reviews = (product?.ratings || []).filter((item) => item?.comment || item?.rating)
 
   const shareImage = useMemo(() => {
     if (!activeImage) return undefined
@@ -58,7 +67,7 @@ const ProductDetail = () => {
   }, [activeImage])
 
   usePageMeta({
-    title: product ? `${product.name} | FINDSTORE` : 'FINDSTORE',
+    title: product ? `${product.name} | FINDSTORE` : missing ? 'المنتج غير موجود | FINDSTORE' : 'FINDSTORE',
     description: product
       ? (headline || product.description || product.name).replace(/\s+/g, ' ').slice(0, 160)
       : 'FINDSTORE',
@@ -69,548 +78,330 @@ const ProductDetail = () => {
   useEffect(() => {
     let cancelled = false
 
-    const loadProduct = async () => {
-      setLoading(true)
-      setOrderSuccess(null)
+    const loadProduct = async ({ silent = false } = {}) => {
+      if (!silent) setLoading(true)
       try {
         const res = await api.get(`/products/${encodeURIComponent(slug)}`)
         if (cancelled) return
         setProduct(res.data)
-        setSelectedImageIndex(0)
-        setQuantity(1)
-        if (res.data?.slug && res.data.slug !== slug) {
-          navigate(`/product/${res.data.slug}`, { replace: true })
-        }
-      } catch (error) {
-        if (!cancelled) {
-          toast.error('المنتج غير موجود')
-          navigate('/')
+        setMissing(false)
+        setSelectedImageIndex((current) => {
+          const count = (res.data?.images || []).filter(Boolean).length
+          return count > 0 && current < count ? current : 0
+        })
+      } catch {
+        if (!cancelled && !silent) {
+          setProduct(null)
+          setMissing(true)
         }
       } finally {
         if (!cancelled) setLoading(false)
       }
     }
 
+    setQuantity(1)
     loadProduct()
+
+    const socket = io(window.location.origin, {
+      path: '/socket.io',
+      transports: ['websocket', 'polling'],
+      reconnection: true
+    })
+    socket.on('sync', (payload) => {
+      if (!payload?.scope || payload.scope === 'products' || payload.scope === 'all') {
+        loadProduct({ silent: true })
+      }
+    })
+    const onFocus = () => loadProduct({ silent: true })
+    window.addEventListener('focus', onFocus)
+
     return () => {
       cancelled = true
+      socket.removeAllListeners()
+      socket.disconnect()
+      window.removeEventListener('focus', onFocus)
     }
-  }, [slug, navigate])
+  }, [slug])
 
-  const scrollToOrder = () => {
-    document.getElementById('order-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-  }
+  const maxQuantity = Math.max(1, Math.min(50, product?.stock || 1))
+  const changeQuantity = (next) => setQuantity(Math.min(maxQuantity, Math.max(1, next)))
+  const inStock = (product?.stock || 0) > 0
 
-  const changeQuantity = (next) => {
-    const max = Math.max(product?.stock || 1, 1)
-    setQuantity(Math.min(max, Math.max(1, next)))
-  }
-
-  const handleBuyNow = () => {
-    if (!product || product.stock < quantity) {
-      toast.error(t('outOfStock') || 'Insufficient stock')
-      return
-    }
+  const orderNow = () => {
+    if (!product || !inStock) return
     openBuyNow(product, quantity)
   }
 
-  const handleWhatsApp = () => {
+  const scrollToDetails = () => {
+    document.getElementById('product-details')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
+  const openWhatsApp = () => {
     if (!product) return
-    const productUrl = window.location.href
-    const priceLabel = hasDiscount
-      ? `${formatCurrency(unitPrice)} (${formatCurrency(product.price)})`
-      : formatCurrency(unitPrice)
-    const message = language === 'ar'
-      ? `مرحبا! أنا مهتم بالمنتج: ${product.name}\nالسعر: ${priceLabel}\n${productUrl}`
-      : language === 'fr'
-        ? `Bonjour ! Je suis intéressé(e) par : ${product.name}\nPrix : ${priceLabel}\n${productUrl}`
-        : `Hello! I'm interested in: ${product.name}\nPrice: ${priceLabel}\n${productUrl}`
+    const message = `مرحبا! أنا مهتم بالمنتج: ${product.name}\nالثمن: ${formatDirham(unitPrice)}\n${window.location.href}`
     window.open(`https://wa.me/${WHATSAPP_PHONE}?text=${encodeURIComponent(message)}`, '_blank', 'noopener,noreferrer')
-  }
-
-  const handleSubmitReview = async (event) => {
-    event.preventDefault()
-    if (!user) {
-      toast.error(t('pleaseLoginReview') || 'Please login to submit a review')
-      return
-    }
-    try {
-      const res = await api.post(`/products/${product._id}/reviews`, review)
-      setProduct(res.data)
-      setReview({ rating: 5, comment: '' })
-      toast.success(t('reviewSubmitted') || 'Review submitted!')
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'تعذر إرسال التقييم')
-    }
-  }
-
-  const handleOrder = async (event) => {
-    event.preventDefault()
-    if (!product || submittingRef.current) return
-
-    const fullName = orderForm.fullName.trim()
-    const phone = normalizeMoroccanPhone(orderForm.phone)
-    const city = orderForm.city.trim()
-    const address = orderForm.address.trim()
-
-    if (fullName.length < 2 || !phone || city.length < 2 || address.length < 5) {
-      toast.error(tx(
-        'Enter your name, a Moroccan phone number, city, and full address.',
-        'Indiquez votre nom, un numéro marocain, la ville et l’adresse complète.',
-        'أدخل الاسم ورقم هاتف مغربي والمدينة والعنوان الكامل.'
-      ))
-      return
-    }
-    if (product.stock < quantity) {
-      toast.error(t('outOfStock') || 'Insufficient stock')
-      return
-    }
-
-    submittingRef.current = true
-    setSubmitting(true)
-    try {
-      const res = await api.post('/orders/guest', {
-        items: [{ product: product._id, quantity }],
-        customerName: fullName,
-        customerPhone: phone,
-        city,
-        address,
-        country: 'Morocco'
-      })
-      setOrderSuccess(res.data)
-      setProduct((current) => current ? { ...current, stock: Math.max(0, current.stock - quantity) } : current)
-      setOrderForm({ fullName: '', phone: '', city: '', address: '' })
-      notifyAdminChange('orders')
-      toast.success(tx(
-        'Order confirmed. Our team will contact you shortly.',
-        'Commande confirmée. Notre équipe vous contactera rapidement.',
-        'تم تأكيد الطلب. سيتواصل معك فريقنا قريبا.'
-      ))
-    } catch (error) {
-      toast.error(error.response?.data?.message || tx(
-        'Could not place the order. Please try again.',
-        'Impossible d’enregistrer la commande. Réessayez.',
-        'تعذر حفظ الطلب. حاول مرة أخرى.'
-      ))
-    } finally {
-      submittingRef.current = false
-      setSubmitting(false)
-    }
   }
 
   if (loading) {
     return (
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10">
-        <div className="grid lg:grid-cols-2 gap-8">
-          <div className="aspect-square rounded-3xl bg-gray-200 animate-pulse" />
-          <div className="space-y-4">
-            <div className="h-4 w-32 bg-gray-200 rounded animate-pulse" />
-            <div className="h-10 w-4/5 bg-gray-200 rounded animate-pulse" />
-            <div className="h-24 w-full bg-gray-200 rounded animate-pulse" />
-            <div className="h-14 w-48 bg-gray-200 rounded animate-pulse" />
+      <div className="bg-white">
+        <div className="mx-auto grid max-w-6xl gap-8 px-4 py-8 sm:px-6 lg:grid-cols-2 lg:px-8 lg:py-12">
+          <div className="aspect-square animate-pulse rounded-[28px] bg-[#F7F7F5] lg:order-2" />
+          <div className="space-y-4 lg:order-1">
+            <div className="h-8 w-3/4 animate-pulse rounded bg-[#F7F7F5]" />
+            <div className="h-20 animate-pulse rounded bg-[#F7F7F5]" />
+            <div className="h-12 w-40 animate-pulse rounded bg-[#F7F7F5]" />
           </div>
         </div>
       </div>
     )
   }
 
-  if (!product) return null
+  if (missing || !product) {
+    return (
+      <div className="bg-white px-4 py-24 text-center text-[#242424]" dir="rtl">
+        <p className="text-sm text-[#777777]">FINDSTORE</p>
+        <h1 className="mt-3 text-3xl font-semibold">هذا المنتج غير موجود</h1>
+        <p className="mx-auto mt-3 max-w-md text-[#777777]">تأكد من الرابط أو عد إلى قائمة المنتجات.</p>
+        <Link to="/products" className="mt-8 inline-flex h-12 items-center rounded-full bg-[#171717] px-6 font-semibold text-white">
+          جميع المنتجات
+        </Link>
+      </div>
+    )
+  }
 
-  const inStock = product.stock > 0
-  const detailFacts = [
-    product.category ? { label: t('category') || 'Category', value: product.category } : null,
-    product.subcategory ? { label: tx('Collection', 'Collection', 'المجموعة'), value: product.subcategory } : null,
-    { label: t('stock') || 'Stock', value: inStock ? `${product.stock}` : (t('outOfStockLabel') || 'Out of stock') }
-  ].filter(Boolean)
-  const specRows = specifications.length > 0 ? specifications : detailFacts
+  const showcase = images.length > 1 ? images.slice(1) : images
 
   return (
-    <div className={`bg-[#f6f5f3] text-gray-900 pb-24 lg:pb-0 ${isRTL ? 'text-right' : 'text-left'}`} dir={isRTL ? 'rtl' : 'ltr'}>
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
-        <nav className="text-sm text-gray-500 mb-6 flex flex-wrap items-center gap-2">
-          <Link to="/" className="hover:text-gray-900">FINDSTORE</Link>
-          <span>/</span>
-          <Link to="/products" className="hover:text-gray-900">{t('products') || 'Products'}</Link>
-          <span>/</span>
-          <span className="text-gray-900 font-medium truncate max-w-[12rem] sm:max-w-none">{product.name}</span>
-        </nav>
-
-        <section className="grid lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] gap-8 lg:gap-14 items-start">
-          <div>
-            <div className="bg-white rounded-3xl border border-black/5 shadow-sm overflow-hidden">
-              <button
-                type="button"
-                className="block w-full aspect-square bg-[#f3f1ee]"
-                onClick={() => activeImage && setLightboxOpen(true)}
-                aria-label={product.name}
-              >
-                {activeImage ? (
-                  isVideoUrl(activeImage) ? (
-                    <video src={activeImage} className="w-full h-full object-cover" controls playsInline />
-                  ) : (
-                    <img
-                      src={activeImage}
-                      alt={product.name}
-                      className="w-full h-full object-cover"
-                      onError={(event) => {
-                        event.currentTarget.src = 'https://via.placeholder.com/900x900?text=FINDSTORE'
-                      }}
-                    />
-                  )
+    <div className="bg-white pb-28 text-[#242424]" dir="rtl">
+      <section className="bg-[#F7F7F5]">
+        <div className="mx-auto grid max-w-6xl items-center gap-8 px-4 py-8 sm:px-6 lg:grid-cols-2 lg:gap-14 lg:px-8 lg:py-14">
+        <div className="order-1 lg:sticky lg:top-24 lg:order-2">
+          <div className="overflow-hidden rounded-[32px] bg-white shadow-[0_24px_60px_rgba(23,23,23,0.08)]">
+            <button type="button" className="block aspect-square w-full" onClick={() => activeImage && setLightboxOpen(true)} aria-label={product.name}>
+              {activeImage ? (
+                isVideoUrl(activeImage) ? (
+                  <video key={activeImage} src={activeImage} className="h-full w-full object-cover" controls playsInline />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-gray-400">{t('noImageAvailable')}</div>
-                )}
-              </button>
-            </div>
-            {images.length > 1 && (
-              <div className="mt-4 flex gap-3 overflow-x-auto pb-1">
-                {images.map((image, index) => (
-                  <button
-                    key={`${image}-${index}`}
-                    type="button"
-                    onClick={() => setSelectedImageIndex(index)}
-                    className={`h-20 w-20 flex-shrink-0 rounded-2xl overflow-hidden border-2 bg-white ${
-                      selectedImageIndex === index ? 'border-[#111]' : 'border-transparent'
-                    }`}
-                  >
-                    {isVideoUrl(image) ? (
-                      <video src={image} className="w-full h-full object-cover" muted />
-                    ) : (
-                      <img src={image} alt="" className="w-full h-full object-cover" loading="lazy" />
-                    )}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div className="lg:sticky lg:top-24">
-            <p className="text-xs font-semibold tracking-[0.18em] uppercase text-[#FF385C]">
-              {product.category}{product.subcategory ? ` · ${product.subcategory}` : ''}
-            </p>
-            <h1 className="mt-3 text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight text-gray-950">
-              {product.name}
-            </h1>
-            {headline && (
-              <p className="mt-4 text-lg text-gray-600 leading-relaxed">{headline}</p>
-            )}
-
-            <div className="mt-6 flex flex-wrap items-end gap-3">
-              <p className="text-4xl font-semibold tracking-tight">{formatCurrency(unitPrice)}</p>
-              {hasDiscount && (
-                <>
-                  <p className="text-lg text-gray-400 line-through mb-1">{formatCurrency(product.price)}</p>
-                  <span className="mb-1 inline-flex items-center rounded-full bg-red-50 text-red-600 text-sm font-semibold px-3 py-1">
-                    -{discountPercentage}%
-                  </span>
-                </>
+                  <img key={activeImage} src={activeImage} alt={product.name} className="h-full w-full object-contain p-4 transition duration-500 sm:p-8" />
+                )
+              ) : (
+                <div className="flex h-full items-center justify-center text-[#777777]">لا توجد صورة</div>
               )}
-            </div>
-            <p className={`mt-3 text-sm font-medium ${inStock ? 'text-emerald-700' : 'text-red-600'}`}>
-              {inStock ? `${t('inStockLabel') || 'In stock'} · ${product.stock}` : (t('outOfStockLabel') || 'Out of stock')}
-            </p>
-
-            <div className="mt-6 flex items-center gap-4">
-              <span className="text-sm font-medium text-gray-600">{t('quantity') || 'Quantity'}</span>
-              <div className="inline-flex items-center rounded-full border border-gray-200 bg-white">
-                <button type="button" onClick={() => changeQuantity(quantity - 1)} className="h-11 w-11 text-lg" aria-label="إنقاص الكمية">−</button>
-                <span className="w-8 text-center font-semibold">{quantity}</span>
-                <button type="button" onClick={() => changeQuantity(quantity + 1)} className="h-11 w-11 text-lg" aria-label="زيادة الكمية">+</button>
-              </div>
-              <span className="text-sm text-gray-500">{formatCurrency(totalPrice)}</span>
-            </div>
-
-            <div className="mt-6 grid sm:grid-cols-2 gap-3">
-              <button
-                type="button"
-                onClick={scrollToOrder}
-                disabled={!inStock}
-                className="h-12 rounded-full bg-[#111] text-white font-semibold disabled:bg-gray-300"
-              >
-                {tx('Order now', 'Commander maintenant', 'اطلب الآن')}
-              </button>
-              <button
-                type="button"
-                onClick={handleWhatsApp}
-                className="h-12 rounded-full bg-[#25D366] text-white font-semibold"
-              >
-                WhatsApp
-              </button>
-            </div>
-            <button type="button" onClick={handleBuyNow} disabled={!inStock} className="mt-3 text-sm font-medium text-gray-600 underline underline-offset-4 disabled:no-underline disabled:text-gray-400">
-              {t('buyNow') || 'Buy now'}
             </button>
           </div>
-        </section>
-
-        <section className="mt-14 grid lg:grid-cols-3 gap-6">
-          <article className="lg:col-span-2 bg-white rounded-3xl border border-black/5 p-6 sm:p-8">
-            <h2 className="text-2xl font-semibold">{t('productOverview') || 'Overview'}</h2>
-            <p className="mt-4 text-gray-600 leading-7 whitespace-pre-line">{product.description}</p>
-          </article>
-          <aside className="bg-white rounded-3xl border border-black/5 p-6">
-            <h2 className="text-lg font-semibold">{tx('Delivery', 'Livraison', 'التوصيل')}</h2>
-            <p className="mt-3 text-sm text-gray-600 leading-6">
-              {product.deliveryNote || tx(
-                'Cash on delivery across Morocco. We confirm every order by phone before shipping.',
-                'Paiement à la livraison partout au Maroc. Chaque commande est confirmée par téléphone.',
-                'الدفع عند الاستلام في جميع مدن المغرب. نؤكد كل طلب عبر الهاتف قبل الشحن.'
-              )}
-            </p>
-            <h2 className="mt-6 text-lg font-semibold">{tx('Support', 'Assistance', 'الدعم')}</h2>
-            <p className="mt-3 text-sm text-gray-600 leading-6">
-              {product.supportNote || tx(
-                'Questions about this product? Message FINDSTORE on WhatsApp and include the product name.',
-                'Une question ? Écrivez à FINDSTORE sur WhatsApp en indiquant le nom du produit.',
-                'لأي سؤال، راسل FINDSTORE عبر واتساب مع اسم المنتج.'
-              )}
-            </p>
-          </aside>
-        </section>
-
-        {benefits.length > 0 && (
-          <section className="mt-6 grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {benefits.map((benefit) => (
-              <div key={benefit} className="bg-white rounded-2xl border border-black/5 p-5">
-                <p className="font-medium leading-6">{benefit}</p>
-              </div>
-            ))}
-          </section>
-        )}
-
-        {features.length > 0 && (
-          <section className="mt-6 bg-white rounded-3xl border border-black/5 p-6 sm:p-8">
-            <h2 className="text-2xl font-semibold">{t('productFeatures') || 'Features'}</h2>
-            <ul className="mt-5 grid sm:grid-cols-2 gap-3">
-              {features.map((feature) => (
-                <li key={feature} className="rounded-2xl bg-[#f6f5f3] px-4 py-3 text-gray-700">{feature}</li>
-              ))}
-            </ul>
-          </section>
-        )}
-
-        <section className="mt-6 bg-white rounded-3xl border border-black/5 p-6 sm:p-8">
-          <h2 className="text-2xl font-semibold">{tx('Specifications', 'Caractéristiques', 'المواصفات')}</h2>
-          <dl className="mt-5 divide-y divide-gray-100">
-            {specRows.map((row) => (
-              <div key={`${row.label}-${row.value}`} className="grid sm:grid-cols-[180px_1fr] gap-2 py-3">
-                <dt className="text-sm text-gray-500">{row.label}</dt>
-                <dd className="font-medium">{row.value}</dd>
-              </div>
-            ))}
-          </dl>
-        </section>
-
-        <section id="order-form" className="mt-6 scroll-mt-24 grid lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] gap-6">
-          <div className="bg-[#111] text-white rounded-3xl p-6 sm:p-8">
-            <p className="text-xs uppercase tracking-[0.16em] text-white/60">FINDSTORE</p>
-            <h2 className="mt-3 text-3xl font-semibold">{tx('Place your order', 'Passer la commande', 'أرسل طلبك')}</h2>
-            <p className="mt-3 text-white/70 leading-6">
-              {tx(
-                'The product is already selected. Choose a quantity and we will call you to confirm delivery.',
-                'Le produit est déjà sélectionné. Choisissez la quantité, nous vous appelons pour confirmer.',
-                'المنتج محدد تلقائيا. اختر الكمية وسنتصل بك لتأكيد التوصيل.'
-              )}
-            </p>
-            <div className="mt-8 space-y-3 text-sm">
-              <div className="flex justify-between gap-4 border-b border-white/10 pb-3">
-                <span className="text-white/60">{tx('Product', 'Produit', 'المنتج')}</span>
-                <span className="font-medium text-right">{product.name}</span>
-              </div>
-              <div className="flex justify-between gap-4 border-b border-white/10 pb-3">
-                <span className="text-white/60">{t('quantity') || 'Quantity'}</span>
-                <span>{quantity}</span>
-              </div>
-              <div className="flex justify-between gap-4">
-                <span className="text-white/60">{tx('Total', 'Total', 'المجموع')}</span>
-                <span className="text-xl font-semibold">{formatCurrency(totalPrice)}</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-3xl border border-black/5 p-6 sm:p-8">
-            {orderSuccess ? (
-              <div>
-                <h3 className="text-2xl font-semibold">{tx('Order received', 'Commande reçue', 'تم استلام الطلب')}</h3>
-                <p className="mt-3 text-gray-600 leading-6">
-                  {tx(
-                    'Your order is now in the FINDSTORE order list. Keep your phone available.',
-                    'Votre commande est enregistrée. Gardez votre téléphone disponible.',
-                    'تم حفظ طلبك. أبق هاتفك قريبا.'
-                  )}
-                </p>
-                <p className="mt-4 text-sm text-gray-500">#{String(orderSuccess._id || '').slice(-8).toUpperCase()}</p>
+          {images.length > 1 && (
+            <div className="mt-4 flex gap-3 overflow-x-auto pb-1">
+              {images.map((image, index) => (
                 <button
+                  key={`${image}-${index}`}
                   type="button"
-                  onClick={() => setOrderSuccess(null)}
-                  className="mt-6 h-11 px-5 rounded-full bg-[#111] text-white font-semibold"
+                  onClick={() => setSelectedImageIndex(index)}
+                  className={`h-16 w-16 shrink-0 overflow-hidden rounded-2xl border bg-white sm:h-20 sm:w-20 ${selectedImageIndex === index ? 'border-[#171717]' : 'border-transparent'}`}
                 >
-                  {tx('Place another order', 'Nouvelle commande', 'طلب جديد')}
+                  {isVideoUrl(image) ? (
+                    <video src={image} className="h-full w-full object-cover" muted />
+                  ) : (
+                    <img src={image} alt="" className="h-full w-full object-cover" />
+                  )}
                 </button>
-              </div>
-            ) : (
-              <form onSubmit={handleOrder} className="space-y-4">
-                <label className="block">
-                  <span className="text-sm font-medium text-gray-700">{tx('Full name', 'Nom complet', 'الاسم الكامل')}</span>
-                  <input
-                    value={orderForm.fullName}
-                    onChange={(event) => setOrderForm({ ...orderForm, fullName: event.target.value })}
-                    autoComplete="name"
-                    required
-                    className="mt-1.5 w-full h-12 px-4 rounded-xl border border-gray-200 focus:border-gray-900 focus:outline-none"
-                  />
-                </label>
-                <label className="block">
-                  <span className="text-sm font-medium text-gray-700">{tx('Phone number', 'Numéro de téléphone', 'رقم الهاتف')}</span>
-                  <input
-                    type="tel"
-                    inputMode="tel"
-                    value={orderForm.phone}
-                    onChange={(event) => setOrderForm({ ...orderForm, phone: event.target.value })}
-                    placeholder="06 12 34 56 78"
-                    autoComplete="tel"
-                    required
-                    className="mt-1.5 w-full h-12 px-4 rounded-xl border border-gray-200 focus:border-gray-900 focus:outline-none"
-                  />
-                </label>
-                <label className="block">
-                  <span className="text-sm font-medium text-gray-700">{tx('City', 'Ville', 'المدينة')}</span>
-                  <input
-                    value={orderForm.city}
-                    onChange={(event) => setOrderForm({ ...orderForm, city: event.target.value })}
-                    autoComplete="address-level2"
-                    required
-                    className="mt-1.5 w-full h-12 px-4 rounded-xl border border-gray-200 focus:border-gray-900 focus:outline-none"
-                  />
-                </label>
-                <label className="block">
-                  <span className="text-sm font-medium text-gray-700">{tx('Full address', 'Adresse complète', 'العنوان الكامل')}</span>
-                  <textarea
-                    value={orderForm.address}
-                    onChange={(event) => setOrderForm({ ...orderForm, address: event.target.value })}
-                    required
-                    rows={3}
-                    className="mt-1.5 w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-gray-900 focus:outline-none resize-none"
-                  />
-                </label>
-                <label className="block">
-                  <span className="text-sm font-medium text-gray-700">{tx('Product', 'Produit', 'المنتج')}</span>
-                  <input value={product.name} readOnly className="mt-1.5 w-full h-12 px-4 rounded-xl border border-gray-200 bg-gray-50 text-gray-700" />
-                </label>
-                <button
-                  type="submit"
-                  disabled={submitting || !inStock}
-                  className="w-full h-12 rounded-full bg-[#FF385C] hover:bg-[#E61E4D] text-white font-semibold disabled:opacity-60"
-                >
-                  {submitting
-                    ? tx('Sending...', 'Envoi...', 'جار الإرسال...')
-                    : tx(`Order · ${formatCurrency(totalPrice)}`, `Commander · ${formatCurrency(totalPrice)}`, `اطلب · ${formatCurrency(totalPrice)}`)}
-                </button>
-              </form>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="order-2 rounded-[32px] bg-white p-6 shadow-sm sm:p-8 lg:order-1">
+          {product.category && <p className="text-sm font-medium text-[#D97736]">{product.category}</p>}
+          <h1 className="mt-2 text-3xl font-semibold leading-snug sm:text-5xl">{product.name}</h1>
+          <p className="mt-4 text-base leading-8 text-[#777777] sm:text-lg">
+            {headline || product.description}
+          </p>
+
+          <div className="mt-6 flex flex-wrap items-end gap-3">
+            <p className="text-3xl font-semibold sm:text-4xl">{formatDirham(unitPrice)}</p>
+            {hasDiscount && (
+              <>
+                <p className="mb-1 text-lg text-[#777777] line-through">{formatDirham(product.price)}</p>
+                <span className="mb-1 rounded-full bg-[#F7F7F5] px-3 py-1 text-sm font-semibold text-[#D97736]">-{formatDecimalComma(discountPercentage)}%</span>
+              </>
             )}
           </div>
-        </section>
+          <p className={`mt-3 text-sm font-medium ${inStock ? 'text-emerald-700' : 'text-red-600'}`}>
+            {inStock ? `متوفر · ${product.stock}` : 'غير متوفر حاليا'}
+          </p>
+          <p className="mt-2 text-sm leading-6 text-[#777777]">
+            {product.deliveryNote || 'التوصيل متوفر لجميع مدن المغرب، والدفع عند الاستلام بعد تأكيد الطلب عبر الهاتف.'}
+          </p>
 
-        <section className="mt-6 bg-white rounded-3xl border border-black/5 p-6 sm:p-8">
-          <h2 className="text-2xl font-semibold">{tx('Customer reviews', 'Avis clients', 'آراء الزبائن')}</h2>
-          {reviews.length === 0 ? (
-            <p className="mt-4 text-gray-500">{t('noReviews') || 'No reviews yet'}</p>
-          ) : (
-            <div className="mt-5 space-y-4">
-              {reviews.map((rating, index) => (
-                <article key={rating._id || index} className="rounded-2xl bg-[#f6f5f3] p-4">
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="font-medium">{rating.user?.name || tx('Customer', 'Client', 'زبون')}</p>
-                    <p className="text-amber-500">{'★'.repeat(rating.rating || 0)}</p>
+          <div className="mt-6 flex items-center gap-4">
+            <span className="text-sm text-[#777777]">الكمية</span>
+            <div className="inline-flex items-center rounded-full border border-black/10">
+              <button type="button" className="h-11 w-11 text-lg" onClick={() => changeQuantity(quantity - 1)} aria-label="إنقاص الكمية">−</button>
+              <span className="w-8 text-center font-semibold">{quantity}</span>
+              <button type="button" className="h-11 w-11 text-lg" onClick={() => changeQuantity(quantity + 1)} aria-label="زيادة الكمية">+</button>
+            </div>
+            <span className="text-sm text-[#777777]">{formatDirham(totalPrice)}</span>
+          </div>
+
+          <div className="mt-6 grid gap-3 sm:grid-cols-2">
+            <button type="button" onClick={orderNow} disabled={!inStock} className="h-12 rounded-full bg-[#171717] font-semibold text-white disabled:bg-neutral-300">
+              اطلب الآن
+            </button>
+            <button type="button" onClick={scrollToDetails} className="h-12 rounded-full border border-black/10 font-semibold">
+              اكتشف التفاصيل
+            </button>
+            <button
+              type="button"
+              onClick={openWhatsApp}
+              className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-[#25D366] font-semibold text-white transition hover:bg-[#128C7E] sm:col-span-2"
+            >
+              <WhatsAppIcon />
+              راسلنا عبر واتساب
+            </button>
+          </div>
+        </div>
+        </div>
+      </section>
+
+      <section className="border-y border-black/5 bg-white">
+        <div className="mx-auto grid max-w-6xl gap-4 px-4 py-6 sm:grid-cols-2 sm:px-6 lg:grid-cols-4 lg:px-8">
+          {['توصيل لجميع أنحاء المغرب', 'طلب سهل وسريع', 'خدمة الزبناء', 'منتجات مختارة بعناية'].map((item) => (
+            <p key={item} className="text-sm font-medium leading-6">{item}</p>
+          ))}
+        </div>
+      </section>
+
+      {benefitItems.length > 0 && (
+        <section className="mx-auto max-w-6xl px-4 py-14 sm:px-6 lg:px-8">
+          <h2 className="text-2xl font-semibold sm:text-3xl">ما يميز هذا المنتج</h2>
+          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {benefitItems.map((item) => (
+              <article key={item} className="rounded-3xl bg-[#F7F7F5] p-6">
+                <span className="mb-4 block h-2 w-2 rounded-full bg-[#D97736]" />
+                <p className="leading-8">{item}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+      )}
+
+      <section id="product-details" className="scroll-mt-24 bg-[#F7F7F5] py-14">
+        <div className="mx-auto grid max-w-6xl gap-8 px-4 sm:px-6 lg:grid-cols-[1.1fr_0.9fr] lg:px-8">
+          <article className="rounded-[28px] bg-white p-6 sm:p-8">
+            <h2 className="text-2xl font-semibold">تفاصيل المنتج</h2>
+            <p className="mt-4 whitespace-pre-line leading-8 text-[#555]">{product.description}</p>
+          </article>
+          {specifications.length > 0 && (
+            <article className="rounded-[28px] bg-white p-6 sm:p-8">
+              <h2 className="text-2xl font-semibold">المواصفات</h2>
+              <dl className="mt-4 divide-y divide-black/5">
+                {specifications.map((row) => (
+                  <div key={`${row.label}-${row.value}`} className="grid gap-1 py-3 sm:grid-cols-[120px_1fr]">
+                    <dt className="text-sm text-[#777777]">{row.label}</dt>
+                    <dd className="font-medium">{row.value}</dd>
                   </div>
-                  {rating.comment && <p className="mt-2 text-gray-600 leading-6">{rating.comment}</p>}
+                ))}
+              </dl>
+            </article>
+          )}
+        </div>
+        {reviews.length > 0 && (
+          <div className="mx-auto mt-8 max-w-6xl px-4 sm:px-6 lg:px-8">
+            <h2 className="text-2xl font-semibold">آراء الزبائن</h2>
+            <div className="mt-4 grid gap-3">
+              {reviews.map((review, index) => (
+                <article key={review._id || index} className="rounded-3xl bg-white p-5">
+                  <p className="font-medium">{review.user?.name || 'زبون'}</p>
+                  <p className="mt-1 text-[#D97736]">{'★'.repeat(review.rating || 0)}</p>
+                  {review.comment && <p className="mt-2 leading-7 text-[#555]">{review.comment}</p>}
                 </article>
               ))}
             </div>
-          )}
+          </div>
+        )}
+      </section>
 
-          {user && (
-            <form onSubmit={handleSubmitReview} className="mt-6 grid gap-3 sm:grid-cols-[140px_1fr_auto]">
-              <select
-                value={review.rating}
-                onChange={(event) => setReview({ ...review, rating: Number(event.target.value) })}
-                className="h-12 px-3 rounded-xl border border-gray-200"
-              >
-                {[5, 4, 3, 2, 1].map((value) => (
-                  <option key={value} value={value}>{value} ★</option>
-                ))}
-              </select>
-              <input
-                value={review.comment}
-                onChange={(event) => setReview({ ...review, comment: event.target.value })}
-                required
-                placeholder={t('yourComment') || 'Your comment'}
-                className="h-12 px-4 rounded-xl border border-gray-200"
-              />
-              <button type="submit" className="h-12 px-5 rounded-xl bg-[#111] text-white font-semibold">
-                {t('submitReview') || 'Submit'}
-              </button>
-            </form>
-          )}
-        </section>
+      <section className="mx-auto max-w-6xl space-y-16 px-4 py-16 sm:px-6 lg:px-8">
+        {showcase.map((image, index) => (
+          <article key={`${image}-${index}`} className={`grid items-center gap-8 lg:grid-cols-2 ${index % 2 === 1 ? 'lg:[&>*:first-child]:order-2' : ''}`}>
+            <div className="overflow-hidden rounded-[28px] bg-[#F7F7F5]">
+              {isVideoUrl(image) ? (
+                <video src={image} className="aspect-[4/5] w-full object-cover" controls playsInline />
+              ) : (
+                <img src={image} alt={product.name} loading="lazy" className="aspect-[4/5] w-full object-cover" />
+              )}
+            </div>
+            <div>
+              <p className="text-sm font-medium text-[#D97736]">FINDSTORE</p>
+              <h2 className="mt-2 text-2xl font-semibold leading-snug sm:text-3xl">{headline || product.name}</h2>
+              <p className="mt-4 leading-8 text-[#777777]">{headline ? product.description : product.category}</p>
+            </div>
+          </article>
+        ))}
+      </section>
 
-        <section className="mt-6 bg-white rounded-3xl border border-black/5 p-6 sm:p-8">
-          <h2 className="text-2xl font-semibold">{tx('Questions', 'Questions fréquentes', 'أسئلة شائعة')}</h2>
-          <div className="mt-4 divide-y divide-gray-100">
-            {(faqs.length > 0 ? faqs : [
-              {
-                question: tx('How does delivery work?', 'Comment se passe la livraison ?', 'كيف يتم التوصيل؟'),
-                answer: tx(
-                  'FINDSTORE delivers across Morocco. After you order, we call to confirm the address and delivery time.',
-                  'FINDSTORE livre partout au Maroc. Après la commande, nous appelons pour confirmer l’adresse.',
-                  'FINDSTORE يوصل إلى جميع مدن المغرب، ونتصل بك لتأكيد العنوان.'
-                )
-              },
-              {
-                question: tx('When do I pay?', 'Quand dois-je payer ?', 'متى أدفع؟'),
-                answer: tx(
-                  'You pay on delivery. The total shown on this page is the amount to prepare.',
-                  'Le paiement se fait à la livraison. Le total affiché est le montant à préparer.',
-                  'الدفع عند الاستلام. المبلغ الظاهر هو المبلغ المطلوب.'
-                )
-              },
-              {
-                question: tx('Can I change the quantity?', 'Puis-je changer la quantité ?', 'هل يمكن تغيير الكمية؟'),
-                answer: tx(
-                  'Yes. Use the quantity control before submitting the form. The total updates immediately.',
-                  'Oui. Modifiez la quantité avant d’envoyer le formulaire. Le total se met à jour immédiatement.',
-                  'نعم. غيّر الكمية قبل الإرسال وسيتحدث المجموع مباشرة.'
-                )
-              }
-            ]).map((faq, index) => (
+      <section className="bg-[#F7F7F5] py-14">
+        <div className="mx-auto max-w-3xl px-4 sm:px-6">
+          <h2 className="text-2xl font-semibold sm:text-3xl">أسئلة شائعة</h2>
+          <div className="mt-6 divide-y divide-black/10">
+            {faqs.map((faq, index) => (
               <div key={faq.question}>
-                <button
-                  type="button"
-                  onClick={() => setOpenFaq(openFaq === index ? -1 : index)}
-                  className="w-full py-4 flex items-center justify-between gap-4 text-left font-medium"
-                >
+                <button type="button" onClick={() => setOpenFaq(openFaq === index ? -1 : index)} className="flex w-full items-center justify-between gap-4 py-4 text-start font-medium">
                   <span>{faq.question}</span>
-                  <span className="text-gray-400">{openFaq === index ? '−' : '+'}</span>
+                  <span className="text-[#777777]">{openFaq === index ? '−' : '+'}</span>
                 </button>
-                {openFaq === index && <p className="pb-4 text-gray-600 leading-6">{faq.answer}</p>}
+                {openFaq === index && <p className="pb-4 leading-8 text-[#555]">{faq.answer}</p>}
               </div>
             ))}
           </div>
-        </section>
-      </div>
+        </div>
+      </section>
 
-      <div className="lg:hidden fixed inset-x-0 bottom-0 z-40 border-t border-black/10 bg-white/95 backdrop-blur px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-        <button
-          type="button"
-          onClick={scrollToOrder}
-          className="w-full h-12 rounded-full bg-[#FF385C] text-white font-semibold"
+      <section className="px-4 py-16 sm:px-6">
+        <div className="mx-auto max-w-4xl rounded-[32px] bg-[#171717] px-6 py-12 text-center text-white sm:px-12">
+          <h2 className="text-3xl font-semibold">واجد تطلب المنتج ديالك؟</h2>
+          <p className="mx-auto mt-4 max-w-xl leading-8 text-white/70">كمّل الطلب ديالك بسهولة وغادي نتواصلو معاك لتأكيد المعلومات.</p>
+          <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+            <button type="button" onClick={orderNow} disabled={!inStock} className="h-12 rounded-full bg-white px-8 font-semibold text-[#171717] disabled:opacity-50">
+              اطلب الآن
+            </button>
+            <button
+              type="button"
+              onClick={openWhatsApp}
+              className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-[#25D366] px-6 font-semibold text-white transition hover:bg-[#20BA5A]"
+            >
+              <WhatsAppIcon />
+              واتساب
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {createPortal(
+        <div
+          className="fixed inset-x-0 bottom-0 z-[60] border-t border-black/5 bg-white px-4 py-3 shadow-[0_-8px_24px_rgba(0,0,0,0.06)]"
+          style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}
+          dir="rtl"
         >
-          اطلب الآن
-        </button>
-      </div>
+          <div className="mx-auto flex max-w-6xl items-center gap-3">
+            <button type="button" onClick={orderNow} disabled={!inStock} className="h-12 flex-1 rounded-full bg-[#171717] font-semibold text-white disabled:bg-neutral-300">
+              اطلب الآن · {formatDirham(totalPrice)}
+            </button>
+            <button
+              type="button"
+              onClick={openWhatsApp}
+              className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#25D366] text-white shadow-md shadow-[#25D366]/30"
+              aria-label="راسلنا عبر واتساب"
+            >
+              <WhatsAppIcon className="h-6 w-6" />
+            </button>
+          </div>
+        </div>,
+        document.body
+      )}
 
       {lightboxOpen && activeImage && !isVideoUrl(activeImage) && (
-        <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4" onClick={() => setLightboxOpen(false)}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4" onClick={() => setLightboxOpen(false)}>
           <img src={activeImage} alt={product.name} className="max-h-[90vh] max-w-full object-contain" />
         </div>
       )}

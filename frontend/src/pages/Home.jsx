@@ -3,14 +3,14 @@ import { Link } from 'react-router-dom'
 import { useLanguage } from '../context/LanguageContext'
 import api from '../utils/api'
 import ProductCard from '../components/ProductCard'
-import { productPath } from '../utils/product'
+import { formatDirham, getUnitPrice, productPath } from '../utils/product'
 import ProductCardSkeleton from '../components/ProductCardSkeleton'
 import Footer from '../components/Footer'
 import Chatbot from '../components/Chatbot'
 import toast from 'react-hot-toast'
 
 const Home = () => {
-  const { t, isRTL } = useLanguage()
+  const { t } = useLanguage()
   const [productsByCategory, setProductsByCategory] = useState({})
   const [galleryProducts, setGalleryProducts] = useState([])
   const [categories, setCategories] = useState([])
@@ -176,114 +176,80 @@ const Home = () => {
 
   return (
     <>
-      {/* Hero Section - Professional Design */}
-      <section className="relative min-h-[70vh] sm:min-h-[80vh] md:min-h-screen flex items-center justify-center overflow-hidden">
-        {/* Background Image with Parallax Effect */}
-        <div 
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat scale-105 transition-transform duration-700 hover:scale-100"
-          style={{
-            backgroundImage: heroBackgroundImage 
-              ? `url(${heroBackgroundImage})` 
-              : `url('https://images.unsplash.com/photo-1441986300917-64674bd600d8?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80')`,
-            backgroundColor: !heroBackgroundImage ? '#f8f9fa' : 'transparent'
-          }}
-        >
-          {/* Professional Overlay with Gradient */}
-          <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black/70"></div>
-          <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-transparent to-black/40"></div>
-        </div>
-        
-        {/* Decorative Elements */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-0 left-0 w-96 h-96 bg-[#FF385C]/10 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2"></div>
-          <div className="absolute bottom-0 right-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl translate-x-1/2 translate-y-1/2"></div>
-        </div>
-        
-        {/* Content */}
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 md:py-24 w-full">
-          <div className="text-center max-w-4xl mx-auto">
-            {/* Badge */}
-            <div className="inline-flex items-center gap-2 px-4 py-2 mb-6 sm:mb-8 bg-white/10 backdrop-blur-md rounded-full border border-white/20">
-              <span className="w-2 h-2 bg-[#FF385C] rounded-full animate-pulse"></span>
-              <span className="text-white/90 text-xs sm:text-sm font-medium">{t('newArrivals')}</span>
-            </div>
-            
-            {/* Main Heading */}
-            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-black text-white mb-4 sm:mb-6 md:mb-8 leading-[1.1] tracking-tight">
+      <section className="relative overflow-hidden bg-[#F6F4F1]">
+        {heroBackgroundImage && (
+          <img src={heroBackgroundImage} alt="" className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-25" />
+        )}
+        <div className="relative mx-auto grid max-w-6xl items-center gap-10 px-4 py-12 sm:px-6 lg:grid-cols-2 lg:gap-14 lg:px-8 lg:py-20">
+          <div className="order-2 lg:order-1">
+            <p className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-xs font-semibold tracking-[0.16em] text-[#D97736] shadow-sm">
+              FINDSTORE
+            </p>
+            <h1 className="mt-5 max-w-xl text-4xl font-semibold leading-[1.15] text-[#171717] sm:text-6xl">
               {t('findPerfectProduct')}
-              <br />
-              <span className="bg-gradient-to-r from-[#FF385C] via-pink-500 to-[#FF385C] bg-clip-text text-transparent animate-gradient">
-                {t('product')}
-              </span>
             </h1>
-            
-            {/* Subheading */}
-            <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-white/90 mb-8 sm:mb-10 md:mb-12 max-w-2xl mx-auto leading-relaxed font-light">
+            <p className="mt-5 max-w-md text-base leading-8 text-[#5c5c5c] sm:text-lg">
               {t('discoverUnique')}
             </p>
-            
-            {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6">
-              <Link
-                to="/products"
-                className="group relative inline-flex items-center justify-center gap-3 bg-[#FF385C] hover:bg-[#E61E4D] text-white px-8 py-4 sm:px-10 sm:py-5 rounded-xl font-bold text-base sm:text-lg transition-all duration-300 shadow-2xl hover:shadow-[#FF385C]/50 hover:scale-105 active:scale-95 overflow-hidden"
-              >
-                <span className="relative z-10 flex items-center gap-2">
-                  {t('shopNow')}
-                  <svg className={`w-5 h-5 sm:w-6 sm:h-6 transition-transform ${isRTL ? 'group-hover:-translate-x-1' : 'group-hover:translate-x-1'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                  </svg>
-                </span>
-                <div className="absolute inset-0 bg-gradient-to-r from-[#FF385C] to-pink-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+              <Link to="/products" className="inline-flex h-12 items-center justify-center rounded-full bg-[#171717] px-7 font-semibold text-white transition hover:bg-black">
+                {t('shopNow')}
               </Link>
-              
-              <Link
-                to="/products"
-                className="group inline-flex items-center justify-center gap-2 bg-white/10 hover:bg-white/20 backdrop-blur-md text-white border-2 border-white/30 hover:border-white/50 px-8 py-4 sm:px-10 sm:py-5 rounded-xl font-semibold text-base sm:text-lg transition-all duration-300"
-              >
-                {t('exploreCollection')}
-                <svg className={`w-5 h-5 transition-transform ${isRTL ? 'group-hover:-translate-x-1' : 'group-hover:translate-x-1'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </Link>
+              {galleryProducts[0] ? (
+                <Link to={productPath(galleryProducts[0])} className="inline-flex h-12 items-center justify-center rounded-full border border-black/10 bg-white px-7 font-semibold text-[#171717]">
+                  اكتشف المنتج
+                </Link>
+              ) : (
+                <Link to="/products" className="inline-flex h-12 items-center justify-center rounded-full border border-black/10 bg-white px-7 font-semibold text-[#171717]">
+                  {t('exploreCollection')}
+                </Link>
+              )}
             </div>
-            
-            {/* Trust Indicators */}
-            <div className="mt-12 sm:mt-16 flex flex-wrap items-center justify-center gap-6 sm:gap-8 text-white/80 text-sm">
-              <div className="flex items-center gap-2">
-                <svg className="w-5 h-5 text-[#FF385C]" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                </svg>
-                <span>{t('qualityGuaranteed')}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <svg className="w-5 h-5 text-[#FF385C]" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M8 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM15 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" />
-                  <path d="M3 4a1 1 0 00-1 1v10a1 1 0 001 1h1.05a2.5 2.5 0 014.9 0H10a1 1 0 001-1V5a1 1 0 00-1-1H3zM14 7a1 1 0 00-1 1v6.05A2.5 2.5 0 0115.95 16H17a1 1 0 001-1v-5a1 1 0 00-.293-.707l-2-2A1 1 0 0015 7h-1z" />
-                </svg>
-                <span>{t('freeShipping')}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <svg className="w-5 h-5 text-[#FF385C]" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                </svg>
-                <span>{t('securePayment')}</span>
-              </div>
+            <div className="mt-8 grid gap-3 sm:grid-cols-3">
+              {['توصيل لجميع مدن المغرب', 'الدفع عند الاستلام', 'منتجات مختارة بعناية'].map((item) => (
+                <p key={item} className="rounded-2xl bg-white/80 px-3 py-3 text-sm font-medium leading-6 text-[#242424] shadow-sm">
+                  {item}
+                </p>
+              ))}
             </div>
           </div>
-        </div>
-        
-        {/* Professional Scroll Indicator */}
-        <div className="absolute bottom-6 sm:bottom-8 left-1/2 transform -translate-x-1/2 z-10">
-          <a 
-            href="#products" 
-            className="flex flex-col items-center gap-2 text-white/70 hover:text-white transition-all duration-300 group"
-          >
-            <span className="text-xs font-medium uppercase tracking-wider">{t('scroll')}</span>
-            <div className="w-6 h-10 border-2 border-white/50 rounded-full flex items-start justify-center p-2 group-hover:border-white transition-colors">
-              <div className="w-1.5 h-1.5 bg-white/70 rounded-full animate-bounce"></div>
-            </div>
-          </a>
+
+          <div className={`order-1 grid gap-4 lg:order-2 ${galleryProducts.length > 1 ? 'sm:grid-cols-[1.45fr_0.75fr]' : ''}`}>
+            {loading && galleryProducts.length === 0 ? (
+              <div className="aspect-[4/5] animate-pulse rounded-[32px] bg-white" />
+            ) : galleryProducts[0]?.images?.[0] ? (
+              <Link to={productPath(galleryProducts[0])} className="group relative block overflow-hidden rounded-[32px] bg-white shadow-[0_24px_60px_rgba(23,23,23,0.1)]">
+                <img
+                  src={galleryProducts[0].images[0]}
+                  alt={galleryProducts[0].name}
+                  className="aspect-[4/5] w-full object-cover transition duration-700 group-hover:scale-[1.03] sm:aspect-[3/4]"
+                />
+                <div className="absolute inset-x-3 bottom-3 rounded-2xl bg-white/95 p-4 shadow-lg backdrop-blur sm:inset-x-4 sm:bottom-4">
+                  <p className="text-xs font-medium text-[#D97736]">{galleryProducts[0].category}</p>
+                  <div className="mt-1 flex items-end justify-between gap-3">
+                    <p className="line-clamp-2 text-sm font-semibold leading-6 sm:text-base">{galleryProducts[0].name}</p>
+                    <p className="shrink-0 text-sm font-semibold">{formatDirham(getUnitPrice(galleryProducts[0]))}</p>
+                  </div>
+                </div>
+              </Link>
+            ) : (
+              <div className="flex aspect-square items-center justify-center rounded-[32px] bg-white text-sm text-[#777777]">FINDSTORE</div>
+            )}
+
+            {galleryProducts.length > 1 && (
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-1">
+                {galleryProducts.slice(1, 3).map((product) => (
+                  <Link key={product._id} to={productPath(product)} className="group overflow-hidden rounded-3xl bg-white shadow-sm">
+                    <img src={product.images[0]} alt={product.name} className="aspect-square w-full object-cover transition duration-500 group-hover:scale-105" />
+                    <div className="p-3">
+                      <p className="line-clamp-1 text-sm font-semibold">{product.name}</p>
+                      <p className="mt-1 text-xs text-[#777777]">{formatDirham(getUnitPrice(product))}</p>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </section>
 

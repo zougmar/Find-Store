@@ -1,7 +1,7 @@
 const express = require('express');
 const multer = require('multer');
 const path = require('path');
-const fs = require('fs');
+const Media = require('../models/Media');
 const User = require('../models/User');
 const Product = require('../models/Product');
 const Order = require('../models/Order');
@@ -34,24 +34,13 @@ router.use((req, res, next) => {
   return res.status(403).json({ message: 'Access denied. Admin or moderator with permissions required.' });
 });
 
-// Configure multer for file uploads (local storage)
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const uploadDir = path.join(__dirname, '../uploads');
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, 'product-' + uniqueSuffix + path.extname(file.originalname));
-  }
-});
+// Files are stored in MongoDB so they remain available on Vercel.
+// 4MB stays under the serverless request limit.
+const MAX_UPLOAD_BYTES = 4 * 1024 * 1024;
 
 const upload = multer({
-  storage: storage,
-  limits: { fileSize: 100 * 1024 * 1024 }, // 100MB limit (for videos)
+  storage: multer.memoryStorage(),
+  limits: { fileSize: MAX_UPLOAD_BYTES },
   fileFilter: (req, file, cb) => {
     // Allow images and videos
     const allowedImageTypes = /jpeg|jpg|png|gif|webp/;
@@ -738,34 +727,50 @@ router.delete('/pages/:id', async (req, res, next) => {
 });
 
 // @route   POST /api/admin/upload
-// @desc    Upload image or video for products/pages (local storage)
+// @desc    Upload an image or short video and store it in the database
 // @access  Private/Admin
-router.post('/upload', upload.single('image'), (req, res, next) => {
+router.post('/upload', (req, res, next) => {
+  upload.single('image')(req, res, (err) => {
+    if (err) {
+      const tooLarge = err.code === 'LIMIT_FILE_SIZE';
+      return res.status(400).json({
+        message: tooLarge
+          ? 'File is too large. The maximum size is 4MB. You can also paste an image URL.'
+          : err.message
+      });
+    }
+    return next();
+  });
+}, async (req, res, next) => {
   try {
     if (!req.file) {
       return res.status(400).json({ message: 'No file uploaded' });
     }
-    
-    // File is already saved to disk by multer
-    const fileUrl = `/uploads/${req.file.filename}`;
-    const isVideo = req.file.mimetype.startsWith('video/');
-    
-    console.log('File uploaded successfully:', {
-      filename: req.file.filename,
-      originalname: req.file.originalname,
-      mimetype: req.file.mimetype,
-      size: req.file.size,
-      url: fileUrl
+
+    const media = await Media.create({
+      data: req.file.buffer,
+      contentType: req.file.mimetype,
+      originalName: path.basename(req.file.originalname || 'upload').slice(0, 180),
+      size: req.file.size
     });
-    
-    res.json({
-      imageUrl: fileUrl, // Keep 'imageUrl' for backward compatibility
-      fileUrl: fileUrl,
+
+    const fileUrl = `/api/media/${media._id}`;
+    const isVideo = req.file.mimetype.startsWith('video/');
+
+    console.log('File stored:', {
+      id: String(media._id),
+      type: isVideo ? 'video' : 'image',
+      size: req.file.size
+    });
+
+    res.status(201).json({
+      imageUrl: fileUrl,
+      fileUrl,
       filename: req.file.originalname,
       type: isVideo ? 'video' : 'image'
     });
   } catch (error) {
-    console.error('Upload error:', error);
+    console.error('Upload error:', error.message);
     next(error);
   }
 });

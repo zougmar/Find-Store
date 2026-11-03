@@ -9,10 +9,11 @@ const AdminSidebar = ({ isOpen = true, onClose }) => {
   const { user } = useAuth()
   const { t } = useAdminI18n()
   const [imageKey, setImageKey] = useState(0)
+  const [imageFailed, setImageFailed] = useState(false)
 
-  // Listen for user updates to refresh image
   useEffect(() => {
     const handleUserUpdate = () => {
+      setImageFailed(false)
       setImageKey(prev => prev + 1)
     }
     window.addEventListener('userUpdated', handleUserUpdate)
@@ -24,8 +25,8 @@ const AdminSidebar = ({ isOpen = true, onClose }) => {
       name: t('nav.dashboard'),
       path: '/admin',
       icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+        <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
         </svg>
       )
     },
@@ -33,8 +34,8 @@ const AdminSidebar = ({ isOpen = true, onClose }) => {
       name: t('nav.orders'),
       path: '/admin/orders',
       icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+        <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
         </svg>
       )
     },
@@ -42,8 +43,8 @@ const AdminSidebar = ({ isOpen = true, onClose }) => {
       name: t('nav.users'),
       path: '/admin/users',
       icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+        <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
         </svg>
       )
     },
@@ -51,8 +52,8 @@ const AdminSidebar = ({ isOpen = true, onClose }) => {
       name: t('nav.products'),
       path: '/admin/products',
       icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+        <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
         </svg>
       )
     },
@@ -60,8 +61,8 @@ const AdminSidebar = ({ isOpen = true, onClose }) => {
       name: t('nav.messages'),
       path: '/admin/messages',
       icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+        <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
         </svg>
       )
     },
@@ -69,8 +70,8 @@ const AdminSidebar = ({ isOpen = true, onClose }) => {
       name: t('nav.requests'),
       path: '/admin/product-inquiries',
       icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7h18M3 12h18M3 17h18" />
+        <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M3 7h18M3 12h18M3 17h18" />
         </svg>
       )
     },
@@ -78,9 +79,9 @@ const AdminSidebar = ({ isOpen = true, onClose }) => {
       name: t('nav.settings'),
       path: '/admin/pages',
       icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+        <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
         </svg>
       )
     }
@@ -93,117 +94,99 @@ const AdminSidebar = ({ isOpen = true, onClose }) => {
     return location.pathname.startsWith(path)
   }
 
+  const showPhoto = user?.image && !imageFailed
+
   return (
-    <div className={`bg-gradient-to-b from-[#1e293b] to-[#0f172a] text-white w-44 min-h-screen fixed inset-y-0 start-0 z-50 flex flex-col shadow-2xl transition-transform duration-300 ease-in-out lg:translate-x-0 ${
+    <aside className={`fixed inset-y-0 start-0 z-50 flex w-64 flex-col border-e border-white/10 bg-[#0b1220] text-white shadow-[8px_0_30px_rgba(15,23,42,0.12)] transition-transform duration-300 ease-out lg:translate-x-0 ${
       isOpen ? 'translate-x-0' : 'max-lg:-translate-x-full rtl:max-lg:translate-x-full'
     }`}>
-      {/* Logo Header */}
-      <div className="p-6 border-b border-gray-700/50 flex justify-center items-center relative bg-[#1e293b]/50">
-        <div className="flex flex-col items-center gap-3">
-          <div className="relative">
-            <div className="w-16 h-16 rounded-xl bg-white p-2 shadow-xl border-2 border-blue-500/30 flex items-center justify-center ring-2 ring-blue-500/20">
-              <img 
-                src={logoAdminImage} 
-                alt="Find Store Admin Logo" 
-                className="w-full h-full rounded-lg object-cover"
-              />
-            </div>
-          </div>
-          <div className="text-center">
-            <p className="text-sm font-bold text-white">Find Store</p>
-            <p className="text-xs text-gray-400 font-medium">{t('nav.controlPanel')}</p>
-          </div>
+      <div className="flex items-center gap-3 px-4 pb-4 pt-5">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white p-1 shadow-sm ring-1 ring-white/15">
+          <img
+            src={logoAdminImage}
+            alt="FINDSTORE"
+            className="h-full w-full rounded-xl object-cover"
+          />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-[15px] font-semibold tracking-tight text-white">FINDSTORE</p>
+          <p className="truncate text-xs text-slate-400">{t('nav.controlPanel')}</p>
         </div>
         <button
           onClick={onClose}
-          className="lg:hidden absolute right-4 top-4 p-2 rounded-lg hover:bg-gray-700/50 transition-colors text-gray-300"
+          className="rounded-lg p-2 text-slate-400 transition-colors hover:bg-white/10 hover:text-white lg:hidden"
           aria-label="Close menu"
         >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
       </div>
-      
-      {/* Navigation Menu */}
-      <div className="p-4 flex-1 flex flex-col overflow-y-auto">
-        <nav className="space-y-2">
-          <div className="px-2 py-2 mb-2">
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">{t('nav.mainMenu')}</p>
-          </div>
-          {menuItems.map((item) => (
-            <Link
-              key={item.path}
-              to={item.path}
-              onClick={() => onClose && window.innerWidth < 1024 && onClose()}
-              className={`group flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 relative ${
-                isActive(item.path)
-                  ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg shadow-blue-500/30'
-                  : 'text-gray-300 hover:bg-gray-700/50 hover:text-white'
-              }`}
-            >
-              <div className={`flex-shrink-0 ${isActive(item.path) ? 'text-white' : 'text-gray-400 group-hover:text-white'}`}>
-                {item.icon}
-              </div>
-              <span className="font-medium text-sm">{item.name}</span>
-              {isActive(item.path) && (
-                <div className="absolute right-3 w-2 h-2 rounded-full bg-white"></div>
-              )}
-            </Link>
-          ))}
+
+      <div className="mx-4 h-px bg-white/10" />
+
+      <div className="flex flex-1 flex-col overflow-y-auto px-3 py-4">
+        <p className="px-3 pb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500 rtl:tracking-normal">
+          {t('nav.mainMenu')}
+        </p>
+        <nav className="space-y-1">
+          {menuItems.map((item) => {
+            const active = isActive(item.path)
+            return (
+              <Link
+                key={item.path}
+                to={item.path}
+                onClick={() => onClose && window.innerWidth < 1024 && onClose()}
+                className={`group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
+                  active
+                    ? 'bg-white/10 text-white'
+                    : 'text-slate-400 hover:bg-white/[0.06] hover:text-white'
+                }`}
+              >
+                {active && (
+                  <span className="absolute inset-y-2 start-0 w-0.5 rounded-full bg-sky-400" />
+                )}
+                <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${
+                  active ? 'bg-sky-400/15 text-sky-300' : 'bg-white/5 text-slate-400 group-hover:text-white'
+                }`}>
+                  {item.icon}
+                </span>
+                <span className="truncate">{item.name}</span>
+              </Link>
+            )
+          })}
         </nav>
-        
-        {/* Quick Stats or Info Section */}
-        <div className="mt-6 px-4">
-          <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-700/50">
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">System Status</p>
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-              <span className="text-xs text-gray-300">All systems operational</span>
-            </div>
-          </div>
-        </div>
-        
-        {/* User Info at Bottom */}
-        <div className="mt-auto pt-4 border-t border-gray-700/50">
-          <Link 
-            to="/profile" 
-            className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-gray-700/50 transition-all duration-200 group"
+
+        <div className="mt-auto pt-4">
+          <Link
+            to="/profile"
+            className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-3 transition-colors hover:bg-white/[0.08]"
           >
-            {user?.image ? (
+            {showPhoto ? (
               <img
                 key={`${user.image}-${imageKey}`}
                 src={user.image}
                 alt={user.name}
-                className="w-10 h-10 rounded-lg object-cover border-2 border-gray-600 group-hover:border-blue-500 transition-colors"
-                onError={(e) => {
-                  console.error('Image load error in sidebar:', user.image, e)
-                  e.target.style.display = 'none'
-                  e.target.nextSibling.style.display = 'flex'
-                }}
-                onLoad={() => console.log('Sidebar image loaded:', user.image)}
+                className="h-10 w-10 shrink-0 rounded-full object-cover ring-2 ring-white/10"
+                onError={() => setImageFailed(true)}
               />
-            ) : null}
-            <div 
-              className={`w-10 h-10 rounded-lg bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center border-2 border-gray-600 group-hover:border-blue-500 transition-colors ${user?.image ? 'hidden' : ''}`}
-            >
-              <span className="text-white font-semibold text-sm">
+            ) : (
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-sky-500/20 text-sm font-semibold text-sky-200 ring-2 ring-white/10">
                 {(user?.name || 'A').charAt(0).toUpperCase()}
-              </span>
+              </div>
+            )}
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-semibold text-white">{user?.name || 'Admin'}</p>
+              <p className="mt-0.5 flex items-center gap-1.5 text-xs text-slate-400">
+                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-400" />
+                <span className="truncate">{t('header.administrator')}</span>
+              </p>
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-white truncate">{user?.name || 'Admin'}</p>
-              <p className="text-xs text-gray-400 truncate">Administrator</p>
-            </div>
-            <svg className="w-4 h-4 text-gray-400 group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
           </Link>
         </div>
       </div>
-    </div>
+    </aside>
   )
 }
 
 export default AdminSidebar
-

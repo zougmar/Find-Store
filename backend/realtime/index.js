@@ -13,7 +13,10 @@ function attachRealtime(server) {
   io.use(async (socket, next) => {
     try {
       const token = socket.handshake.auth?.token;
-      if (!token) return next(new Error('unauthorized'));
+      if (!token) {
+        socket.guest = true;
+        return next();
+      }
       const secret = process.env.JWT_SECRET || 'your_jwt_secret_key_here';
       const decoded = jwt.verify(token, secret);
       const user = await User.findById(decoded.id).select('role permissions');
@@ -28,6 +31,10 @@ function attachRealtime(server) {
   });
 
   io.on('connection', (socket) => {
+    if (socket.guest) {
+      socket.join('store');
+      return;
+    }
     const user = socket.user;
     if (user.role === 'admin') {
       socket.join('admins');
@@ -58,6 +65,9 @@ function emitSync(scope, extra = {}) {
     at: Date.now()
   };
   emit('admins', 'sync', payload);
+  if (scope === 'products') {
+    emit('store', 'sync', payload);
+  }
   if (scope === 'orders') {
     emit('staff', 'sync', payload);
     if (extra.deliveryUserId) {

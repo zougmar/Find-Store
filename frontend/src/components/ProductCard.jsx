@@ -5,7 +5,7 @@ import { useCart } from '../context/CartContext'
 import { useLanguage } from '../context/LanguageContext'
 import toast from 'react-hot-toast'
 import { formatCurrency } from '../utils/currency'
-import { getUnitPrice, productPath } from '../utils/product'
+import { formatDecimalComma, getUnitPrice, productPath } from '../utils/product'
 
 const ProductCard = ({ product }) => {
   const { toggleFavorite, isFavorited } = useFavorites()
@@ -64,7 +64,7 @@ const ProductCard = ({ product }) => {
           {hasDiscount && (
             <div className="absolute top-3 left-3 z-10">
               <span className="inline-block px-3 py-1.5 rounded-full bg-red-500 text-white text-xs font-bold shadow-lg">
-                -{discountPercentage}%
+                -{formatDecimalComma(discountPercentage)}%
               </span>
             </div>
           )}
@@ -161,7 +161,7 @@ const ProductCard = ({ product }) => {
                         {formatCurrency(originalPrice)}
                       </span>
                       <span className="text-xs font-semibold text-red-500">
-                        -{discountPercentage}%
+                        -{formatDecimalComma(discountPercentage)}%
                       </span>
                     </div>
                   </>

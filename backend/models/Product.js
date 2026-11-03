@@ -33,7 +33,13 @@ const productSchema = new mongoose.Schema({
     type: Number,
     default: 0,
     min: 0,
-    max: 100
+    max: 100,
+    set(value) {
+      if (value === '' || value == null) return 0
+      const number = Number(String(value).trim().replace(/\s/g, '').replace(',', '.'))
+      if (!Number.isFinite(number)) return value
+      return Math.round(number * 100) / 100
+    }
   },
   category: {
     type: String,

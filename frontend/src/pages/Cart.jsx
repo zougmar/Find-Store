@@ -6,6 +6,7 @@ import { useLanguage } from '../context/LanguageContext'
 import api from '../utils/api'
 import toast from 'react-hot-toast'
 import { formatCurrency } from '../utils/currency'
+import { formatDecimalComma } from '../utils/product'
 
 const Cart = () => {
   const { cartItems, removeFromCart, updateQuantity, getCartTotal, clearCart, getFinalPrice, openGuestCheckoutModal } = useCart()
@@ -319,7 +320,7 @@ const Cart = () => {
                         </span>
                         {hasDiscount && (
                           <span className="px-2 py-0.5 bg-red-500/10 text-red-600 text-xs font-semibold rounded-lg">
-                            -{item.product.discountPercentage}%
+                            -{formatDecimalComma(item.product.discountPercentage)}%
                           </span>
                         )}
                         {hasDiscount && (

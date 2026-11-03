@@ -9,6 +9,16 @@ function cleanLines(values, { maxItems, maxLength }) {
     .map((value) => value.slice(0, maxLength));
 }
 
+function isAllowedProductImage(value) {
+  if (value.startsWith('/uploads/') || value.startsWith('/api/media/')) return true;
+  try {
+    const url = new URL(value);
+    return url.protocol === 'http:' || url.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
 function sanitizeProductBody(body = {}) {
   const data = { ...body };
 
@@ -29,6 +39,16 @@ function sanitizeProductBody(body = {}) {
   if (typeof data.headline === 'string') data.headline = data.headline.trim().slice(0, 180);
   if (typeof data.deliveryNote === 'string') data.deliveryNote = data.deliveryNote.trim().slice(0, 500);
   if (typeof data.supportNote === 'string') data.supportNote = data.supportNote.trim().slice(0, 500);
+
+  if (data.discountPercentage != null && data.discountPercentage !== '') {
+    const discount = Number(String(data.discountPercentage).trim().replace(/\s/g, '').replace(',', '.'));
+    if (!Number.isFinite(discount) || discount < 0 || discount > 100) {
+      const error = new Error('Discount percentage must be between 0 and 100, for example 20,24');
+      error.status = 400;
+      throw error;
+    }
+    data.discountPercentage = Math.round(discount * 100) / 100;
+  }
 
   if (data.slug != null && String(data.slug).trim() !== '') {
     const normalized = slugify(data.slug);
@@ -51,7 +71,7 @@ function sanitizeProductBody(body = {}) {
   if (data.images != null && Array.isArray(data.images)) {
     data.images = data.images
       .map((image) => String(image || '').trim())
-      .filter(Boolean)
+      .filter(isAllowedProductImage)
       .slice(0, 12);
   }
 

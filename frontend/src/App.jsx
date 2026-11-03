@@ -8,6 +8,8 @@ import { CartProvider } from './context/CartContext'
 import { FavoritesProvider } from './context/FavoritesContext'
 import { LanguageProvider } from './context/LanguageContext'
 import Navbar from './components/Navbar'
+import AnnouncementBar from './components/AnnouncementBar'
+import Footer from './components/Footer'
 import Home from './pages/Home'
 import Products from './pages/Products'
 import About from './pages/About'
@@ -106,10 +108,12 @@ const AppContent = () => {
                 </>
               } />
               <Route path="/product/:slug" element={
-                <>
+                <div className="pb-24">
+                  <AnnouncementBar />
                   <Navbar />
                   <ProductDetail />
-                </>
+                  <Footer />
+                </div>
               } />
               <Route path="/cart" element={
                 <>
