@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { useLanguage } from '../context/LanguageContext'
 import api from '../utils/api'
@@ -16,6 +16,7 @@ const Home = () => {
   const [categories, setCategories] = useState([])
   const [loading, setLoading] = useState(true)
   const [heroBackgroundImage, setHeroBackgroundImage] = useState(null)
+  const [heroSlots, setHeroSlots] = useState([])
   const [visibleSections, setVisibleSections] = useState(new Set())
   const sectionRefs = useRef({})
 
@@ -87,6 +88,8 @@ const Home = () => {
         // Find the hero section
         const heroSection = res.data.sections.find(s => s.type === 'hero' && s.visible !== false)
         console.log('Hero section found:', heroSection)
+        const savedSlots = Array.isArray(heroSection?.styles?.heroSlots) ? heroSection.styles.heroSlots : []
+        setHeroSlots(savedSlots.filter((slot) => slot && (slot.productId || slot.image)))
         if (heroSection && heroSection.backgroundImage) {
           // Process the image URL to ensure it's accessible
           let imageUrl = heroSection.backgroundImage
@@ -148,6 +151,31 @@ const Home = () => {
     return () => document.removeEventListener('visibilitychange', refreshVisible)
   }, [])
 
+  const heroItems = useMemo(() => {
+    const slots = heroSlots.filter((slot) => slot?.productId || slot?.image)
+    if (!slots.length) return galleryProducts.slice(0, 3)
+    const byId = new Map(galleryProducts.map((product) => [String(product._id), product]))
+    return slots.map((slot, index) => {
+      const product = slot.productId ? byId.get(String(slot.productId)) : null
+      const image = slot.image || product?.images?.[0]
+      if (!image) return null
+      if (product) {
+        return {
+          ...product,
+          images: [image, ...(product.images || []).filter((item) => item !== image)]
+        }
+      }
+      return {
+        _id: `hero-slot-${index}`,
+        name: '',
+        images: [image],
+        price: null,
+        category: '',
+        standalone: true
+      }
+    }).filter(Boolean)
+  }, [heroSlots, galleryProducts])
+
   const handleWhatsApp = () => {
     // WhatsApp phone number - same as in ProductDetail
     const whatsappPhone = '212707625535'
@@ -195,8 +223,8 @@ const Home = () => {
               <Link to="/products" className="inline-flex h-12 items-center justify-center rounded-full bg-[#171717] px-7 font-semibold text-white transition hover:bg-black">
                 {t('shopNow')}
               </Link>
-              {galleryProducts[0] ? (
-                <Link to={productPath(galleryProducts[0])} className="inline-flex h-12 items-center justify-center rounded-full border border-black/10 bg-white px-7 font-semibold text-[#171717]">
+              {heroItems[0] && !heroItems[0].standalone ? (
+                <Link to={productPath(heroItems[0])} className="inline-flex h-12 items-center justify-center rounded-full border border-black/10 bg-white px-7 font-semibold text-[#171717]">
                   اكتشف المنتج
                 </Link>
               ) : (
@@ -214,37 +242,45 @@ const Home = () => {
             </div>
           </div>
 
-          <div className={`order-1 grid gap-4 lg:order-2 ${galleryProducts.length > 1 ? 'sm:grid-cols-[1.45fr_0.75fr]' : ''}`}>
-            {loading && galleryProducts.length === 0 ? (
+          <div className={`order-1 grid gap-4 lg:order-2 ${heroItems.length > 1 ? 'sm:grid-cols-[1.45fr_0.75fr]' : ''}`}>
+            {loading && heroItems.length === 0 ? (
               <div className="aspect-[4/5] animate-pulse rounded-[32px] bg-white" />
-            ) : galleryProducts[0]?.images?.[0] ? (
-              <Link to={productPath(galleryProducts[0])} className="group relative block overflow-hidden rounded-[32px] bg-white shadow-[0_24px_60px_rgba(23,23,23,0.1)]">
+            ) : heroItems[0]?.images?.[0] ? (
+              <Link to={heroItems[0].standalone ? '/products' : productPath(heroItems[0])} className="group relative block overflow-hidden rounded-[32px] bg-white shadow-[0_24px_60px_rgba(23,23,23,0.1)]">
                 <img
-                  src={galleryProducts[0].images[0]}
-                  alt={galleryProducts[0].name}
+                  src={heroItems[0].images[0]}
+                  alt={heroItems[0].name || 'FINDSTORE'}
                   className="aspect-[4/5] w-full object-cover transition duration-700 group-hover:scale-[1.03] sm:aspect-[3/4]"
                 />
-                <div className="absolute inset-x-3 bottom-3 rounded-2xl bg-white/95 p-4 shadow-lg backdrop-blur sm:inset-x-4 sm:bottom-4">
-                  <p className="text-xs font-medium text-[#D97736]">{galleryProducts[0].category}</p>
-                  <div className="mt-1 flex items-end justify-between gap-3">
-                    <p className="line-clamp-2 text-sm font-semibold leading-6 sm:text-base">{galleryProducts[0].name}</p>
-                    <p className="shrink-0 text-sm font-semibold">{formatDirham(getUnitPrice(galleryProducts[0]))}</p>
+                {(heroItems[0].name || heroItems[0].price != null) && (
+                  <div className="absolute inset-x-3 bottom-3 rounded-2xl bg-white/95 p-4 shadow-lg backdrop-blur sm:inset-x-4 sm:bottom-4">
+                    <p className="text-xs font-medium text-[#D97736]">{heroItems[0].category}</p>
+                    <div className="mt-1 flex items-end justify-between gap-3">
+                      <p className="line-clamp-2 text-sm font-semibold leading-6 sm:text-base">{heroItems[0].name}</p>
+                      {heroItems[0].price != null && (
+                        <p className="shrink-0 text-sm font-semibold">{formatDirham(getUnitPrice(heroItems[0]))}</p>
+                      )}
+                    </div>
                   </div>
-                </div>
+                )}
               </Link>
             ) : (
               <div className="flex aspect-square items-center justify-center rounded-[32px] bg-white text-sm text-[#777777]">FINDSTORE</div>
             )}
 
-            {galleryProducts.length > 1 && (
+            {heroItems.length > 1 && (
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-1">
-                {galleryProducts.slice(1, 3).map((product) => (
-                  <Link key={product._id} to={productPath(product)} className="group overflow-hidden rounded-3xl bg-white shadow-sm">
-                    <img src={product.images[0]} alt={product.name} className="aspect-square w-full object-cover transition duration-500 group-hover:scale-105" />
-                    <div className="p-3">
-                      <p className="line-clamp-1 text-sm font-semibold">{product.name}</p>
-                      <p className="mt-1 text-xs text-[#777777]">{formatDirham(getUnitPrice(product))}</p>
-                    </div>
+                {heroItems.slice(1, 3).map((product) => (
+                  <Link key={product._id} to={product.standalone ? '/products' : productPath(product)} className="group overflow-hidden rounded-3xl bg-white shadow-sm">
+                    <img src={product.images[0]} alt={product.name || 'FINDSTORE'} className="aspect-square w-full object-cover transition duration-500 group-hover:scale-105" />
+                    {product.name && (
+                      <div className="p-3">
+                        <p className="line-clamp-1 text-sm font-semibold">{product.name}</p>
+                        {product.price != null && (
+                          <p className="mt-1 text-xs text-[#777777]">{formatDirham(getUnitPrice(product))}</p>
+                        )}
+                      </div>
+                    )}
                   </Link>
                 ))}
               </div>

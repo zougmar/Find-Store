@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import AdminLayout from '../../components/AdminLayout'
+import HeroImageSettings from '../../components/HeroImageSettings'
 import api from '../../utils/api'
 import toast from 'react-hot-toast'
 
@@ -227,6 +228,7 @@ const AdminPages = () => {
 
   return (
     <AdminLayout title="Page Settings">
+      <HeroImageSettings />
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Pages List */}
         <div className="lg:col-span-1">
