@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
+import useAutoRefresh from '../../hooks/useAutoRefresh'
 import { Link } from 'react-router-dom'
 import AdminLayout from '../../components/AdminLayout'
 import api from '../../utils/api'
@@ -19,6 +20,7 @@ import {
   Line
 } from 'recharts'
 import toast from 'react-hot-toast'
+import { useAdminI18n } from '../../context/AdminLanguageContext'
 
 // Copy to clipboard function
 const copyToClipboard = async (text, successMessage = 'Copied to clipboard!') => {
@@ -34,33 +36,39 @@ const copyToClipboard = async (text, successMessage = 'Copied to clipboard!') =>
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899']
 
 const AdminDashboard = () => {
+  const { t } = useAdminI18n()
   const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [updatedAt, setUpdatedAt] = useState(null)
 
-  useEffect(() => {
-    fetchDashboardData()
-  }, [])
-
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = useCallback(async ({ silent = false } = {}) => {
     try {
       const res = await api.get('/admin/dashboard')
-      console.log('Dashboard data received:', res.data)
       setStats(res.data)
+      setUpdatedAt(new Date())
     } catch (error) {
       console.error('Error fetching dashboard data:', error)
-      toast.error('Failed to fetch dashboard data')
-      setStats(null)
+      if (!silent) {
+        toast.error('Failed to fetch dashboard data')
+        setStats(null)
+      }
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    fetchDashboardData()
+  }, [fetchDashboardData])
+
+  useAutoRefresh(() => fetchDashboardData({ silent: true }), { scopes: ['users', 'orders', 'products', 'all'] })
 
   if (loading) {
     return (
       <AdminLayout>
         <div className="flex flex-col justify-center items-center min-h-[60vh]">
           <div className="animate-spin rounded-full h-16 w-16 border-4 border-gray-200 border-t-[#FF385C] mb-4"></div>
-          <p className="text-gray-600 font-medium">Loading dashboard data...</p>
+          <p className="text-gray-600 font-medium">{t('dashboard.loading')}</p>
         </div>
       </AdminLayout>
     )
@@ -73,8 +81,8 @@ const AdminDashboard = () => {
           <svg className="w-16 h-16 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
           </svg>
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">No Data Available</h3>
-          <p className="text-gray-500 text-center">Unable to load dashboard statistics. Please try again later.</p>
+          <h3 className="text-xl font-semibold text-gray-900 mb-2">{t('dashboard.noDataTitle')}</h3>
+          <p className="text-gray-500 text-center">{t('dashboard.noData')}</p>
         </div>
       </AdminLayout>
     )
@@ -147,9 +155,11 @@ const AdminDashboard = () => {
         <div className="bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-800 rounded-xl shadow-lg p-6 md:p-8 text-white">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
-              <h1 className="text-3xl md:text-4xl font-bold mb-2">Dashboard Overview</h1>
+              <h1 className="text-3xl md:text-4xl font-bold mb-2">{t('dashboard.overview')}</h1>
               <p className="text-white/90 text-base md:text-lg">{currentDate}</p>
-              <p className="text-white/80 mt-2 text-sm md:text-base">Welcome back! Here's what's happening with your store today.</p>
+              <p className="text-white/80 mt-2 text-sm md:text-base">
+                {t('dashboard.welcome')} {t('dashboard.updated')}{updatedAt ? ` · ${updatedAt.toLocaleTimeString()}` : ''}.
+              </p>
             </div>
             <div className="mt-4 md:mt-0 flex flex-wrap gap-3">
               <Link
@@ -159,7 +169,7 @@ const AdminDashboard = () => {
                 <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                 </svg>
-                View Messages
+                {t('dashboard.viewMessages')}
                 {stats.unreadMessages > 0 && (
                   <span className="bg-red-500 text-white text-xs font-bold rounded-full px-2 py-1">
                     {stats.unreadMessages}
@@ -173,7 +183,7 @@ const AdminDashboard = () => {
                 <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                 </svg>
-                View Orders
+                {t('dashboard.viewOrders')}
               </Link>
             </div>
           </div>
@@ -191,10 +201,11 @@ const AdminDashboard = () => {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                   </svg>
                 </div>
-                <span className="text-xs font-bold text-blue-600 bg-blue-50 px-3 py-1 rounded-full border border-blue-200">Users</span>
+                <span className="text-xs font-bold text-blue-600 bg-blue-50 px-3 py-1 rounded-full border border-blue-200">{t('nav.users')}</span>
               </div>
-              <h3 className="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-2">Total Users</h3>
-              <p className="text-4xl font-bold text-gray-900 mb-1">{stats.totalUsers}</p>
+              <h3 className="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-2">{t('dashboard.totalUsers')}</h3>
+              <p className="text-4xl font-bold text-gray-900 mb-1">{stats.totalAccounts ?? stats.totalUsers}</p>
+              <p className="text-xs text-gray-500 mb-1">{stats.totalUsers} · {stats.totalStaff || 0} {t('dashboard.customersStaff')}</p>
               <p className="text-xs text-gray-500 flex items-center gap-1">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
@@ -219,9 +230,9 @@ const AdminDashboard = () => {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                   </svg>
                 </div>
-                <span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full border border-indigo-200">Messages</span>
+                <span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full border border-indigo-200">{t('nav.messages')}</span>
               </div>
-              <h3 className="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-2">Total Messages</h3>
+              <h3 className="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-2">{t('dashboard.messages')}</h3>
               <p className="text-4xl font-bold text-gray-900 mb-1">{stats.totalMessages || 0}</p>
               <p className="text-xs text-gray-500">
                 {stats.unreadMessages > 0 ? (
@@ -253,9 +264,9 @@ const AdminDashboard = () => {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                   </svg>
                 </div>
-                <span className="text-xs font-bold text-green-600 bg-green-50 px-3 py-1 rounded-full border border-green-200">Products</span>
+                <span className="text-xs font-bold text-green-600 bg-green-50 px-3 py-1 rounded-full border border-green-200">{t('nav.products')}</span>
               </div>
-              <h3 className="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-2">Total Products</h3>
+              <h3 className="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-2">{t('dashboard.products')}</h3>
               <p className="text-4xl font-bold text-gray-900 mb-1">{stats.totalProducts}</p>
               <p className="text-xs text-gray-500 flex items-center gap-1">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -276,9 +287,9 @@ const AdminDashboard = () => {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                   </svg>
                 </div>
-                <span className="text-xs font-bold text-purple-600 bg-purple-50 px-3 py-1 rounded-full border border-purple-200">Orders</span>
+                <span className="text-xs font-bold text-purple-600 bg-purple-50 px-3 py-1 rounded-full border border-purple-200">{t('nav.orders')}</span>
               </div>
-              <h3 className="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-2">Total Orders</h3>
+              <h3 className="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-2">{t('dashboard.orders')}</h3>
               <p className="text-4xl font-bold text-gray-900 mb-1">{stats.totalOrders}</p>
               <p className="text-xs text-gray-500 flex items-center gap-1">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -299,9 +310,9 @@ const AdminDashboard = () => {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </div>
-                <span className="text-xs font-bold text-white bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full border border-white/30">Revenue</span>
+                <span className="text-xs font-bold text-white bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full border border-white/30">{t('dashboard.revenue')}</span>
               </div>
-              <h3 className="text-white/90 text-xs font-semibold uppercase tracking-wider mb-2">Total Revenue</h3>
+              <h3 className="text-white/90 text-xs font-semibold uppercase tracking-wider mb-2">{t('dashboard.totalRevenue')}</h3>
               <p className="text-4xl font-bold text-white mb-1">{formatCurrency(stats.totalRevenue || 0)}</p>
               <p className="text-xs text-white/80 flex items-center gap-1">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -317,17 +328,17 @@ const AdminDashboard = () => {
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 md:p-8">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-1">Sales Trend</h2>
-              <p className="text-sm text-gray-600">Last 12 months performance overview</p>
+              <h2 className="text-2xl font-bold text-gray-900 mb-1">{t('dashboard.salesTrend')}</h2>
+              <p className="text-sm text-gray-600">{t('dashboard.salesSubtitle')}</p>
             </div>
             <div className="flex items-center gap-4 mt-4 md:mt-0">
               <div className="flex items-center gap-2 bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-200">
                 <div className="w-3 h-3 rounded-full bg-blue-600"></div>
-                <span className="text-xs font-semibold text-gray-700">Orders</span>
+                <span className="text-xs font-semibold text-gray-700">{t('nav.orders')}</span>
               </div>
               <div className="flex items-center gap-2 bg-green-50 px-3 py-1.5 rounded-lg border border-green-200">
                 <div className="w-3 h-3 rounded-full bg-green-600"></div>
-                <span className="text-xs font-semibold text-gray-700">Revenue</span>
+                <span className="text-xs font-semibold text-gray-700">{t('dashboard.revenue')}</span>
               </div>
             </div>
           </div>
@@ -423,7 +434,7 @@ const AdminDashboard = () => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                 </svg>
               </div>
-              <p className="text-sm font-medium">No sales data available</p>
+              <p className="text-sm font-medium">{t('dashboard.noSales')}</p>
             </div>
           )}
         </div>
@@ -438,8 +449,8 @@ const AdminDashboard = () => {
                 </svg>
               </div>
               <div>
-                <h2 className="text-xl font-bold text-gray-900">Best Selling Products</h2>
-                <p className="text-xs text-gray-500 mt-0.5">Top performing items</p>
+                <h2 className="text-xl font-bold text-gray-900">{t('dashboard.bestSellers')}</h2>
+                <p className="text-xs text-gray-500 mt-0.5">{t('dashboard.topItems')}</p>
               </div>
             </div>
             {stats.bestSellingProducts && stats.bestSellingProducts.length > 0 ? (
@@ -490,7 +501,7 @@ const AdminDashboard = () => {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                   </svg>
                 </div>
-                <p className="text-sm font-medium">No sales data available</p>
+                <p className="text-sm font-medium">{t('dashboard.noSales')}</p>
               </div>
             )}
         </div>
@@ -504,8 +515,8 @@ const AdminDashboard = () => {
                 </svg>
               </div>
               <div>
-                <h2 className="text-xl font-bold text-gray-900">Orders by Status</h2>
-                <p className="text-xs text-gray-500 mt-0.5">Order distribution overview</p>
+                <h2 className="text-xl font-bold text-gray-900">{t('dashboard.ordersByStatus')}</h2>
+                <p className="text-xs text-gray-500 mt-0.5">{t('dashboard.orderDistribution')}</p>
               </div>
             </div>
             {orderStatusData.length > 0 ? (
@@ -557,7 +568,7 @@ const AdminDashboard = () => {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                   </svg>
                 </div>
-                <p className="text-sm font-medium">No order data available</p>
+                <p className="text-sm font-medium">{t('dashboard.noOrders')}</p>
               </div>
             )}
         </div>
@@ -573,8 +584,8 @@ const AdminDashboard = () => {
                 </svg>
               </div>
               <div>
-                <h2 className="text-2xl font-bold text-gray-900">Most Favorited Products</h2>
-                <p className="text-sm text-gray-500 mt-1">Customer favorites</p>
+                <h2 className="text-2xl font-bold text-gray-900">{t('dashboard.favorites')}</h2>
+                <p className="text-sm text-gray-500 mt-1">{t('dashboard.customerFavorites')}</p>
               </div>
             </div>
             <div className="overflow-x-auto rounded-xl border border-gray-200">
@@ -608,7 +619,7 @@ const AdminDashboard = () => {
                             />
                           ) : (
                             <div className="h-14 w-14 rounded-xl bg-gradient-to-br from-gray-200 to-gray-300 mr-4 flex items-center justify-center border-2 border-gray-200">
-                              <span className="text-xs text-gray-500 font-medium">No img</span>
+                              <span className="text-xs text-gray-500 font-medium">{t('dashboard.noImg')}</span>
                             </div>
                           )}
                           <span className="text-sm font-bold text-gray-900">
@@ -654,8 +665,8 @@ const AdminDashboard = () => {
                 </svg>
               </div>
               <div>
-                <h2 className="text-2xl font-bold text-gray-900">Recent Orders</h2>
-                <p className="text-sm text-gray-500 mt-1">Latest transactions</p>
+                <h2 className="text-2xl font-bold text-gray-900">{t('dashboard.recentOrders')}</h2>
+                <p className="text-sm text-gray-500 mt-1">{t('dashboard.latest')}</p>
               </div>
             </div>
             <Link
@@ -753,7 +764,7 @@ const AdminDashboard = () => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                 </svg>
               </div>
-              <p className="text-sm font-medium">No recent orders</p>
+              <p className="text-sm font-medium">{t('dashboard.noRecent')}</p>
             </div>
           )}
         </div>

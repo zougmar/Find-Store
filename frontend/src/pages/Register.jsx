@@ -172,7 +172,7 @@ const Register = () => {
             window.FB.api('/me', { fields: 'name,email,picture' }, async (userInfo) => {
               try {
                 if (!userInfo.email) {
-                  throw new Error('Email permission is required. Please grant email access.')
+                  throw new Error('يلزم السماح بالوصول إلى البريد الإلكتروني')
                 }
                 await registerWithFacebook(
                   response.authResponse.userID,

@@ -1,9 +1,11 @@
 import { Link, useLocation } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import logoImage from '../images/logo.png'
+import { useAdminI18n } from '../context/AdminLanguageContext'
 
 const ModeratorSidebar = ({ isOpen = true, onClose, user }) => {
   const location = useLocation()
+  const { t } = useAdminI18n()
   const [imageKey, setImageKey] = useState(0)
 
   useEffect(() => {
@@ -16,7 +18,7 @@ const ModeratorSidebar = ({ isOpen = true, onClose, user }) => {
 
   const menuItems = [
     {
-      name: 'Dashboard',
+      name: t('nav.dashboard'),
       path: '/moderator/dashboard',
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -25,7 +27,7 @@ const ModeratorSidebar = ({ isOpen = true, onClose, user }) => {
       )
     },
     {
-      name: 'Orders',
+      name: t('nav.orders'),
       path: '/moderator/orders',
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -34,7 +36,7 @@ const ModeratorSidebar = ({ isOpen = true, onClose, user }) => {
       )
     },
     {
-      name: 'Product Requests',
+      name: t('nav.requests'),
       path: '/moderator/product-inquiries',
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -52,8 +54,8 @@ const ModeratorSidebar = ({ isOpen = true, onClose, user }) => {
   }
 
   return (
-    <div className={`bg-gradient-to-b from-indigo-600 to-indigo-700 text-white w-64 min-h-screen fixed left-0 top-0 flex flex-col z-50 transform transition-transform duration-300 ease-in-out lg:translate-x-0 shadow-2xl ${
-      isOpen ? 'translate-x-0' : '-translate-x-full'
+    <div className={`bg-gradient-to-b from-indigo-600 to-indigo-700 text-white w-64 min-h-screen fixed inset-y-0 start-0 flex flex-col z-50 transform transition-transform duration-300 ease-in-out lg:translate-x-0 shadow-2xl ${
+      isOpen ? 'translate-x-0' : 'ltr:-translate-x-full rtl:translate-x-full'
     }`}>
       {/* Logo Header */}
       <div className="p-6 border-b border-indigo-500/50 flex justify-center items-center relative bg-indigo-700/50">
@@ -76,7 +78,7 @@ const ModeratorSidebar = ({ isOpen = true, onClose, user }) => {
           </div>
           <div className="text-center">
             <p className="text-sm font-bold text-white">Find Store</p>
-            <p className="text-xs text-indigo-200 font-medium">Moderator Panel</p>
+            <p className="text-xs text-indigo-200 font-medium">{t('page.moderator')}</p>
           </div>
         </div>
         <button

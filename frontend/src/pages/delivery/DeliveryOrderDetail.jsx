@@ -3,7 +3,7 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import api from '../../utils/api'
 import toast from 'react-hot-toast'
 import { formatCurrency } from '../../utils/currency'
-import { useLanguage } from '../../context/LanguageContext'
+import { useAdminI18n } from '../../context/AdminLanguageContext'
 
 const DeliveryOrderDetail = () => {
   const { orderId } = useParams()
@@ -16,7 +16,7 @@ const DeliveryOrderDetail = () => {
   const [deliveryNotes, setDeliveryNotes] = useState('')
   const [deliveryMan, setDeliveryMan] = useState(null)
   const [showWhatsAppLanguage, setShowWhatsAppLanguage] = useState(false)
-  const { language, changeLanguage } = useLanguage()
+  const { language } = useAdminI18n()
 
   useEffect(() => {
     const token = localStorage.getItem('delivery_token')

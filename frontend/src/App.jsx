@@ -1,9 +1,11 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom'
+import { AdminLanguageProvider, useAdminI18n } from './context/AdminLanguageContext'
+import DocumentDirection from './components/DocumentDirection'
 import { Toaster } from 'react-hot-toast'
 import { AuthProvider } from './context/AuthContext'
 import { CartProvider } from './context/CartContext'
 import { FavoritesProvider } from './context/FavoritesContext'
-import { LanguageProvider, useLanguage } from './context/LanguageContext'
+import { LanguageProvider } from './context/LanguageContext'
 import Navbar from './components/Navbar'
 import Home from './pages/Home'
 import Products from './pages/Products'
@@ -30,19 +32,30 @@ import ModeratorDashboard from './pages/moderator/ModeratorDashboard'
 import ModeratorOrders from './pages/moderator/ModeratorOrders'
 import ModeratorProductInquiries from './pages/moderator/ModeratorProductInquiries'
 import ProtectedRoute from './components/ProtectedRoute'
+import ErrorBoundary from './components/ErrorBoundary'
 import GuestCheckoutModal from './components/GuestCheckoutModal'
 import BuyNowModal from './components/BuyNowModal'
 import { useCart } from './context/CartContext'
 
+const ToastHost = () => {
+  const { language } = useAdminI18n()
+  const { pathname } = useLocation()
+  const workspace = /^\/(admin|moderator|delivery)/.test(pathname)
+  const rtl = workspace ? language === 'ar' : true
+  return <Toaster position={rtl ? 'top-left' : 'top-right'} />
+}
+
 const AppContent = () => {
-  const { isRTL } = useLanguage()
   const { showGuestCheckoutModal, buyNowProduct } = useCart()
 
   return (
     <Router>
+      <AdminLanguageProvider>
+      <DocumentDirection />
       {showGuestCheckoutModal ? <GuestCheckoutModal /> : null}
       {buyNowProduct ? <BuyNowModal /> : null}
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50 overflow-x-hidden">
+        <ErrorBoundary>
         <Routes>
               {/* Public routes with Navbar */}
               <Route path="/" element={
@@ -69,7 +82,7 @@ const AppContent = () => {
                   <Contact />
                 </>
               } />
-              <Route path="/product/:id" element={
+              <Route path="/product/:slug" element={
                 <>
                   <Navbar />
                   <ProductDetail />
@@ -186,8 +199,10 @@ const AppContent = () => {
                 }
               />
         </Routes>
-        <Toaster position={isRTL ? 'top-left' : 'top-right'} />
+        </ErrorBoundary>
+        <ToastHost />
       </div>
+      </AdminLanguageProvider>
     </Router>
   )
 }

@@ -5,6 +5,7 @@ const User = require('../models/User');
 const Order = require('../models/Order');
 const ProductInquiry = require('../models/ProductInquiry');
 const { protect } = require('../middleware/auth');
+const { updatePreferredLanguage } = require('../utils/language');
 
 const router = express.Router();
 
@@ -116,12 +117,15 @@ router.post('/login', [
       phone: user.phone,
       role: user.role,
       image: user.image || '',
+      preferredLanguage: user.preferredLanguage || 'en',
       token: generateToken(user._id)
     });
   } catch (error) {
     next(error);
   }
 });
+
+router.put('/language', protect, isDeliveryMan, updatePreferredLanguage);
 
 // @route   GET /api/delivery/orders
 // @desc    Get all orders assigned to the delivery man

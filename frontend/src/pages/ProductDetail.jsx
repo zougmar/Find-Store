@@ -1,716 +1,619 @@
-import { useState, useEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import api from '../utils/api'
 import { useCart } from '../context/CartContext'
 import { useAuth } from '../context/AuthContext'
 import { useLanguage } from '../context/LanguageContext'
 import toast from 'react-hot-toast'
 import { formatCurrency } from '../utils/currency'
+import { getUnitPrice, isVideoUrl } from '../utils/product'
+import { normalizeMoroccanPhone } from '../utils/phone'
+import usePageMeta from '../hooks/usePageMeta'
+import { notifyAdminChange } from '../utils/adminSync'
+
+const WHATSAPP_PHONE = '212707625535'
 
 const ProductDetail = () => {
-  const { id } = useParams()
+  const { slug } = useParams()
   const navigate = useNavigate()
-  const { openBuyNow, getFinalPrice } = useCart()
+  const { openBuyNow } = useCart()
   const { user } = useAuth()
   const { t, isRTL, language } = useLanguage()
   const [product, setProduct] = useState(null)
   const [loading, setLoading] = useState(true)
   const [quantity, setQuantity] = useState(1)
-  const [review, setReview] = useState({ rating: 5, comment: '' })
   const [selectedImageIndex, setSelectedImageIndex] = useState(0)
-  const [lead, setLead] = useState({
+  const [lightboxOpen, setLightboxOpen] = useState(false)
+  const [openFaq, setOpenFaq] = useState(0)
+  const [review, setReview] = useState({ rating: 5, comment: '' })
+  const [submitting, setSubmitting] = useState(false)
+  const [orderSuccess, setOrderSuccess] = useState(null)
+  const [orderForm, setOrderForm] = useState({
     fullName: '',
     phone: '',
     city: '',
-    address: '',
-    note: ''
+    address: ''
   })
-  const [submittingLead, setSubmittingLead] = useState(false)
+  const submittingRef = useRef(false)
 
-  // Calculate discounted price
-  const discountPercentage = product?.discountPercentage || 0
-  const originalPrice = product?.price || 0
-  const discountedPrice = discountPercentage > 0 
-    ? originalPrice * (1 - discountPercentage / 100) 
-    : originalPrice
-  const hasDiscount = discountPercentage > 0
+  const tx = (_en, _fr, ar) => ar
+
+  const unitPrice = product ? getUnitPrice(product) : 0
+  const discountPercentage = Number(product?.discountPercentage) || 0
+  const hasDiscount = discountPercentage > 0 && unitPrice < Number(product?.price || 0)
+  const totalPrice = unitPrice * quantity
+  const images = product?.images?.filter(Boolean) || []
+  const activeImage = images[selectedImageIndex] || ''
+  const headline = product?.headline?.trim() || ''
+  const benefits = (product?.benefits || []).filter(Boolean)
+  const features = (product?.features || []).filter(Boolean)
+  const specifications = (product?.specifications || []).filter((item) => item?.label && item?.value)
+  const faqs = (product?.faqs || []).filter((item) => item?.question && item?.answer)
+  const reviews = product?.ratings || []
+
+  const shareImage = useMemo(() => {
+    if (!activeImage) return undefined
+    if (activeImage.startsWith('http://') || activeImage.startsWith('https://')) return activeImage
+    return `${window.location.origin}${activeImage.startsWith('/') ? activeImage : `/${activeImage}`}`
+  }, [activeImage])
+
+  usePageMeta({
+    title: product ? `${product.name} | FINDSTORE` : 'FINDSTORE',
+    description: product
+      ? (headline || product.description || product.name).replace(/\s+/g, ' ').slice(0, 160)
+      : 'FINDSTORE',
+    image: shareImage,
+    url: product ? `${window.location.origin}/product/${product.slug || slug}` : undefined
+  })
 
   useEffect(() => {
-    fetchProduct()
-  }, [id])
+    let cancelled = false
 
-  const fetchProduct = async () => {
-    try {
-      const res = await api.get(`/products/${id}`)
-      setProduct(res.data)
-    } catch (error) {
-      toast.error(t('noProductsFound') || 'Product not found')
-      navigate('/')
-    } finally {
-      setLoading(false)
+    const loadProduct = async () => {
+      setLoading(true)
+      setOrderSuccess(null)
+      try {
+        const res = await api.get(`/products/${encodeURIComponent(slug)}`)
+        if (cancelled) return
+        setProduct(res.data)
+        setSelectedImageIndex(0)
+        setQuantity(1)
+        if (res.data?.slug && res.data.slug !== slug) {
+          navigate(`/product/${res.data.slug}`, { replace: true })
+        }
+      } catch (error) {
+        if (!cancelled) {
+          toast.error('المنتج غير موجود')
+          navigate('/')
+        }
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
     }
+
+    loadProduct()
+    return () => {
+      cancelled = true
+    }
+  }, [slug, navigate])
+
+  const scrollToOrder = () => {
+    document.getElementById('order-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
+  const changeQuantity = (next) => {
+    const max = Math.max(product?.stock || 1, 1)
+    setQuantity(Math.min(max, Math.max(1, next)))
   }
 
   const handleBuyNow = () => {
-    if (product.stock < quantity) {
+    if (!product || product.stock < quantity) {
       toast.error(t('outOfStock') || 'Insufficient stock')
       return
     }
     openBuyNow(product, quantity)
   }
 
-  const handleSubmitReview = async (e) => {
-    e.preventDefault()
+  const handleWhatsApp = () => {
+    if (!product) return
+    const productUrl = window.location.href
+    const priceLabel = hasDiscount
+      ? `${formatCurrency(unitPrice)} (${formatCurrency(product.price)})`
+      : formatCurrency(unitPrice)
+    const message = language === 'ar'
+      ? `مرحبا! أنا مهتم بالمنتج: ${product.name}\nالسعر: ${priceLabel}\n${productUrl}`
+      : language === 'fr'
+        ? `Bonjour ! Je suis intéressé(e) par : ${product.name}\nPrix : ${priceLabel}\n${productUrl}`
+        : `Hello! I'm interested in: ${product.name}\nPrice: ${priceLabel}\n${productUrl}`
+    window.open(`https://wa.me/${WHATSAPP_PHONE}?text=${encodeURIComponent(message)}`, '_blank', 'noopener,noreferrer')
+  }
+
+  const handleSubmitReview = async (event) => {
+    event.preventDefault()
     if (!user) {
       toast.error(t('pleaseLoginReview') || 'Please login to submit a review')
       return
     }
-
     try {
-      await api.post(`/products/${id}/reviews`, review)
-      toast.success(t('reviewSubmitted') || 'Review submitted!')
+      const res = await api.post(`/products/${product._id}/reviews`, review)
+      setProduct(res.data)
       setReview({ rating: 5, comment: '' })
-      fetchProduct()
+      toast.success(t('reviewSubmitted') || 'Review submitted!')
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to submit review')
+      toast.error(error.response?.data?.message || 'تعذر إرسال التقييم')
     }
   }
 
-  const handleWhatsApp = () => {
-    // WhatsApp phone number - you can change this to your store's WhatsApp number
-    // Format: country code + number (without + or spaces)
-    const whatsappPhone = '212707625535' // Default from Contact page, can be made configurable
-    
-    // Get current page URL for product link
-    const productUrl = window.location.href
-    
-    // Build the message based on language
-    let message = ''
-    if (language === 'ar') {
-      // Arabic message
-      message = `مرحبا! 👋
+  const handleOrder = async (event) => {
+    event.preventDefault()
+    if (!product || submittingRef.current) return
 
-أنا مهتم بهذا المنتج:
+    const fullName = orderForm.fullName.trim()
+    const phone = normalizeMoroccanPhone(orderForm.phone)
+    const city = orderForm.city.trim()
+    const address = orderForm.address.trim()
 
-📦 *${product.name}*
-
-💰 السعر: ${hasDiscount ? formatCurrency(discountedPrice) : formatCurrency(originalPrice)}${hasDiscount ? ` (كان ${formatCurrency(originalPrice)}، وفر ${discountPercentage}%!)` : ''}
-
-📝 الوصف: ${product.description || t('noImageAvailable')}
-
-🏷️ ${t('category')}: ${product.category || t('noImageAvailable')}
-${product.subcategory ? `📂 ${product.subcategory}\n` : ''}
-📊 ${t('stock')}: ${product.stock > 0 ? `${product.stock} ${t('available')}` : t('outOfStockLabel')}
-
-🔗 ${productUrl}
-
-أود معرفة المزيد عن هذا المنتج. هل يمكنك مساعدتي؟`
-    } else if (language === 'fr') {
-      // French message
-      message = `Bonjour! 👋
-
-Je suis intéressé(e) par ce produit:
-
-📦 *${product.name}*
-
-💰 Prix: ${hasDiscount ? formatCurrency(discountedPrice) : formatCurrency(originalPrice)}${hasDiscount ? ` (était ${formatCurrency(originalPrice)}, économisez ${discountPercentage}%!)` : ''}
-
-📝 Description: ${product.description || t('noImageAvailable')}
-
-🏷️ ${t('category')}: ${product.category || t('noImageAvailable')}
-${product.subcategory ? `📂 ${product.subcategory}\n` : ''}
-📊 Stock: ${product.stock > 0 ? `${product.stock} ${t('available')}` : t('outOfStockLabel')}
-
-🔗 Lien du produit: ${productUrl}
-
-J'aimerais en savoir plus sur ce produit. Pouvez-vous m'aider?`
-    } else {
-      // English message
-      message = `Hello! 👋
-
-I'm interested in this product:
-
-📦 *${product.name}*
-
-💰 Price: ${hasDiscount ? formatCurrency(discountedPrice) : formatCurrency(originalPrice)}${hasDiscount ? ` (was ${formatCurrency(originalPrice)}, save ${discountPercentage}%!)` : ''}
-
-📝 Description: ${product.description || t('noImageAvailable')}
-
-🏷️ ${t('category')}: ${product.category || t('noImageAvailable')}
-${product.subcategory ? `📂 ${product.subcategory}\n` : ''}
-📊 ${t('stock')}: ${product.stock > 0 ? `${product.stock} ${t('available')}` : t('outOfStockLabel')}
-
-🔗 Product link: ${productUrl}
-
-I would like to know more about this product. Can you help me?`
+    if (fullName.length < 2 || !phone || city.length < 2 || address.length < 5) {
+      toast.error(tx(
+        'Enter your name, a Moroccan phone number, city, and full address.',
+        'Indiquez votre nom, un numéro marocain, la ville et l’adresse complète.',
+        'أدخل الاسم ورقم هاتف مغربي والمدينة والعنوان الكامل.'
+      ))
+      return
     }
-
-    // Encode the message for URL
-    const encodedMessage = encodeURIComponent(message)
-    
-    // Create WhatsApp URL
-    const whatsappUrl = `https://wa.me/${whatsappPhone}?text=${encodedMessage}`
-    
-    // Open WhatsApp in a new tab/window
-    window.open(whatsappUrl, '_blank')
-    
-    toast.success(language === 'ar' ? 'جاري فتح واتساب...' : (language === 'fr' ? 'Ouverture de WhatsApp...' : 'Opening WhatsApp...'), {
-      icon: '💬',
-      duration: 2000
-    })
-  }
-
-  const handleSubmitLead = async (e) => {
-    e.preventDefault()
-
-    if (!product?._id) {
-      toast.error('Product not found')
+    if (product.stock < quantity) {
+      toast.error(t('outOfStock') || 'Insufficient stock')
       return
     }
 
-    if (!lead.fullName || !lead.phone || !lead.city || !lead.address) {
-      toast.error('Please fill all required fields')
-      return
-    }
-
+    submittingRef.current = true
+    setSubmitting(true)
     try {
-      setSubmittingLead(true)
-      await api.post('/product-inquiries', {
-        productId: product._id,
-        fullName: lead.fullName,
-        phone: lead.phone,
-        city: lead.city,
-        address: lead.address,
-        note: lead.note
+      const res = await api.post('/orders/guest', {
+        items: [{ product: product._id, quantity }],
+        customerName: fullName,
+        customerPhone: phone,
+        city,
+        address,
+        country: 'Morocco'
       })
-      toast.success('Your information has been sent. We will contact you soon.')
-      setLead({
-        fullName: '',
-        phone: '',
-        city: '',
-        address: '',
-        note: ''
-      })
+      setOrderSuccess(res.data)
+      setProduct((current) => current ? { ...current, stock: Math.max(0, current.stock - quantity) } : current)
+      setOrderForm({ fullName: '', phone: '', city: '', address: '' })
+      notifyAdminChange('orders')
+      toast.success(tx(
+        'Order confirmed. Our team will contact you shortly.',
+        'Commande confirmée. Notre équipe vous contactera rapidement.',
+        'تم تأكيد الطلب. سيتواصل معك فريقنا قريبا.'
+      ))
     } catch (error) {
-      console.error('Error sending lead:', error)
-      toast.error(error.response?.data?.message || 'Failed to send your request')
+      toast.error(error.response?.data?.message || tx(
+        'Could not place the order. Please try again.',
+        'Impossible d’enregistrer la commande. Réessayez.',
+        'تعذر حفظ الطلب. حاول مرة أخرى.'
+      ))
     } finally {
-      setSubmittingLead(false)
+      submittingRef.current = false
+      setSubmitting(false)
     }
   }
-
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-screen bg-white">
-        <div className="text-center">
-          <div className="relative">
-            <div className="animate-spin rounded-full h-16 w-16 border-4 border-gray-200 mx-auto"></div>
-            <div className="animate-spin rounded-full h-16 w-16 border-4 border-transparent border-t-blue-600 mx-auto absolute top-0 left-1/2 transform -translate-x-1/2"></div>
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10">
+        <div className="grid lg:grid-cols-2 gap-8">
+          <div className="aspect-square rounded-3xl bg-gray-200 animate-pulse" />
+          <div className="space-y-4">
+            <div className="h-4 w-32 bg-gray-200 rounded animate-pulse" />
+            <div className="h-10 w-4/5 bg-gray-200 rounded animate-pulse" />
+            <div className="h-24 w-full bg-gray-200 rounded animate-pulse" />
+            <div className="h-14 w-48 bg-gray-200 rounded animate-pulse" />
           </div>
-          <p className="text-gray-600 font-medium mt-6 text-lg">{t('loadingProduct')}</p>
         </div>
       </div>
     )
   }
 
-  if (!product) {
-    return null
-  }
+  if (!product) return null
+
+  const inStock = product.stock > 0
+  const detailFacts = [
+    product.category ? { label: t('category') || 'Category', value: product.category } : null,
+    product.subcategory ? { label: tx('Collection', 'Collection', 'المجموعة'), value: product.subcategory } : null,
+    { label: t('stock') || 'Stock', value: inStock ? `${product.stock}` : (t('outOfStockLabel') || 'Out of stock') }
+  ].filter(Boolean)
+  const specRows = specifications.length > 0 ? specifications : detailFacts
 
   return (
-    <div className={`min-h-screen bg-white ${isRTL ? 'text-right' : 'text-left'}`} dir={isRTL ? 'rtl' : 'ltr'} lang={isRTL ? 'ar' : language}>
-      {/* Hero Section */}
-      <section className={`relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white border-b border-slate-700/50 ${isRTL ? 'text-right' : 'text-left'}`} dir={isRTL ? 'rtl' : 'ltr'} lang={isRTL ? 'ar' : language}>
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 via-transparent to-purple-600/10"></div>
-        <div className="absolute inset-0 opacity-[0.03]" style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
-        }}></div>
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12 items-center">
-            {/* Product Image Hero */}
-            <div className={`relative ${isRTL ? 'lg:order-2' : 'lg:order-1'}`}>
-              {product.images && product.images.length > 0 ? (
-                <div className="relative group">
-                  <div className="relative overflow-hidden rounded-2xl bg-white/5 backdrop-blur-sm shadow-2xl border border-white/10 p-6">
-                    <div className="aspect-square w-full max-w-lg mx-auto bg-white/5 rounded-xl overflow-hidden">
-                      <img
-                        src={product.images[selectedImageIndex]}
-                        alt={product.name}
-                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                        onError={(e) => {
-                          e.target.src = 'https://via.placeholder.com/800x800?text=No+Image'
-                        }}
-                      />
-                    </div>
-                    {/* Floating badges */}
-                    {hasDiscount && (
-                      <div className={`absolute top-8 ${isRTL ? 'right-8' : 'left-8'} bg-gradient-to-r from-red-600 to-red-500 text-white px-5 py-2.5 rounded-lg font-bold text-sm shadow-2xl backdrop-blur-sm border border-white/20`}>
-                        <span className="flex items-center gap-1.5">
-                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M12.395 2.553a1 1 0 00-1.45-.385c-.345.23-.614.558-.822.88-.214.33-.403.713-.57 1.116-.334.804-.614 1.768-.84 2.734a31.365 31.365 0 00-.613 3.58 2.64 2.64 0 01-.945-1.067c-.328-.68-.398-1.534-.398-2.654A1 1 0 005.05 6.05 6.981 6.981 0 003 11a7 7 0 1011.95-4.95c-.592-.591-.98-.985-1.348-1.467-.363-.476-.724-1.063-1.207-2.03zM12.12 15.12A3 3 0 017 13s.879.5 2.5.5c0-1 .5-4 1.25-4.5.5 1 .786 1.293 1.371 1.879A2.99 2.99 0 0113 13a2.99 2.99 0 01-.879 2.121z" clipRule="evenodd" />
-                          </svg>
-                          {discountPercentage}% {t('save')}
-                        </span>
-                      </div>
-                    )}
-                    {product.stock > 0 && (
-                      <div className={`absolute top-8 ${isRTL ? 'left-8' : 'right-8'} bg-gradient-to-r from-emerald-600 to-emerald-500 text-white px-5 py-2.5 rounded-lg font-semibold text-sm shadow-2xl backdrop-blur-sm border border-white/20`}>
-                        <span className="flex items-center gap-1.5">
-                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                          </svg>
-                          {t('inStockLabel')}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                  
-                  {/* Image thumbnails for hero */}
-                  {product.images && product.images.length > 1 && (
-                    <div className="flex gap-3 mt-6 justify-center">
-                      {product.images.map((image, index) => (
-                        <button
-                          key={index}
-                          type="button"
-                          onClick={() => setSelectedImageIndex(index)}
-                          className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-all duration-300 shadow-lg backdrop-blur-sm ${
-                            selectedImageIndex === index
-                              ? 'border-white ring-2 ring-white/30 scale-105 shadow-xl'
-                              : 'border-white/20 hover:border-white/40 opacity-70 hover:opacity-100'
-                          }`}
-                        >
-                          <img
-                            src={image}
-                            alt={`${product.name} ${index + 1}`}
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                              e.target.src = 'https://via.placeholder.com/96?text=Error'
-                            }}
-                          />
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="w-full max-w-lg mx-auto aspect-square bg-white/5 backdrop-blur-sm rounded-2xl flex items-center justify-center border border-white/10">
-                  <div className="text-center">
-                    <svg className="w-24 h-24 mx-auto mb-4 text-white/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                    <p className="text-white/50 font-medium text-sm">{t('noImageAvailable')}</p>
-                  </div>
-                </div>
-              )}
-            </div>
+    <div className={`bg-[#f6f5f3] text-gray-900 pb-24 lg:pb-0 ${isRTL ? 'text-right' : 'text-left'}`} dir={isRTL ? 'rtl' : 'ltr'}>
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
+        <nav className="text-sm text-gray-500 mb-6 flex flex-wrap items-center gap-2">
+          <Link to="/" className="hover:text-gray-900">FINDSTORE</Link>
+          <span>/</span>
+          <Link to="/products" className="hover:text-gray-900">{t('products') || 'Products'}</Link>
+          <span>/</span>
+          <span className="text-gray-900 font-medium truncate max-w-[12rem] sm:max-w-none">{product.name}</span>
+        </nav>
 
-            {/* Hero Content */}
-            <div className={`${isRTL ? 'text-right lg:order-1' : 'text-center lg:text-left lg:order-2'} space-y-6`} dir={isRTL ? 'rtl' : 'ltr'} lang={isRTL ? 'ar' : language}>
-              <div className={`inline-flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-sm rounded-lg text-xs font-medium text-white/90 border border-white/20 ${isRTL ? 'flex-row-reverse' : ''}`}>
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                </svg>
-                <span>{product.category}</span>
-                {product.subcategory && (
-                  <>
-                    <span className="text-white/40">•</span>
-                    <span>{product.subcategory}</span>
-                  </>
-                )}
-              </div>
-              
-              <div className={isRTL ? 'text-right' : ''}>
-                <h1 className={`text-4xl md:text-5xl lg:text-6xl font-bold mb-4 leading-tight tracking-tight ${isRTL ? 'text-right font-semibold' : ''}`} lang={isRTL ? 'ar' : language}>
-                  {product.name}
-                </h1>
-                <div className={`flex items-center ${isRTL ? 'justify-end' : 'justify-center lg:justify-start'} gap-3 mb-6`}>
-                  <div className="flex items-center gap-1">
-                    {[...Array(5)].map((_, i) => (
-                      <span key={i} className={`text-xl ${i < Math.floor(product.averageRating || 0) ? 'text-amber-400' : 'text-white/20'}`}>
-                        ★
-                      </span>
-                    ))}
-                  </div>
-                  <span className="text-base font-semibold text-white/90">
-                    {product.averageRating?.toFixed(1) || '0.0'}
-                  </span>
-                  <span className="text-sm text-white/60">
-                    ({product.numReviews || 0} {t('reviews') || 'reviews'})
-                  </span>
-                </div>
-              </div>
-              
-              {/* Price Section */}
-              <div className={`space-y-3 ${isRTL ? 'text-right' : ''}`}>
-                {hasDiscount ? (
-                  <div className="space-y-2">
-                    <div className={`flex items-baseline ${isRTL ? 'justify-end' : 'justify-center lg:justify-start'} gap-4 ${isRTL ? 'flex-row-reverse' : ''}`}>
-                      <span className="text-5xl md:text-6xl font-bold tracking-tight">
-                        {formatCurrency(discountedPrice)}
-                      </span>
-                      <span className="px-3 py-1.5 bg-gradient-to-r from-red-600 to-red-500 text-white text-sm font-bold rounded-lg shadow-lg">
-                        {t('save')} {discountPercentage}%
-                      </span>
-                    </div>
-                    <div className={`flex items-center ${isRTL ? 'justify-end' : 'justify-center lg:justify-start'} gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
-                      <span className="text-2xl text-white/50 line-through font-medium">
-                        {formatCurrency(originalPrice)}
-                      </span>
-                      <span className="text-sm text-white/70 font-medium">
-                        {t('youSaveAmount')} {formatCurrency(originalPrice - discountedPrice)}
-                      </span>
-                    </div>
-                  </div>
-                ) : (
-                  <p className={`text-5xl md:text-6xl font-bold tracking-tight ${isRTL ? 'text-right' : ''}`}>
-                    {formatCurrency(originalPrice)}
-                  </p>
-                )}
-              </div>
-
-              {/* Stock & Quantity */}
-              {product.stock > 0 && (
-                <div className={`bg-white/5 backdrop-blur-sm rounded-xl p-5 border border-white/10 ${isRTL ? 'text-right' : 'text-left'}`} dir={isRTL ? 'rtl' : 'ltr'}>
-                  <div className={`flex items-center justify-between mb-4 ${isRTL ? 'flex-row-reverse' : ''}`}>
-                    <span className="text-sm font-semibold text-white/90 uppercase tracking-wide">{t('quantity') || 'Quantity'}</span>
-                    <span className="text-xs text-white/60 font-medium">{t('stock') || 'Stock'}: {product.stock} {t('available') || 'available'}</span>
-                  </div>
-                  <div className={`flex items-center gap-4 ${isRTL ? 'flex-row-reverse' : ''}`}>
-                    <button
-                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                      className="w-11 h-11 bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg font-semibold text-lg transition-all duration-200 hover:scale-105"
-                    >
-                      −
-                    </button>
-                    <span className="text-2xl font-bold text-white min-w-[3rem] text-center">{quantity}</span>
-                    <button
-                      onClick={() => setQuantity(Math.min(product.stock, quantity + 1))}
-                      className="w-11 h-11 bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg font-semibold text-lg transition-all duration-200 hover:scale-105"
-                    >
-                      +
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* CTA Buttons */}
-              <div className={`flex flex-col sm:flex-row gap-3 pt-2 ${isRTL ? 'sm:flex-row-reverse' : ''}`}>
-                <button
-                  onClick={handleBuyNow}
-                  disabled={product.stock === 0}
-                  className="flex-1 bg-white text-slate-900 hover:bg-gray-50 disabled:bg-slate-700 disabled:text-slate-400 font-semibold py-4 px-8 rounded-xl transition-all duration-200 hover:scale-[1.02] shadow-xl text-base"
-                >
-                  {product.stock > 0 ? (t('buyNow') || 'Buy now') : (t('outOfStockLabel') || 'Out of Stock')}
-                </button>
-                <button
-                  onClick={handleWhatsApp}
-                  className={`flex-1 bg-[#25D366] hover:bg-[#20BA5A] text-white font-semibold py-4 px-8 rounded-xl transition-all duration-200 hover:scale-[1.02] shadow-xl text-base flex items-center justify-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}
-                >
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
-                  </svg>
-                  {t('contactViaWhatsApp')}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Product Description Section */}
-      <section className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-20 ${isRTL ? 'text-right' : 'text-left'}`} dir={isRTL ? 'rtl' : 'ltr'} lang={isRTL ? 'ar' : language}>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2">
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-lg p-8 md:p-12">
-              <div className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-10 pb-8 border-b-2 border-gray-100 ${isRTL ? 'sm:flex-row-reverse' : ''}`}>
-                <div className={isRTL ? 'text-right' : 'text-left'}>
-                  <h2 className={`text-3xl md:text-4xl font-bold text-gray-900 mb-3 ${isRTL ? 'text-right' : 'text-left'} ${isRTL ? 'font-semibold' : ''}`}>{t('productOverview')}</h2>
-                  <p className={`text-gray-600 text-base md:text-lg ${isRTL ? 'text-right' : 'text-left'} ${isRTL ? 'leading-relaxed' : ''}`}>{t('productOverviewSubtitle') || 'Detailed information about this product'}</p>
-                </div>
-              </div>
-              <div className="space-y-6">
-                <div className={`p-8 bg-gradient-to-br ${isRTL ? 'from-gray-50 to-gray-100/50' : 'from-gray-50 to-gray-100/50'} rounded-xl border-2 border-gray-200 hover:border-[#FF385C]/30 transition-all duration-300 shadow-sm`}>
-                  <p className={`text-gray-700 leading-relaxed whitespace-pre-line text-base md:text-lg ${isRTL ? 'text-right font-medium' : 'text-left'} ${isRTL ? 'leading-loose' : ''}`} dir={isRTL ? 'rtl' : 'ltr'} lang={isRTL ? 'ar' : language}>
-                    {product.description || t('noImageAvailable')}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Lead Capture Form */}
+        <section className="grid lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] gap-8 lg:gap-14 items-start">
           <div>
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-lg p-6 md:p-7">
-              <h3 className={`text-xl font-bold text-gray-900 mb-4 ${isRTL ? 'text-right' : 'text-left'}`}>
-                {language === 'ar'
-                  ? 'أرسل معلوماتك وسنتواصل معك'
-                  : language === 'fr'
-                  ? 'Envoyez vos informations et nous vous contacterons'
-                  : 'Send your info and we will contact you'}
-              </h3>
-              <p className={`text-sm text-gray-600 mb-6 ${isRTL ? 'text-right' : 'text-left'}`}>
-                {language === 'ar'
-                  ? 'املأ هذه الخانات وسنتواصل معك عبر الهاتف أو واتساب لتأكيد الطلب.'
-                  : language === 'fr'
-                  ? 'Remplissez ces champs et nous vous contacterons par téléphone ou WhatsApp pour confirmer la commande.'
-                  : 'Fill in these fields and we will contact you by phone or WhatsApp to confirm your order.'}
-              </p>
-
-              <form onSubmit={handleSubmitLead} className={isRTL ? 'text-right' : 'text-left'}>
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      {language === 'ar' ? 'الاسم الكامل*' : language === 'fr' ? 'Nom complet*' : 'Full name*'}
-                    </label>
-                    <input
-                      type="text"
-                      value={lead.fullName}
-                      onChange={(e) => setLead({ ...lead, fullName: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      {language === 'ar' ? 'رقم الهاتف*' : language === 'fr' ? 'Numéro de téléphone*' : 'Phone number*'}
-                    </label>
-                    <input
-                      type="tel"
-                      value={lead.phone}
-                      onChange={(e) => setLead({ ...lead, phone: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-                      placeholder="+212..."
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      {language === 'ar' ? 'المدينة*' : language === 'fr' ? 'Ville*' : 'City*'}
-                    </label>
-                    <input
-                      type="text"
-                      value={lead.city}
-                      onChange={(e) => setLead({ ...lead, city: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      {language === 'ar' ? 'العنوان الكامل*' : language === 'fr' ? 'Adresse complète*' : 'Full address*'}
-                    </label>
-                    <textarea
-                      rows="2"
-                      value={lead.address}
-                      onChange={(e) => setLead({ ...lead, address: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      {language === 'ar' ? 'ملاحظة (اختياري)' : language === 'fr' ? 'Note (optionnel)' : 'Note (optional)'}
-                    </label>
-                    <textarea
-                      rows="2"
-                      value={lead.note}
-                      onChange={(e) => setLead({ ...lead, note: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none"
-                    />
-                  </div>
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={submittingLead}
-                  className="mt-5 w-full bg-[#FF385C] hover:bg-[#E61E4D] text-white font-semibold py-2.5 rounded-lg text-sm shadow-md transition-colors disabled:opacity-60"
-                >
-                  {submittingLead
-                    ? language === 'ar'
-                      ? 'جاري الإرسال...'
-                      : language === 'fr'
-                      ? 'Envoi...'
-                      : 'Sending...'
-                    : language === 'ar'
-                    ? 'إرسال المعلومات'
-                    : language === 'fr'
-                    ? 'Envoyer les informations'
-                    : 'Send information'}
-                </button>
-              </form>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Product Features Section */}
-      {product.features && product.features.length > 0 && (
-        <section className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-20 ${isRTL ? 'text-right' : 'text-left'}`} dir={isRTL ? 'rtl' : 'ltr'} lang={isRTL ? 'ar' : language}>
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-lg p-8 md:p-12">
-            <div className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-10 pb-8 border-b-2 border-gray-100 ${isRTL ? 'sm:flex-row-reverse' : ''}`}>
-              <div className={isRTL ? 'text-right' : 'text-left'}>
-                <h2 className={`text-3xl md:text-4xl font-bold text-gray-900 mb-3 ${isRTL ? 'text-right' : 'text-left'} ${isRTL ? 'font-semibold' : ''}`}>{t('productFeatures') || 'Product Features'}</h2>
-                <p className={`text-gray-600 text-base md:text-lg ${isRTL ? 'text-right' : 'text-left'} ${isRTL ? 'leading-relaxed' : ''}`}>{t('productFeaturesSubtitle') || 'Key features and benefits of this product'}</p>
-              </div>
-            </div>
-            <div className="space-y-6">
-              {product.features.map((feature, index) => (
-                <div key={index} className={`p-6 md:p-8 bg-gradient-to-br ${isRTL ? 'from-gray-50 to-gray-100/50' : 'from-gray-50 to-gray-100/50'} rounded-xl border-2 border-gray-200 hover:border-[#FF385C]/30 transition-all duration-300 shadow-sm hover:shadow-md`}>
-                  <div className={`flex items-start gap-4 md:gap-6 ${isRTL ? 'flex-row-reverse' : ''}`}>
-                    <div className={`flex-shrink-0 w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-[#FF385C] to-[#FF6B8A] rounded-full flex items-center justify-center text-white font-bold text-base md:text-lg shadow-lg ${isRTL ? 'ml-4' : 'mr-0'}`}>
-                      {index + 1}
-                    </div>
-                    <p className={`text-gray-700 leading-relaxed text-base md:text-lg flex-1 ${isRTL ? 'text-right font-medium' : 'text-left'} ${isRTL ? 'leading-loose' : ''}`} dir={isRTL ? 'rtl' : 'ltr'} lang={isRTL ? 'ar' : language}>
-                      {feature}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* Reviews Section */}
-      <section className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-20 ${isRTL ? 'text-right' : 'text-left'}`} dir={isRTL ? 'rtl' : 'ltr'} lang={isRTL ? 'ar' : language}>
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-8 md:p-12">
-          <div className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-10 pb-8 border-b-2 border-gray-100 ${isRTL ? 'sm:flex-row-reverse' : ''}`}>
-            <div className={isRTL ? 'text-right' : 'text-left'}>
-              <h2 className={`text-3xl md:text-4xl font-bold text-gray-900 mb-3 ${isRTL ? 'text-right' : 'text-left'} ${isRTL ? 'font-semibold' : ''}`}>{t('customerReviews') || t('reviews') || 'Customer Reviews'}</h2>
-              <p className={`text-gray-600 text-base md:text-lg ${isRTL ? 'text-right' : 'text-left'} ${isRTL ? 'leading-relaxed' : ''}`}>{t('seeWhatCustomersSaying')}</p>
-            </div>
-            <div className={`flex items-center gap-3 bg-gray-50 px-6 py-4 rounded-xl border border-gray-200 ${isRTL ? 'flex-row-reverse' : ''}`}>
-              <div className="flex items-center gap-1">
-                {[...Array(5)].map((_, i) => (
-                  <span key={i} className={`text-xl ${i < Math.floor(product.averageRating || 0) ? 'text-amber-400' : 'text-gray-300'}`}>
-                    ★
-                  </span>
-                ))}
-              </div>
-              <div className={isRTL ? 'mr-2' : 'ml-2'}>
-                <span className="text-2xl font-bold text-gray-900 block leading-none">
-                  {product.averageRating?.toFixed(1) || '0.0'}
-                </span>
-                <span className="text-xs text-gray-500 font-medium">
-                  {product.numReviews || 0} {t('reviews')}
-                </span>
-              </div>
-            </div>
-          </div>
-          
-          {/* Add Review Form */}
-          {user && (
-            <form onSubmit={handleSubmitReview} className={`mb-12 p-8 bg-gradient-to-br from-gray-50 to-gray-100/50 rounded-xl border border-gray-200 ${isRTL ? 'text-right' : 'text-left'}`} dir={isRTL ? 'rtl' : 'ltr'} lang={isRTL ? 'ar' : language}>
-              <h3 className="text-xl font-bold text-gray-900 mb-6">{t('writeReview') || 'Write a Review'}</h3>
-              <div className="mb-6">
-                <label className={`block text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wide ${isRTL ? 'text-right' : 'text-left'}`}>
-                  {t('yourRating') || t('rating') || 'Your Rating'}
-                </label>
-                <select
-                  value={review.rating}
-                  onChange={(e) => setReview({ ...review, rating: Number(e.target.value) })}
-                  className={`w-full max-w-xs px-4 py-3 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 font-medium ${isRTL ? 'text-right' : 'text-left'}`}
-                  dir={isRTL ? 'rtl' : 'ltr'}
-                >
-                  <option value={5}>{t('ratingExcellent') || '5 - Excellent'}</option>
-                  <option value={4}>{t('ratingVeryGood') || '4 - Very Good'}</option>
-                  <option value={3}>{t('ratingGood') || '3 - Good'}</option>
-                  <option value={2}>{t('ratingFair') || '2 - Fair'}</option>
-                  <option value={1}>{t('ratingPoor') || '1 - Poor'}</option>
-                </select>
-              </div>
-              <div className="mb-6">
-                <label className={`block text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wide ${isRTL ? 'text-right' : 'text-left'}`}>
-                  {t('yourComment') || t('comment') || 'Your Comment'}
-                </label>
-                <textarea
-                  value={review.comment}
-                  onChange={(e) => setReview({ ...review, comment: e.target.value })}
-                  rows="5"
-                  className={`w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 resize-none ${isRTL ? 'text-right' : 'text-left'}`}
-                  placeholder={t('shareYourExperience')}
-                  dir={isRTL ? 'rtl' : 'ltr'}
-                  required
-                />
-              </div>
+            <div className="bg-white rounded-3xl border border-black/5 shadow-sm overflow-hidden">
               <button
-                type="submit"
-                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold px-8 py-3 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl"
+                type="button"
+                className="block w-full aspect-square bg-[#f3f1ee]"
+                onClick={() => activeImage && setLightboxOpen(true)}
+                aria-label={product.name}
               >
-                {t('submitReview') || 'Submit Review'}
+                {activeImage ? (
+                  isVideoUrl(activeImage) ? (
+                    <video src={activeImage} className="w-full h-full object-cover" controls playsInline />
+                  ) : (
+                    <img
+                      src={activeImage}
+                      alt={product.name}
+                      className="w-full h-full object-cover"
+                      onError={(event) => {
+                        event.currentTarget.src = 'https://via.placeholder.com/900x900?text=FINDSTORE'
+                      }}
+                    />
+                  )
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-gray-400">{t('noImageAvailable')}</div>
+                )}
               </button>
-            </form>
-          )}
-
-          {/* Reviews List */}
-          <div className="space-y-6">
-            {product.ratings && product.ratings.length > 0 ? (
-              product.ratings.map((rating, index) => (
-                <div key={index} className={`p-6 bg-gray-50 rounded-xl border border-gray-200 hover:border-gray-300 transition-all duration-200 ${isRTL ? 'text-right' : 'text-left'}`} dir={isRTL ? 'rtl' : 'ltr'} lang={isRTL ? 'ar' : language}>
-                  <div className={`flex items-start justify-between mb-4 ${isRTL ? 'flex-row-reverse' : ''}`}>
-                    <div className={`flex items-center gap-4 ${isRTL ? 'flex-row-reverse' : ''}`}>
-                      <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-md">
-                        {rating.user?.name?.charAt(0)?.toUpperCase() || 'U'}
-                      </div>
-                      <div>
-                        <p className="font-semibold text-gray-900 text-base">{rating.user?.name || t('anonymousUser')}</p>
-                        <p className="text-sm text-gray-500 font-medium">{new Date(rating.createdAt).toLocaleDateString(isRTL ? 'ar-SA' : (language === 'fr' ? 'fr-FR' : 'en-US'), { year: 'numeric', month: 'long', day: 'numeric' })}</p>
-                      </div>
-                    </div>
-                    <div className={`flex items-center gap-1 ${isRTL ? 'flex-row-reverse' : ''}`}>
-                      {[...Array(5)].map((_, i) => (
-                        <span key={i} className={`text-lg ${i < rating.rating ? 'text-amber-400' : 'text-gray-300'}`}>
-                          ★
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                  {rating.comment && (
-                    <p className={`text-gray-700 leading-relaxed ${isRTL ? 'pr-16 text-right font-medium leading-loose' : 'pl-16 text-left'}`} dir={isRTL ? 'rtl' : 'ltr'} lang={isRTL ? 'ar' : language}>{rating.comment}</p>
-                  )}
-                </div>
-              ))
-            ) : (
-              <div className="text-center py-16">
-                <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <svg className="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                  </svg>
-                </div>
-                <p className="text-xl font-semibold text-gray-700 mb-2">{t('noReviews') || 'No reviews yet'}</p>
-                <p className="text-gray-500">{t('beFirstReview') || 'Be the first to review this product!'}</p>
+            </div>
+            {images.length > 1 && (
+              <div className="mt-4 flex gap-3 overflow-x-auto pb-1">
+                {images.map((image, index) => (
+                  <button
+                    key={`${image}-${index}`}
+                    type="button"
+                    onClick={() => setSelectedImageIndex(index)}
+                    className={`h-20 w-20 flex-shrink-0 rounded-2xl overflow-hidden border-2 bg-white ${
+                      selectedImageIndex === index ? 'border-[#111]' : 'border-transparent'
+                    }`}
+                  >
+                    {isVideoUrl(image) ? (
+                      <video src={image} className="w-full h-full object-cover" muted />
+                    ) : (
+                      <img src={image} alt="" className="w-full h-full object-cover" loading="lazy" />
+                    )}
+                  </button>
+                ))}
               </div>
             )}
           </div>
-        </div>
-      </section>
 
-      {/* Final CTA Section */}
-      <section className={`bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border-t border-slate-700/50 ${isRTL ? 'text-right' : 'text-left'}`} dir={isRTL ? 'rtl' : 'ltr'} lang={isRTL ? 'ar' : language}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-20">
-          <div className={`bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 p-8 md:p-12 ${isRTL ? 'text-right' : 'text-center'} text-white`} dir={isRTL ? 'rtl' : 'ltr'} lang={isRTL ? 'ar' : language}>
-            <h2 className={`text-3xl md:text-4xl font-bold mb-4 ${isRTL ? 'text-right' : 'text-center'} ${isRTL ? 'font-semibold' : ''}`}>{t('readyToMakePurchase')}</h2>
-            <p className={`text-lg text-white/80 mb-8 max-w-2xl mx-auto leading-relaxed ${isRTL ? 'text-right' : 'text-center'} ${isRTL ? 'leading-loose' : ''}`} dir={isRTL ? 'rtl' : 'ltr'} lang={isRTL ? 'ar' : language}>
-              {t('dontMissOut')}
+          <div className="lg:sticky lg:top-24">
+            <p className="text-xs font-semibold tracking-[0.18em] uppercase text-[#FF385C]">
+              {product.category}{product.subcategory ? ` · ${product.subcategory}` : ''}
             </p>
-            <div className={`flex flex-col sm:flex-row gap-4 justify-center max-w-md mx-auto ${isRTL ? 'sm:flex-row-reverse' : ''}`}>
+            <h1 className="mt-3 text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight text-gray-950">
+              {product.name}
+            </h1>
+            {headline && (
+              <p className="mt-4 text-lg text-gray-600 leading-relaxed">{headline}</p>
+            )}
+
+            <div className="mt-6 flex flex-wrap items-end gap-3">
+              <p className="text-4xl font-semibold tracking-tight">{formatCurrency(unitPrice)}</p>
+              {hasDiscount && (
+                <>
+                  <p className="text-lg text-gray-400 line-through mb-1">{formatCurrency(product.price)}</p>
+                  <span className="mb-1 inline-flex items-center rounded-full bg-red-50 text-red-600 text-sm font-semibold px-3 py-1">
+                    -{discountPercentage}%
+                  </span>
+                </>
+              )}
+            </div>
+            <p className={`mt-3 text-sm font-medium ${inStock ? 'text-emerald-700' : 'text-red-600'}`}>
+              {inStock ? `${t('inStockLabel') || 'In stock'} · ${product.stock}` : (t('outOfStockLabel') || 'Out of stock')}
+            </p>
+
+            <div className="mt-6 flex items-center gap-4">
+              <span className="text-sm font-medium text-gray-600">{t('quantity') || 'Quantity'}</span>
+              <div className="inline-flex items-center rounded-full border border-gray-200 bg-white">
+                <button type="button" onClick={() => changeQuantity(quantity - 1)} className="h-11 w-11 text-lg" aria-label="إنقاص الكمية">−</button>
+                <span className="w-8 text-center font-semibold">{quantity}</span>
+                <button type="button" onClick={() => changeQuantity(quantity + 1)} className="h-11 w-11 text-lg" aria-label="زيادة الكمية">+</button>
+              </div>
+              <span className="text-sm text-gray-500">{formatCurrency(totalPrice)}</span>
+            </div>
+
+            <div className="mt-6 grid sm:grid-cols-2 gap-3">
               <button
-                onClick={handleBuyNow}
-                disabled={product.stock === 0}
-                className="flex-1 bg-white text-slate-900 hover:bg-gray-50 disabled:bg-slate-700 disabled:text-slate-400 font-semibold py-4 px-8 rounded-xl transition-all duration-200 hover:scale-[1.02] shadow-xl text-base"
+                type="button"
+                onClick={scrollToOrder}
+                disabled={!inStock}
+                className="h-12 rounded-full bg-[#111] text-white font-semibold disabled:bg-gray-300"
               >
-                {product.stock > 0 ? (t('buyNow') || 'Buy now') : (t('outOfStockLabel') || 'Out of Stock')}
+                {tx('Order now', 'Commander maintenant', 'اطلب الآن')}
               </button>
               <button
+                type="button"
                 onClick={handleWhatsApp}
-                className={`flex-1 bg-[#25D366] hover:bg-[#20BA5A] text-white font-semibold py-4 px-8 rounded-xl transition-all duration-200 hover:scale-[1.02] shadow-xl text-base flex items-center justify-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}
+                className="h-12 rounded-full bg-[#25D366] text-white font-semibold"
               >
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
-                </svg>
-                {t('contactViaWhatsApp')}
+                WhatsApp
               </button>
             </div>
+            <button type="button" onClick={handleBuyNow} disabled={!inStock} className="mt-3 text-sm font-medium text-gray-600 underline underline-offset-4 disabled:no-underline disabled:text-gray-400">
+              {t('buyNow') || 'Buy now'}
+            </button>
           </div>
+        </section>
+
+        <section className="mt-14 grid lg:grid-cols-3 gap-6">
+          <article className="lg:col-span-2 bg-white rounded-3xl border border-black/5 p-6 sm:p-8">
+            <h2 className="text-2xl font-semibold">{t('productOverview') || 'Overview'}</h2>
+            <p className="mt-4 text-gray-600 leading-7 whitespace-pre-line">{product.description}</p>
+          </article>
+          <aside className="bg-white rounded-3xl border border-black/5 p-6">
+            <h2 className="text-lg font-semibold">{tx('Delivery', 'Livraison', 'التوصيل')}</h2>
+            <p className="mt-3 text-sm text-gray-600 leading-6">
+              {product.deliveryNote || tx(
+                'Cash on delivery across Morocco. We confirm every order by phone before shipping.',
+                'Paiement à la livraison partout au Maroc. Chaque commande est confirmée par téléphone.',
+                'الدفع عند الاستلام في جميع مدن المغرب. نؤكد كل طلب عبر الهاتف قبل الشحن.'
+              )}
+            </p>
+            <h2 className="mt-6 text-lg font-semibold">{tx('Support', 'Assistance', 'الدعم')}</h2>
+            <p className="mt-3 text-sm text-gray-600 leading-6">
+              {product.supportNote || tx(
+                'Questions about this product? Message FINDSTORE on WhatsApp and include the product name.',
+                'Une question ? Écrivez à FINDSTORE sur WhatsApp en indiquant le nom du produit.',
+                'لأي سؤال، راسل FINDSTORE عبر واتساب مع اسم المنتج.'
+              )}
+            </p>
+          </aside>
+        </section>
+
+        {benefits.length > 0 && (
+          <section className="mt-6 grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {benefits.map((benefit) => (
+              <div key={benefit} className="bg-white rounded-2xl border border-black/5 p-5">
+                <p className="font-medium leading-6">{benefit}</p>
+              </div>
+            ))}
+          </section>
+        )}
+
+        {features.length > 0 && (
+          <section className="mt-6 bg-white rounded-3xl border border-black/5 p-6 sm:p-8">
+            <h2 className="text-2xl font-semibold">{t('productFeatures') || 'Features'}</h2>
+            <ul className="mt-5 grid sm:grid-cols-2 gap-3">
+              {features.map((feature) => (
+                <li key={feature} className="rounded-2xl bg-[#f6f5f3] px-4 py-3 text-gray-700">{feature}</li>
+              ))}
+            </ul>
+          </section>
+        )}
+
+        <section className="mt-6 bg-white rounded-3xl border border-black/5 p-6 sm:p-8">
+          <h2 className="text-2xl font-semibold">{tx('Specifications', 'Caractéristiques', 'المواصفات')}</h2>
+          <dl className="mt-5 divide-y divide-gray-100">
+            {specRows.map((row) => (
+              <div key={`${row.label}-${row.value}`} className="grid sm:grid-cols-[180px_1fr] gap-2 py-3">
+                <dt className="text-sm text-gray-500">{row.label}</dt>
+                <dd className="font-medium">{row.value}</dd>
+              </div>
+            ))}
+          </dl>
+        </section>
+
+        <section id="order-form" className="mt-6 scroll-mt-24 grid lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] gap-6">
+          <div className="bg-[#111] text-white rounded-3xl p-6 sm:p-8">
+            <p className="text-xs uppercase tracking-[0.16em] text-white/60">FINDSTORE</p>
+            <h2 className="mt-3 text-3xl font-semibold">{tx('Place your order', 'Passer la commande', 'أرسل طلبك')}</h2>
+            <p className="mt-3 text-white/70 leading-6">
+              {tx(
+                'The product is already selected. Choose a quantity and we will call you to confirm delivery.',
+                'Le produit est déjà sélectionné. Choisissez la quantité, nous vous appelons pour confirmer.',
+                'المنتج محدد تلقائيا. اختر الكمية وسنتصل بك لتأكيد التوصيل.'
+              )}
+            </p>
+            <div className="mt-8 space-y-3 text-sm">
+              <div className="flex justify-between gap-4 border-b border-white/10 pb-3">
+                <span className="text-white/60">{tx('Product', 'Produit', 'المنتج')}</span>
+                <span className="font-medium text-right">{product.name}</span>
+              </div>
+              <div className="flex justify-between gap-4 border-b border-white/10 pb-3">
+                <span className="text-white/60">{t('quantity') || 'Quantity'}</span>
+                <span>{quantity}</span>
+              </div>
+              <div className="flex justify-between gap-4">
+                <span className="text-white/60">{tx('Total', 'Total', 'المجموع')}</span>
+                <span className="text-xl font-semibold">{formatCurrency(totalPrice)}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-3xl border border-black/5 p-6 sm:p-8">
+            {orderSuccess ? (
+              <div>
+                <h3 className="text-2xl font-semibold">{tx('Order received', 'Commande reçue', 'تم استلام الطلب')}</h3>
+                <p className="mt-3 text-gray-600 leading-6">
+                  {tx(
+                    'Your order is now in the FINDSTORE order list. Keep your phone available.',
+                    'Votre commande est enregistrée. Gardez votre téléphone disponible.',
+                    'تم حفظ طلبك. أبق هاتفك قريبا.'
+                  )}
+                </p>
+                <p className="mt-4 text-sm text-gray-500">#{String(orderSuccess._id || '').slice(-8).toUpperCase()}</p>
+                <button
+                  type="button"
+                  onClick={() => setOrderSuccess(null)}
+                  className="mt-6 h-11 px-5 rounded-full bg-[#111] text-white font-semibold"
+                >
+                  {tx('Place another order', 'Nouvelle commande', 'طلب جديد')}
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={handleOrder} className="space-y-4">
+                <label className="block">
+                  <span className="text-sm font-medium text-gray-700">{tx('Full name', 'Nom complet', 'الاسم الكامل')}</span>
+                  <input
+                    value={orderForm.fullName}
+                    onChange={(event) => setOrderForm({ ...orderForm, fullName: event.target.value })}
+                    autoComplete="name"
+                    required
+                    className="mt-1.5 w-full h-12 px-4 rounded-xl border border-gray-200 focus:border-gray-900 focus:outline-none"
+                  />
+                </label>
+                <label className="block">
+                  <span className="text-sm font-medium text-gray-700">{tx('Phone number', 'Numéro de téléphone', 'رقم الهاتف')}</span>
+                  <input
+                    type="tel"
+                    inputMode="tel"
+                    value={orderForm.phone}
+                    onChange={(event) => setOrderForm({ ...orderForm, phone: event.target.value })}
+                    placeholder="06 12 34 56 78"
+                    autoComplete="tel"
+                    required
+                    className="mt-1.5 w-full h-12 px-4 rounded-xl border border-gray-200 focus:border-gray-900 focus:outline-none"
+                  />
+                </label>
+                <label className="block">
+                  <span className="text-sm font-medium text-gray-700">{tx('City', 'Ville', 'المدينة')}</span>
+                  <input
+                    value={orderForm.city}
+                    onChange={(event) => setOrderForm({ ...orderForm, city: event.target.value })}
+                    autoComplete="address-level2"
+                    required
+                    className="mt-1.5 w-full h-12 px-4 rounded-xl border border-gray-200 focus:border-gray-900 focus:outline-none"
+                  />
+                </label>
+                <label className="block">
+                  <span className="text-sm font-medium text-gray-700">{tx('Full address', 'Adresse complète', 'العنوان الكامل')}</span>
+                  <textarea
+                    value={orderForm.address}
+                    onChange={(event) => setOrderForm({ ...orderForm, address: event.target.value })}
+                    required
+                    rows={3}
+                    className="mt-1.5 w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-gray-900 focus:outline-none resize-none"
+                  />
+                </label>
+                <label className="block">
+                  <span className="text-sm font-medium text-gray-700">{tx('Product', 'Produit', 'المنتج')}</span>
+                  <input value={product.name} readOnly className="mt-1.5 w-full h-12 px-4 rounded-xl border border-gray-200 bg-gray-50 text-gray-700" />
+                </label>
+                <button
+                  type="submit"
+                  disabled={submitting || !inStock}
+                  className="w-full h-12 rounded-full bg-[#FF385C] hover:bg-[#E61E4D] text-white font-semibold disabled:opacity-60"
+                >
+                  {submitting
+                    ? tx('Sending...', 'Envoi...', 'جار الإرسال...')
+                    : tx(`Order · ${formatCurrency(totalPrice)}`, `Commander · ${formatCurrency(totalPrice)}`, `اطلب · ${formatCurrency(totalPrice)}`)}
+                </button>
+              </form>
+            )}
+          </div>
+        </section>
+
+        <section className="mt-6 bg-white rounded-3xl border border-black/5 p-6 sm:p-8">
+          <h2 className="text-2xl font-semibold">{tx('Customer reviews', 'Avis clients', 'آراء الزبائن')}</h2>
+          {reviews.length === 0 ? (
+            <p className="mt-4 text-gray-500">{t('noReviews') || 'No reviews yet'}</p>
+          ) : (
+            <div className="mt-5 space-y-4">
+              {reviews.map((rating, index) => (
+                <article key={rating._id || index} className="rounded-2xl bg-[#f6f5f3] p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="font-medium">{rating.user?.name || tx('Customer', 'Client', 'زبون')}</p>
+                    <p className="text-amber-500">{'★'.repeat(rating.rating || 0)}</p>
+                  </div>
+                  {rating.comment && <p className="mt-2 text-gray-600 leading-6">{rating.comment}</p>}
+                </article>
+              ))}
+            </div>
+          )}
+
+          {user && (
+            <form onSubmit={handleSubmitReview} className="mt-6 grid gap-3 sm:grid-cols-[140px_1fr_auto]">
+              <select
+                value={review.rating}
+                onChange={(event) => setReview({ ...review, rating: Number(event.target.value) })}
+                className="h-12 px-3 rounded-xl border border-gray-200"
+              >
+                {[5, 4, 3, 2, 1].map((value) => (
+                  <option key={value} value={value}>{value} ★</option>
+                ))}
+              </select>
+              <input
+                value={review.comment}
+                onChange={(event) => setReview({ ...review, comment: event.target.value })}
+                required
+                placeholder={t('yourComment') || 'Your comment'}
+                className="h-12 px-4 rounded-xl border border-gray-200"
+              />
+              <button type="submit" className="h-12 px-5 rounded-xl bg-[#111] text-white font-semibold">
+                {t('submitReview') || 'Submit'}
+              </button>
+            </form>
+          )}
+        </section>
+
+        <section className="mt-6 bg-white rounded-3xl border border-black/5 p-6 sm:p-8">
+          <h2 className="text-2xl font-semibold">{tx('Questions', 'Questions fréquentes', 'أسئلة شائعة')}</h2>
+          <div className="mt-4 divide-y divide-gray-100">
+            {(faqs.length > 0 ? faqs : [
+              {
+                question: tx('How does delivery work?', 'Comment se passe la livraison ?', 'كيف يتم التوصيل؟'),
+                answer: tx(
+                  'FINDSTORE delivers across Morocco. After you order, we call to confirm the address and delivery time.',
+                  'FINDSTORE livre partout au Maroc. Après la commande, nous appelons pour confirmer l’adresse.',
+                  'FINDSTORE يوصل إلى جميع مدن المغرب، ونتصل بك لتأكيد العنوان.'
+                )
+              },
+              {
+                question: tx('When do I pay?', 'Quand dois-je payer ?', 'متى أدفع؟'),
+                answer: tx(
+                  'You pay on delivery. The total shown on this page is the amount to prepare.',
+                  'Le paiement se fait à la livraison. Le total affiché est le montant à préparer.',
+                  'الدفع عند الاستلام. المبلغ الظاهر هو المبلغ المطلوب.'
+                )
+              },
+              {
+                question: tx('Can I change the quantity?', 'Puis-je changer la quantité ?', 'هل يمكن تغيير الكمية؟'),
+                answer: tx(
+                  'Yes. Use the quantity control before submitting the form. The total updates immediately.',
+                  'Oui. Modifiez la quantité avant d’envoyer le formulaire. Le total se met à jour immédiatement.',
+                  'نعم. غيّر الكمية قبل الإرسال وسيتحدث المجموع مباشرة.'
+                )
+              }
+            ]).map((faq, index) => (
+              <div key={faq.question}>
+                <button
+                  type="button"
+                  onClick={() => setOpenFaq(openFaq === index ? -1 : index)}
+                  className="w-full py-4 flex items-center justify-between gap-4 text-left font-medium"
+                >
+                  <span>{faq.question}</span>
+                  <span className="text-gray-400">{openFaq === index ? '−' : '+'}</span>
+                </button>
+                {openFaq === index && <p className="pb-4 text-gray-600 leading-6">{faq.answer}</p>}
+              </div>
+            ))}
+          </div>
+        </section>
+      </div>
+
+      <div className="lg:hidden fixed inset-x-0 bottom-0 z-40 border-t border-black/10 bg-white/95 backdrop-blur px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+        <button
+          type="button"
+          onClick={scrollToOrder}
+          className="w-full h-12 rounded-full bg-[#FF385C] text-white font-semibold"
+        >
+          اطلب الآن
+        </button>
+      </div>
+
+      {lightboxOpen && activeImage && !isVideoUrl(activeImage) && (
+        <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4" onClick={() => setLightboxOpen(false)}>
+          <img src={activeImage} alt={product.name} className="max-h-[90vh] max-w-full object-contain" />
         </div>
-      </section>
+      )}
     </div>
   )
 }

@@ -129,7 +129,7 @@ const Products = () => {
       setCategories(res.data || [])
     } catch (error) {
       console.error('Error fetching categories:', error)
-      toast.error('Failed to fetch categories')
+      toast.error(t('categoriesFailed'))
     }
   }
 
@@ -143,8 +143,9 @@ const Products = () => {
     }
   }
 
-  const fetchProducts = async () => {
-    setLoading(true)
+  const fetchProducts = async (options = {}) => {
+    const silent = options.silent === true
+    if (!silent) setLoading(true)
     try {
       const params = new URLSearchParams()
       if (filters.category && filters.category !== 'all') params.append('category', filters.category)
@@ -187,17 +188,31 @@ const Products = () => {
       setCategoryPages({})
     } catch (error) {
       console.error('Error fetching products:', error)
-      
-      if (error.code === 'ERR_NETWORK' || error.message.includes('Network Error')) {
-        toast.error('Cannot connect to server. Make sure the backend is running on port 5000')
-      } else {
-        toast.error(error.response?.data?.message || 'Failed to fetch products')
+      if (!silent) {
+        if (error.code === 'ERR_NETWORK' || error.message.includes('Network Error')) {
+          toast.error(t('serverUnreachable'))
+        } else {
+          toast.error(error.response?.data?.message || t('productsFetchFailed'))
+        }
+        setProducts([])
       }
-      setProducts([])
     } finally {
-      setLoading(false)
+      if (!silent) setLoading(false)
     }
   }
+
+  const fetchProductsRef = useRef(fetchProducts)
+  fetchProductsRef.current = fetchProducts
+
+  useEffect(() => {
+    const refreshVisible = () => {
+      if (document.visibilityState === 'visible') {
+        fetchProductsRef.current({ silent: true })
+      }
+    }
+    document.addEventListener('visibilitychange', refreshVisible)
+    return () => document.removeEventListener('visibilitychange', refreshVisible)
+  }, [])
 
   const handleFilterChange = (e) => {
     const { name, value } = e.target
@@ -306,10 +321,10 @@ const Products = () => {
       <section className="bg-white border-b border-gray-200 py-6 md:py-8">
         <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
           <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 mb-2">
-            All Products
+            {t('allProducts')}
           </h1>
           <p className="text-base md:text-lg text-gray-600">
-            {!loading && products.length > 0 ? `${products.length} ${products.length === 1 ? 'product' : 'products'} found` : 'Browse our collection'}
+            {!loading && products.length > 0 ? `${products.length} ${products.length === 1 ? t('productFound') : t('productsFound')}` : t('browseCollection')}
           </p>
         </div>
       </section>
@@ -319,17 +334,17 @@ const Products = () => {
         <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
           {/* Search Input */}
           <div className="relative mb-4">
-            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+            <div className="absolute inset-y-0 start-0 ps-4 flex items-center pointer-events-none">
               <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </div>
             <input
               type="text"
-              placeholder="Search products by name or description..."
+              placeholder={t('searchPlaceholder')}
               value={searchInput}
               onChange={handleSearchChange}
-              className="w-full pl-12 pr-10 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF385C] focus:border-transparent text-sm md:text-base"
+              className="w-full ps-12 pe-10 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF385C] focus:border-transparent text-sm md:text-base"
             />
             {searchInput && (
               <button
@@ -339,7 +354,7 @@ const Products = () => {
                   setFilters(newFilters)
                   updateURLParams(newFilters)
                 }}
-                className="absolute inset-y-0 right-0 pr-4 flex items-center"
+                className="absolute inset-y-0 end-0 pe-4 flex items-center"
               >
                 <svg className="h-5 w-5 text-gray-400 hover:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -351,10 +366,10 @@ const Products = () => {
           {/* Active Filters Display */}
           {activeFiltersCount > 0 && (
             <div className="mt-4 flex flex-wrap items-center gap-2">
-              <span className="text-sm text-gray-600 font-medium">Active filters:</span>
+              <span className="text-sm text-gray-600 font-medium">{t('activeFilters')}</span>
               {filters.category !== 'all' && (
                 <span className="inline-flex items-center gap-1 px-3 py-1 bg-gray-100 rounded-full text-sm">
-                  Category: {filters.category}
+                  {t('categoryFilter')} {filters.category}
                   <button
                     onClick={() => handleFilterChange({ target: { name: 'category', value: 'all' } })}
                     className="text-gray-500 hover:text-gray-700"
@@ -376,7 +391,7 @@ const Products = () => {
               )}
               {filters.search && (
                 <span className="inline-flex items-center gap-1 px-3 py-1 bg-gray-100 rounded-full text-sm">
-                  Search: "{filters.search}"
+                  {t('searchFilter')} "{filters.search}"
                   <button
                     onClick={() => {
                       setSearchInput('')
@@ -390,7 +405,7 @@ const Products = () => {
               )}
               {(filters.minPrice || filters.maxPrice) && (
                 <span className="inline-flex items-center gap-1 px-3 py-1 bg-gray-100 rounded-full text-sm">
-                  Price: {filters.minPrice ? formatCurrency(filters.minPrice) : 'Any'} - {filters.maxPrice ? formatCurrency(filters.maxPrice) : 'Any'}
+                  {t('priceFilter')} {filters.minPrice ? formatCurrency(filters.minPrice) : t('any')} - {filters.maxPrice ? formatCurrency(filters.maxPrice) : t('any')}
                   <button
                     onClick={() => {
                       handleFilterChange({ target: { name: 'minPrice', value: '' } })
@@ -404,7 +419,7 @@ const Products = () => {
               )}
               {filters.minRating && (
                 <span className="inline-flex items-center gap-1 px-3 py-1 bg-gray-100 rounded-full text-sm">
-                  Rating: {filters.minRating}+ ⭐
+                  {t('ratingFilter')} {filters.minRating}+ ⭐
                   <button
                     onClick={() => handleFilterChange({ target: { name: 'minRating', value: '' } })}
                     className="text-gray-500 hover:text-gray-700"
@@ -415,7 +430,7 @@ const Products = () => {
               )}
               {filters.inStock !== 'all' && (
                 <span className="inline-flex items-center gap-1 px-3 py-1 bg-gray-100 rounded-full text-sm">
-                  {filters.inStock === 'inStock' ? 'In Stock' : 'Out of Stock'}
+                  {filters.inStock === 'inStock' ? t('inStock') : t('outOfStockFilter')}
                   <button
                     onClick={() => handleFilterChange({ target: { name: 'inStock', value: 'all' } })}
                     className="text-gray-500 hover:text-gray-700"
@@ -428,7 +443,7 @@ const Products = () => {
                 onClick={clearFilters}
                 className="text-sm text-[#FF385C] hover:text-[#E61E4D] font-medium underline"
               >
-                Clear all
+                {t('clearAll')}
               </button>
             </div>
           )}
@@ -439,13 +454,13 @@ const Products = () => {
       <section className="bg-white border-b border-gray-200 py-4">
         <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">Filters</h2>
+            <h2 className="text-lg font-semibold text-gray-900">{t('filters')}</h2>
             {activeFiltersCount > 0 && (
               <button
                 onClick={clearFilters}
                 className="text-sm text-[#FF385C] hover:text-[#E61E4D] font-medium"
               >
-                Clear all
+                {t('clearAll')}
               </button>
             )}
           </div>
@@ -460,7 +475,7 @@ const Products = () => {
               onChange={handleFilterChange}
                 className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF385C] focus:border-transparent text-sm font-medium text-gray-700 bg-white"
             >
-              <option value="all">All Categories</option>
+              <option value="all">{t('allCategories')}</option>
               {categories.map(cat => (
                 <option key={cat} value={cat}>{cat}</option>
               ))}
@@ -476,7 +491,7 @@ const Products = () => {
                   onChange={handleFilterChange}
                   className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF385C] focus:border-transparent text-sm font-medium text-gray-700 bg-white"
                 >
-                  <option value="all">All Subcategories</option>
+                  <option value="all">{t('allSubcategories')}</option>
                   {subcategories.map(sub => (
                     <option key={sub} value={sub}>{sub}</option>
                   ))}
@@ -489,7 +504,7 @@ const Products = () => {
               <input
                 type="number"
                 name="minPrice"
-                placeholder="Min Price"
+                placeholder={t('minPrice')}
                 value={filters.minPrice}
                 onChange={handleFilterChange}
                 min="0"
@@ -499,7 +514,7 @@ const Products = () => {
               <input
                 type="number"
                 name="maxPrice"
-                placeholder="Max Price"
+                placeholder={t('maxPrice')}
                 value={filters.maxPrice}
                 onChange={handleFilterChange}
                 min="0"
@@ -515,7 +530,7 @@ const Products = () => {
                 onChange={handleFilterChange}
                 className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF385C] focus:border-transparent text-sm font-medium text-gray-700 bg-white"
               >
-                <option value="">Any Rating</option>
+                <option value="">{t('anyRating')}</option>
                 <option value="4">4+ ⭐⭐⭐⭐</option>
                 <option value="3">3+ ⭐⭐⭐</option>
                 <option value="2">2+ ⭐⭐</option>
@@ -531,24 +546,24 @@ const Products = () => {
                 onChange={handleFilterChange}
                 className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF385C] focus:border-transparent text-sm font-medium text-gray-700 bg-white"
               >
-                <option value="all">All Products</option>
-                <option value="inStock">In Stock</option>
-                <option value="outOfStock">Out of Stock</option>
+                <option value="all">{t('allProductsFilter')}</option>
+                <option value="inStock">{t('inStock')}</option>
+                <option value="outOfStock">{t('outOfStockFilter')}</option>
               </select>
             </div>
 
             {/* Sort By */}
-            <div className="flex-shrink-0 ml-auto">
+            <div className="flex-shrink-0 ms-auto">
             <select
               name="sortBy"
               value={filters.sortBy}
               onChange={handleFilterChange}
                 className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF385C] focus:border-transparent text-sm font-medium text-gray-700 bg-white"
             >
-                <option value="newest">Newest First</option>
-              <option value="price-low">Price: Low to High</option>
-              <option value="price-high">Price: High to Low</option>
-              <option value="rating">Highest Rated</option>
+                <option value="newest">{t('newestFirst')}</option>
+              <option value="price-low">{t('priceLowToHigh')}</option>
+              <option value="price-high">{t('priceHighToLow')}</option>
+              <option value="rating">{t('highestRated')}</option>
             </select>
             </div>
             </div>
@@ -585,21 +600,21 @@ const Products = () => {
                   onClick={clearFilters}
                   className="text-[#FF385C] hover:text-[#E61E4D] font-medium underline"
                 >
-                  Clear all filters
+                  {t('clearAllFilters')}
                 </button>
               )}
             </div>
           ) : Object.keys(productsByCategory).length === 0 ? (
             <div className="text-center py-24 bg-white rounded-xl shadow-sm border border-gray-200">
-              <p className="text-gray-500 text-lg">No products to display</p>
+              <p className="text-gray-500 text-lg">{t('noProductsToDisplay')}</p>
             </div>
           ) : (
             <div className="space-y-12 sm:space-y-16">
               {/* Products Summary */}
               <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm border border-gray-200">
                 <p className="text-base sm:text-lg font-semibold text-gray-900">
-                  Showing {products.length} {products.length === 1 ? 'product' : 'products'} 
-                  {Object.keys(productsByCategory).length > 1 && ` across ${Object.keys(productsByCategory).length} categories`}
+                  {t('showing')} {products.length} {products.length === 1 ? t('product') : t('products')}
+                  {Object.keys(productsByCategory).length > 1 && ` ${t('acrossCategories')} ${Object.keys(productsByCategory).length}`}
                 </p>
               </div>
 

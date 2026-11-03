@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '../../utils/api'
 import toast from 'react-hot-toast'
+import { useAdminI18n } from '../../context/AdminLanguageContext'
+import LanguageSwitcher from '../../components/LanguageSwitcher'
 
 const ModeratorLogin = () => {
   const [formData, setFormData] = useState({
@@ -10,6 +12,7 @@ const ModeratorLogin = () => {
   })
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
+  const { t } = useAdminI18n()
 
   const handleChange = (e) => {
     setFormData({
@@ -62,7 +65,8 @@ const ModeratorLogin = () => {
         phone: res.data.phone,
         role: res.data.role,
         permissions: res.data.permissions || {},
-        image: res.data.image || ''
+        image: res.data.image || '',
+        preferredLanguage: res.data.preferredLanguage || 'en'
       }))
 
       console.log('Moderator login successful:', {
@@ -71,7 +75,7 @@ const ModeratorLogin = () => {
         role: res.data.role
       })
 
-      toast.success(`Welcome back, ${res.data.name}!`, { icon: '✅' })
+      toast.success(`${t('auth.welcome')}, ${res.data.name}`, { icon: '✅' })
       navigate('/moderator/dashboard')
     } catch (error) {
       console.error('Login error:', error)
@@ -91,14 +95,15 @@ const ModeratorLogin = () => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
             </svg>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Moderator Portal</h1>
-          <p className="text-gray-600">Sign in to manage orders</p>
+          <div className="mb-4 flex justify-center"><LanguageSwitcher /></div>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">{t('auth.moderatorTitle')}</h1>
+          <p className="text-gray-600">{t('auth.moderatorSubtitle')}</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
-              Email Address
+              {t('auth.email')}
             </label>
             <input
               type="email"
@@ -114,7 +119,7 @@ const ModeratorLogin = () => {
 
           <div>
             <label htmlFor="password" className="block text-sm font-semibold text-gray-700 mb-2">
-              Password
+              {t('auth.password')}
             </label>
             <input
               type="password"
@@ -136,14 +141,14 @@ const ModeratorLogin = () => {
             {loading ? (
               <>
                 <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
-                Signing in...
+                {t('auth.signingIn')}
               </>
             ) : (
               <>
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
                 </svg>
-                Sign In
+                {t('auth.signIn')}
               </>
             )}
           </button>
@@ -151,9 +156,8 @@ const ModeratorLogin = () => {
 
         <div className="mt-6 text-center">
           <p className="text-sm text-gray-600">
-            Need help?{' '}
             <a href="/contact" className="text-indigo-600 hover:text-indigo-700 font-semibold">
-              Contact Admin
+              {t('header.viewStore')}
             </a>
           </p>
         </div>

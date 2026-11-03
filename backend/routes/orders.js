@@ -4,6 +4,7 @@ const Product = require('../models/Product');
 const User = require('../models/User');
 const { protect } = require('../middleware/auth');
 const { triggerAutomation } = require('../services/aiAgentService');
+const { normalizeMoroccanPhone, isValidPersonName } = require('../utils/phone');
 
 const router = express.Router();
 
@@ -11,39 +12,84 @@ const router = express.Router();
 // @desc    Create a new order (guest checkout - no login required)
 // @access  Public
 router.post('/guest', async (req, res, next) => {
+  const reserved = [];
   try {
-    const { items, customerName, customerPhone, customerEmail, city, address, country } = req.body;
+    const { items, customerName, customerPhone, customerEmail, city, address, country, note } = req.body;
 
-    if (!items || items.length === 0) {
-      return res.status(400).json({ message: 'No order items' });
+    if (!Array.isArray(items) || items.length === 0 || items.length > 30) {
+      return res.status(400).json({ message: 'Please choose a valid product and quantity' });
     }
-    if (!customerName || !customerPhone || !city || !address) {
-      return res.status(400).json({ message: 'Please provide name, phone, city, and address' });
+
+    const name = String(customerName || '').trim();
+    const phone = normalizeMoroccanPhone(customerPhone);
+    const cityName = String(city || '').trim();
+    const fullAddress = String(address || '').trim();
+
+    if (!isValidPersonName(name)) {
+      return res.status(400).json({ message: 'Please enter a valid full name' });
+    }
+    if (!phone) {
+      return res.status(400).json({ message: 'Please enter a valid Moroccan phone number' });
+    }
+    if (cityName.length < 2 || cityName.length > 60) {
+      return res.status(400).json({ message: 'Please enter a valid city' });
+    }
+    if (fullAddress.length < 5 || fullAddress.length > 240) {
+      return res.status(400).json({ message: 'Please enter a complete address' });
     }
 
     let totalAmount = 0;
     const orderItems = [];
+    const productsToUpdate = [];
 
     for (const item of items) {
+      const quantity = Number(item.quantity);
+      if (!Number.isInteger(quantity) || quantity < 1 || quantity > 50) {
+        return res.status(400).json({ message: 'Quantity must be between 1 and 50' });
+      }
+
       const product = await Product.findById(item.product);
       if (!product) {
-        return res.status(404).json({ message: `Product ${item.product} not found` });
+        return res.status(404).json({ message: 'Product not found' });
       }
-      if (product.stock < item.quantity) {
+      if (product.stock < quantity) {
         return res.status(400).json({ message: `Insufficient stock for ${product.name}` });
       }
-      const price = product.discountPercentage
-        ? product.price * (1 - product.discountPercentage / 100)
+
+      const discount = Number(product.discountPercentage) || 0;
+      const price = discount > 0
+        ? product.price * (1 - discount / 100)
         : product.price;
-      const itemTotal = price * item.quantity;
-      totalAmount += itemTotal;
+      totalAmount += price * quantity;
       orderItems.push({
         product: product._id,
-        quantity: item.quantity,
+        quantity,
         price
       });
-      product.stock -= item.quantity;
-      await product.save();
+      productsToUpdate.push({ product, quantity });
+    }
+
+    const recentOrders = await Order.find({
+      'paymentDetails.customerPhone': phone,
+      createdAt: { $gte: new Date(Date.now() - 20000) }
+    }).select('items').limit(5);
+
+    const isDuplicate = recentOrders.some((recent) => (
+      recent.items.length === orderItems.length &&
+      recent.items.every((item, index) => (
+        item.product.toString() === orderItems[index].product.toString() &&
+        item.quantity === orderItems[index].quantity
+      ))
+    ));
+
+    if (isDuplicate) {
+      return res.status(409).json({ message: 'This order was just submitted. Please wait a moment before trying again.' });
+    }
+
+    for (const entry of productsToUpdate) {
+      entry.product.stock -= entry.quantity;
+      await entry.product.save();
+      reserved.push(entry);
     }
 
     const order = await Order.create({
@@ -51,27 +97,36 @@ router.post('/guest', async (req, res, next) => {
       items: orderItems,
       totalAmount,
       shippingAddress: {
-        street: address,
-        city,
-        country: country || ''
+        street: fullAddress,
+        city: cityName,
+        country: country || 'Morocco'
       },
       paymentMethod: 'cash',
       paymentDetails: {
-        customerName,
-        customerPhone,
+        customerName: name,
+        customerPhone: phone,
         customerEmail: customerEmail || '',
-        city,
-        address,
-        country: country || ''
+        city: cityName,
+        address: fullAddress,
+        country: country || 'Morocco',
+        note: String(note || '').trim().slice(0, 400)
       },
       paymentStatus: 'pending',
       orderStatus: 'new',
       contactConsent: false
     });
 
-    await order.populate('items.product', 'name images');
+    await order.populate('items.product', 'name images price');
     res.status(201).json(order);
   } catch (error) {
+    for (const entry of reserved) {
+      try {
+        entry.product.stock += entry.quantity;
+        await entry.product.save();
+      } catch (restoreError) {
+        console.error('Failed to restore stock:', restoreError.message);
+      }
+    }
     next(error);
   }
 });

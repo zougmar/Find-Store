@@ -5,6 +5,7 @@ import { useCart } from '../context/CartContext'
 import { useLanguage } from '../context/LanguageContext'
 import toast from 'react-hot-toast'
 import { formatCurrency } from '../utils/currency'
+import { getUnitPrice, productPath } from '../utils/product'
 
 const ProductCard = ({ product }) => {
   const { toggleFavorite, isFavorited } = useFavorites()
@@ -14,12 +15,10 @@ const ProductCard = ({ product }) => {
   const favorited = isFavorited(product._id)
 
   // Calculate discounted price
-  const discountPercentage = product.discountPercentage || 0
-  const originalPrice = product.price
-  const discountedPrice = discountPercentage > 0 
-    ? originalPrice * (1 - discountPercentage / 100) 
-    : originalPrice
-  const hasDiscount = discountPercentage > 0
+  const discountPercentage = Number(product.discountPercentage) || 0
+  const originalPrice = Number(product.price) || 0
+  const discountedPrice = getUnitPrice(product)
+  const hasDiscount = discountPercentage > 0 && discountedPrice < originalPrice
 
   const handleFavoriteClick = async (e) => {
     e.preventDefault()
@@ -39,17 +38,19 @@ const ProductCard = ({ product }) => {
 
   return (
     <Link
-      to={`/product/${product._id}`}
-      className="block group"
+      to={productPath(product)}
+      className="block group h-full"
     >
-      <div className="relative">
+      <div className="relative h-full bg-white rounded-2xl border border-black/5 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden">
         {/* Image Container */}
-        <div className="relative w-full h-48 sm:h-56 md:h-64 rounded-xl md:rounded-2xl overflow-hidden bg-gray-100">
+        <div className="relative w-full aspect-[4/5] sm:aspect-square overflow-hidden bg-[#f3f1ee]">
           {product.images && product.images.length > 0 ? (
             <img
               src={product.images[0]}
               alt={product.name}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              loading="lazy"
+              decoding="async"
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-gray-400 bg-gray-100">
@@ -113,14 +114,14 @@ const ProductCard = ({ product }) => {
                   {t('buyNow') || 'Buy now'}
                 </span>
               ) : (
-                'Out of Stock'
+                t('outOfStockLabel') || 'غير متوفر'
               )}
             </button>
           </div>
         </div>
 
         {/* Product Info */}
-        <div className="mt-3">
+        <div className="p-4">
           <div className="flex items-start justify-between">
             <div className="flex-1 min-w-0">
               <h3 className="text-[15px] font-semibold text-gray-900 truncate">
@@ -138,7 +139,7 @@ const ProductCard = ({ product }) => {
                 <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
               </svg>
               <span className="text-sm font-medium text-gray-900">
-                {product.averageRating ? Number(product.averageRating).toFixed(1) : 'New'}
+                {product.averageRating ? Number(product.averageRating).toFixed(1) : 'جديد'}
               </span>
               {product.numReviews > 0 && (
                 <span className="text-sm text-gray-500">
@@ -170,9 +171,9 @@ const ProductCard = ({ product }) => {
                   </span>
                 )}
                 {product.stock > 0 ? (
-                  <span className="text-xs text-gray-500">available</span>
+                  <span className="text-xs text-gray-500">{t('available')}</span>
                 ) : (
-                  <span className="text-xs text-red-500">sold out</span>
+                  <span className="text-xs text-red-500">{t('outOfStockLabel')}</span>
                 )}
               </div>
             </div>

@@ -3,12 +3,15 @@ import { useNavigate } from 'react-router-dom'
 import api from '../../utils/api'
 import toast from 'react-hot-toast'
 import logoImage from '../../images/logo.png'
+import { useAdminI18n } from '../../context/AdminLanguageContext'
+import LanguageSwitcher from '../../components/LanguageSwitcher'
 
 const DeliveryLogin = () => {
   const [formData, setFormData] = useState({ email: '', phone: '', password: '' })
   const [loginMethod, setLoginMethod] = useState('email') // 'email' or 'phone'
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
+  const { t } = useAdminI18n()
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value })
@@ -25,14 +28,14 @@ const DeliveryLogin = () => {
 
       if (loginMethod === 'email') {
         if (!formData.email) {
-          toast.error('Email is required')
+          toast.error(t('auth.email'))
           setLoading(false)
           return
         }
         loginData.email = formData.email
       } else {
         if (!formData.phone) {
-          toast.error('Phone number is required')
+          toast.error(t('auth.phone'))
           setLoading(false)
           return
         }
@@ -72,10 +75,10 @@ const DeliveryLogin = () => {
       localStorage.setItem('delivery_token', res.data.token)
       localStorage.setItem('delivery_user', JSON.stringify(res.data))
       
-      toast.success('Login successful!')
+      toast.success(t('auth.welcome'))
       navigate('/delivery/dashboard')
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Login failed')
+      toast.error(error.response?.data?.message || t('auth.failed'))
     } finally {
       setLoading(false)
     }
@@ -92,8 +95,9 @@ const DeliveryLogin = () => {
               alt="Find Store Logo" 
               className="h-20 mx-auto mb-4 object-contain drop-shadow-lg"
             />
-            <h1 className="text-2xl font-bold text-white mb-2">Delivery Portal</h1>
-            <p className="text-blue-100 text-sm">Livreur Login</p>
+            <div className="mb-3 flex justify-center"><LanguageSwitcher /></div>
+            <h1 className="text-2xl font-bold text-white mb-2">{t('auth.deliveryTitle')}</h1>
+            <p className="text-blue-100 text-sm">{t('auth.deliverySubtitle')}</p>
           </div>
           
           <div className="p-6">
@@ -108,7 +112,7 @@ const DeliveryLogin = () => {
                     : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
-                Email
+                {t('auth.email')}
               </button>
               <button
                 type="button"
@@ -119,7 +123,7 @@ const DeliveryLogin = () => {
                     : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
-                Phone
+                {t('auth.phone')}
               </button>
             </div>
 
@@ -127,7 +131,7 @@ const DeliveryLogin = () => {
               {loginMethod === 'email' ? (
                 <div>
                   <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                    Email Address
+                    {t('auth.email')}
                   </label>
                   <input
                     type="email"
@@ -137,7 +141,7 @@ const DeliveryLogin = () => {
                     onChange={handleChange}
                     required
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                    placeholder="delivery@example.com"
+                    placeholder="name@example.com"
                   />
                 </div>
               ) : (
@@ -160,7 +164,7 @@ const DeliveryLogin = () => {
 
               <div>
                 <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-                  Password
+                  {t('auth.password')}
                 </label>
                 <input
                   type="password"
@@ -170,7 +174,7 @@ const DeliveryLogin = () => {
                   onChange={handleChange}
                   required
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                  placeholder="Enter your password"
+                  placeholder="••••••••"
                 />
               </div>
 
@@ -179,7 +183,7 @@ const DeliveryLogin = () => {
                 disabled={loading}
                 className="w-full bg-gradient-to-r from-blue-600 to-indigo-700 text-white py-3 px-4 rounded-lg font-semibold hover:from-blue-700 hover:to-indigo-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg"
               >
-                {loading ? 'Logging in...' : 'Login'}
+                {loading ? t('auth.signingIn') : t('auth.signIn')}
               </button>
             </form>
 

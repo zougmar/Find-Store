@@ -1,11 +1,14 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useState } from 'react'
 import ModeratorSidebar from './ModeratorSidebar'
+import LanguageSwitcher from './LanguageSwitcher'
+import { useAdminI18n } from '../context/AdminLanguageContext'
 
 const ModeratorLayout = ({ children, title }) => {
   const location = useLocation()
   const navigate = useNavigate()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const { t } = useAdminI18n()
 
   // Get user from localStorage
   const storedUser = localStorage.getItem('moderator_user')
@@ -24,9 +27,10 @@ const ModeratorLayout = ({ children, title }) => {
 
   const getPageTitle = () => {
     if (title) return title
-    if (location.pathname === '/moderator/dashboard') return 'Dashboard'
-    if (location.pathname === '/moderator/orders') return 'Order Management'
-    return 'Moderator Panel'
+    if (location.pathname === '/moderator/dashboard') return t('page.dashboard')
+    if (location.pathname === '/moderator/orders') return t('page.moderatorOrders')
+    if (location.pathname === '/moderator/product-inquiries') return t('page.inquiries')
+    return t('page.moderator')
   }
 
   const isDashboard = location.pathname === '/moderator/dashboard' || location.pathname === '/moderator/'
@@ -43,7 +47,7 @@ const ModeratorLayout = ({ children, title }) => {
       
       <ModeratorSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} user={user} />
       
-      <div className="flex-1 lg:ml-64 flex flex-col">
+      <div className="flex-1 lg:ms-64 flex flex-col min-w-0">
         {/* Top Bar - cPanel Style */}
         <div className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-30">
           <div className="px-4 md:px-6 lg:px-8 py-3 md:py-4">
@@ -68,7 +72,7 @@ const ModeratorLayout = ({ children, title }) => {
                       <svg className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                       </svg>
-                      <span className="font-medium text-sm">Dashboard</span>
+                      <span className="font-medium text-sm">{t('header.dashboard')}</span>
                     </button>
                   )}
                   <div>
@@ -80,7 +84,8 @@ const ModeratorLayout = ({ children, title }) => {
                 </div>
               </div>
               
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <LanguageSwitcher />
                 <Link
                   to="/"
                   className="hidden sm:flex items-center gap-2 px-4 py-2 text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-all duration-200 border border-gray-200 text-sm font-medium"
@@ -88,7 +93,7 @@ const ModeratorLayout = ({ children, title }) => {
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                   </svg>
-                  View Store
+                  {t('header.viewStore')}
                 </Link>
                 
                 {/* User Profile Dropdown */}
@@ -117,7 +122,7 @@ const ModeratorLayout = ({ children, title }) => {
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                     </svg>
-                    <span className="hidden sm:inline">Logout</span>
+                    <span className="hidden sm:inline">{t('header.logout')}</span>
                   </button>
                 </div>
               </div>

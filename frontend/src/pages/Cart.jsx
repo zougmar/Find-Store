@@ -88,7 +88,7 @@ const Cart = () => {
 
   const handleCheckout = async () => {
     if (cartItems.length === 0) {
-      toast.error('Cart is empty')
+      toast.error(t('cartEmptyToast'))
       return
     }
 
@@ -127,24 +127,24 @@ const Cart = () => {
     // Validate payment data based on method
     if (paymentMethod === 'card') {
       if (!cardData.cardNumber || !cardData.cardName || !cardData.expiryDate || !cardData.cvv) {
-        toast.error('Please fill in all card details')
+        toast.error(t('fillCard'))
         return
       }
       // Basic card number validation (should be 16 digits)
       if (cardData.cardNumber.replace(/\s/g, '').length < 16) {
-        toast.error('Please enter a valid card number')
+        toast.error(t('invalidCard'))
         return
       }
     } else if (paymentMethod === 'cash') {
       // Validate Cash on Delivery form
       if (!cashOnDeliveryData.name || !cashOnDeliveryData.phone || !cashOnDeliveryData.street || 
           !cashOnDeliveryData.city || !cashOnDeliveryData.state || !cashOnDeliveryData.zipCode || !cashOnDeliveryData.country) {
-        toast.error('Please fill in all delivery information fields')
+        toast.error(t('fillDelivery'))
         return
       }
       // Basic phone validation
       if (cashOnDeliveryData.phone.length < 8) {
-        toast.error('Please enter a valid phone number')
+        toast.error(t('invalidPhone'))
         return
       }
     }
@@ -188,7 +188,7 @@ const Cart = () => {
       setCheckoutStep(3)
       
       // Show success toast
-      toast.success('Order placed successfully!', {
+      toast.success(t('orderPlacedShort'), {
         icon: '✅',
         duration: 3000,
         style: {
@@ -202,7 +202,7 @@ const Cart = () => {
         }
       })
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to place order')
+      toast.error(error.response?.data?.message || t('placeOrderFailed'))
       setProcessing(false)
     }
   }
@@ -250,8 +250,8 @@ const Cart = () => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
             </svg>
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Your cart is empty</h2>
-          <p className="text-gray-500 mb-8">Add items you like and they’ll show up here.</p>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">{t('cartEmpty')}</h2>
+          <p className="text-gray-500 mb-8">{t('cartEmptyHint')}</p>
           <button
             onClick={() => navigate('/')}
             className="inline-flex items-center justify-center gap-2 bg-[#FF385C] hover:bg-[#E61E4D] text-white font-semibold py-3.5 px-6 rounded-xl transition-all shadow-lg hover:shadow-xl"
@@ -270,7 +270,7 @@ const Cart = () => {
           {t('shoppingCart') || 'Shopping Cart'}
         </h1>
         <p className="text-gray-500 mt-1">
-          {displayItems.length} {displayItems.length === 1 ? 'item' : 'items'}
+          {displayItems.length} {displayItems.length === 1 ? t('itemsOne') : t('itemsMany')}
         </p>
       </div>
 
@@ -304,7 +304,7 @@ const Cart = () => {
                         onError={(e) => { e.target.src = 'https://via.placeholder.com/200?text=No+Image' }}
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-gray-300 text-sm">No image</div>
+                      <div className="w-full h-full flex items-center justify-center text-gray-300 text-sm">{t('noImage')}</div>
                     )}
                   </div>
 
@@ -525,10 +525,10 @@ const Cart = () => {
                   {/* Payment Forms */}
                   {paymentMethod === 'card' && (
                     <div className="mb-4 md:mb-6">
-                      <h3 className="text-base md:text-lg font-semibold text-gray-900 mb-4">Card Details</h3>
+                      <h3 className="text-base md:text-lg font-semibold text-gray-900 mb-4">{t('cardDetails')}</h3>
                       <div className="space-y-4">
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">Card Number</label>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">{t('cardNumber')}</label>
                           <input
                             type="text"
                             placeholder="1234 5678 9012 3456"
@@ -543,10 +543,10 @@ const Cart = () => {
                           />
                         </div>
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">Cardholder Name</label>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">{t('cardholderName')}</label>
                           <input
                             type="text"
-                            placeholder="John Doe"
+                            placeholder={t('placeholderName')}
                             value={cardData.cardName}
                             onChange={(e) => setCardData({ ...cardData, cardName: e.target.value })}
                             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF385C] focus:border-transparent"
@@ -554,7 +554,7 @@ const Cart = () => {
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                           <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Expiry Date</label>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">{t('expiryDate')}</label>
                             <input
                               type="text"
                               placeholder="MM/YY"
@@ -595,7 +595,7 @@ const Cart = () => {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                           </svg>
                           <div>
-                            <h3 className="font-semibold text-gray-900 mb-2">Cash on Delivery</h3>
+                            <h3 className="font-semibold text-gray-900 mb-2">{t('cashOnDelivery')}</h3>
                             <p className="text-sm text-gray-600">
                               You will pay {formatCurrency(getCartTotal())} when you receive your order. 
                               Our delivery team will collect the payment at your doorstep.
@@ -606,7 +606,7 @@ const Cart = () => {
 
                       {/* Cash on Delivery Form */}
                       <div className="bg-white border-2 border-gray-200 rounded-lg p-4 md:p-6">
-                        <h3 className="text-lg font-semibold text-gray-900 mb-4">Delivery Information</h3>
+                        <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('deliveryInformation')}</h3>
                         <div className="space-y-4">
                           <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -617,7 +617,7 @@ const Cart = () => {
                               value={cashOnDeliveryData.name}
                               onChange={(e) => setCashOnDeliveryData({ ...cashOnDeliveryData, name: e.target.value })}
                               className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF385C] focus:border-[#FF385C] transition-all"
-                              placeholder="Enter your full name"
+                              placeholder={t('enterFullName')}
                               required
                             />
                           </div>
@@ -631,7 +631,7 @@ const Cart = () => {
                               value={cashOnDeliveryData.phone}
                               onChange={(e) => setCashOnDeliveryData({ ...cashOnDeliveryData, phone: e.target.value })}
                               className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF385C] focus:border-[#FF385C] transition-all"
-                              placeholder="Enter your phone number"
+                              placeholder={t('enterPhone')}
                               required
                             />
                           </div>
@@ -645,7 +645,7 @@ const Cart = () => {
                               value={cashOnDeliveryData.street}
                               onChange={(e) => setCashOnDeliveryData({ ...cashOnDeliveryData, street: e.target.value })}
                               className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF385C] focus:border-[#FF385C] transition-all"
-                              placeholder="Enter street address"
+                              placeholder={t('enterStreet')}
                               required
                             />
                           </div>
@@ -660,7 +660,7 @@ const Cart = () => {
                                 value={cashOnDeliveryData.city}
                                 onChange={(e) => setCashOnDeliveryData({ ...cashOnDeliveryData, city: e.target.value })}
                                 className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF385C] focus:border-[#FF385C] transition-all"
-                                placeholder="Enter city"
+                                placeholder={t('enterCity')}
                                 required
                               />
                             </div>
@@ -674,7 +674,7 @@ const Cart = () => {
                                 value={cashOnDeliveryData.state}
                                 onChange={(e) => setCashOnDeliveryData({ ...cashOnDeliveryData, state: e.target.value })}
                                 className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF385C] focus:border-[#FF385C] transition-all"
-                                placeholder="Enter state/province"
+                                placeholder={t('enterState')}
                                 required
                               />
                             </div>
@@ -690,7 +690,7 @@ const Cart = () => {
                                 value={cashOnDeliveryData.zipCode}
                                 onChange={(e) => setCashOnDeliveryData({ ...cashOnDeliveryData, zipCode: e.target.value })}
                                 className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF385C] focus:border-[#FF385C] transition-all"
-                                placeholder="Enter ZIP/postal code"
+                                placeholder={t('enterZip')}
                                 required
                               />
                             </div>
@@ -704,7 +704,7 @@ const Cart = () => {
                                 value={cashOnDeliveryData.country}
                                 onChange={(e) => setCashOnDeliveryData({ ...cashOnDeliveryData, country: e.target.value })}
                                 className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF385C] focus:border-[#FF385C] transition-all"
-                                placeholder="Enter country"
+                                placeholder={t('enterCountry')}
                                 required
                               />
                             </div>
@@ -775,8 +775,8 @@ const Cart = () => {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                       </svg>
                     </div>
-                    <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">Order Placed Successfully!</h2>
-                    <p className="text-base md:text-lg text-gray-600 mb-1">Thank you for your purchase</p>
+                    <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">{t('orderPlaced')}</h2>
+                    <p className="text-base md:text-lg text-gray-600 mb-1">{t('thankYouPurchase')}</p>
                     {orderDetails && (
                       <p className="text-xs md:text-sm text-gray-500">Order ID: #{orderDetails._id.slice(-8).toUpperCase()}</p>
                     )}
@@ -790,7 +790,7 @@ const Cart = () => {
                         </svg>
                       </div>
                       <div className="text-left">
-                        <h3 className="text-sm md:text-base font-semibold text-gray-900 mb-2">What's Next?</h3>
+                        <h3 className="text-sm md:text-base font-semibold text-gray-900 mb-2">{t('whatsNext')}</h3>
                         <p className="text-xs md:text-sm text-gray-700 leading-relaxed">
                           We've received your order and our team will contact you as soon as possible to confirm the details and arrange delivery. 
                           You'll receive an email confirmation shortly with your order information.
@@ -800,18 +800,18 @@ const Cart = () => {
                   </div>
 
                   <div className="bg-gray-50 rounded-lg p-4 md:p-6 mb-4 md:mb-6 text-left">
-                    <h3 className="text-sm md:text-base font-semibold text-gray-900 mb-3 md:mb-4">Order Summary</h3>
+                    <h3 className="text-sm md:text-base font-semibold text-gray-900 mb-3 md:mb-4">{t('orderSummary')}</h3>
                     <div className="space-y-2 text-xs md:text-sm">
                       <div className="flex justify-between">
-                        <span className="text-gray-600">Total Amount</span>
+                        <span className="text-gray-600">{t('totalAmount')}</span>
                         <span className="font-semibold text-gray-900">{formatCurrency(orderDetails?.totalAmount || getCartTotal())}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-600">Payment Method</span>
+                        <span className="text-gray-600">{t('paymentMethod')}</span>
                         <span className="font-medium text-gray-900 capitalize">{paymentMethod}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-600">Order Status</span>
+                        <span className="text-gray-600">{t('orderStatus')}</span>
                         <span className="font-medium text-green-600 capitalize">{orderDetails?.orderStatus || 'Processing'}</span>
                       </div>
                     </div>

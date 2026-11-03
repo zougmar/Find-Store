@@ -3,6 +3,8 @@ import { useNavigate, Link } from 'react-router-dom'
 import api from '../../utils/api'
 import toast from 'react-hot-toast'
 import { formatCurrency } from '../../utils/currency'
+import { useAdminI18n } from '../../context/AdminLanguageContext'
+import LanguageSwitcher from '../../components/LanguageSwitcher'
 
 const DeliveryDashboard = () => {
   const [orders, setOrders] = useState([])
@@ -18,6 +20,7 @@ const DeliveryDashboard = () => {
   })
   const [productInquiries, setProductInquiries] = useState([])
   const navigate = useNavigate()
+  const { t } = useAdminI18n()
 
   useEffect(() => {
     const token = localStorage.getItem('delivery_token')
@@ -185,17 +188,20 @@ const DeliveryDashboard = () => {
         <div className="max-w-4xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold">Delivery Dashboard</h1>
+              <h1 className="text-2xl font-bold">{t('page.delivery')}</h1>
               <p className="text-blue-100 text-sm mt-1">
                 {user?.name || 'Loading...'}
               </p>
             </div>
-            <button
-              onClick={handleLogout}
-              className="bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg text-sm font-medium transition-all"
-            >
-              Logout
-            </button>
+            <div className="flex items-center gap-2">
+              <LanguageSwitcher className="[&_span]:text-white [&_select]:bg-white/95" />
+              <button
+                onClick={handleLogout}
+                className="bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg text-sm font-medium transition-all"
+              >
+                {t('header.logout')}
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -205,7 +211,7 @@ const DeliveryDashboard = () => {
         <div className="grid grid-cols-3 gap-3 mb-6">
           <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
             <div className="text-2xl font-bold text-gray-900">{stats.totalOrders}</div>
-            <div className="text-xs text-gray-500 mt-1">Total Orders</div>
+            <div className="text-xs text-gray-500 mt-1">{t('orders.list')}</div>
           </div>
           <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
             <div className="text-2xl font-bold text-green-600">{stats.deliveredOrders}</div>

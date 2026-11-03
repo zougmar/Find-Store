@@ -1,10 +1,24 @@
 const mongoose = require('mongoose');
+const { generateUniqueSlug } = require('../utils/slug');
 
 const productSchema = new mongoose.Schema({
   name: {
     type: String,
     required: true,
     trim: true
+  },
+  slug: {
+    type: String,
+    unique: true,
+    sparse: true,
+    trim: true,
+    lowercase: true,
+    index: true
+  },
+  headline: {
+    type: String,
+    trim: true,
+    default: ''
   },
   description: {
     type: String,
@@ -38,6 +52,28 @@ const productSchema = new mongoose.Schema({
     type: String,
     trim: true
   }],
+  benefits: [{
+    type: String,
+    trim: true
+  }],
+  specifications: [{
+    label: { type: String, trim: true },
+    value: { type: String, trim: true }
+  }],
+  faqs: [{
+    question: { type: String, trim: true },
+    answer: { type: String, trim: true }
+  }],
+  deliveryNote: {
+    type: String,
+    trim: true,
+    default: ''
+  },
+  supportNote: {
+    type: String,
+    trim: true,
+    default: ''
+  },
   stock: {
     type: Number,
     required: true,
@@ -54,7 +90,8 @@ const productSchema = new mongoose.Schema({
       min: 1,
       max: 5
     },
-    comment: String
+    comment: String,
+    createdAt: { type: Date }
   }],
   averageRating: {
     type: Number,
@@ -71,13 +108,16 @@ const productSchema = new mongoose.Schema({
 });
 
 // Calculate average rating before saving
-productSchema.pre('save', function(next) {
+productSchema.pre('save', async function() {
   if (this.ratings && this.ratings.length > 0) {
     const sum = this.ratings.reduce((acc, rating) => acc + rating.rating, 0);
     this.averageRating = (sum / this.ratings.length).toFixed(1);
     this.numReviews = this.ratings.length;
   }
-  next();
+
+  if (!this.slug) {
+    this.slug = await generateUniqueSlug(this.constructor, this.name, this._id);
+  }
 });
 
 module.exports = mongoose.model('Product', productSchema);

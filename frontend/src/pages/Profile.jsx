@@ -69,7 +69,7 @@ const Profile = () => {
       console.log('Profile fetched:', { image: imageUrl })
     } catch (error) {
       console.error('Profile fetch error:', error)
-      toast.error('Failed to fetch profile')
+      toast.error(t('profileFetchFailed'))
     } finally {
       setLoading(false)
     }
@@ -107,13 +107,13 @@ const Profile = () => {
     // Validate file type
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
     if (!allowedTypes.includes(file.type)) {
-      toast.error('Please select a valid image file (JPEG, PNG, GIF, or WebP)')
+      toast.error(t('invalidImage'))
       return
     }
 
     // Validate file size (5MB max)
     if (file.size > 5 * 1024 * 1024) {
-      toast.error('Image size must be less than 5MB')
+      toast.error(t('imageTooLarge'))
       return
     }
 
@@ -135,7 +135,7 @@ const Profile = () => {
       
       console.log('Image uploaded:', { imageUrl, user: res.data.user })
       
-      toast.success('Profile image uploaded successfully!')
+      toast.success(t('profileImageUploaded'))
       await fetchProfile()
       if (fetchUser) {
         await fetchUser()
@@ -144,7 +144,7 @@ const Profile = () => {
       }
     } catch (error) {
       console.error('Upload error:', error)
-      const errorMessage = error.response?.data?.message || error.message || 'Failed to upload image'
+      const errorMessage = error.response?.data?.message || error.message || t('uploadFailed')
       toast.error(errorMessage)
     } finally {
       setUploading(false)
@@ -166,7 +166,7 @@ const Profile = () => {
         ...formData,
         image: formData.imageUrl
       })
-      toast.success('Profile updated successfully!')
+      toast.success(t('profileUpdated'))
       setEditing(false)
       await fetchProfile()
       if (fetchUser) {
@@ -175,7 +175,7 @@ const Profile = () => {
         window.dispatchEvent(new Event('userUpdated'))
       }
     } catch (error) {
-      toast.error('Failed to update profile')
+      toast.error(t('profileUpdateFailed'))
     }
   }
 
@@ -396,22 +396,22 @@ const Profile = () => {
           ) : (
             <div className="space-y-4">
               <div>
-                <p className="text-sm text-gray-600">Name</p>
+                <p className="text-sm text-gray-600">{t('name')}</p>
                 <p className="text-lg font-semibold">{user?.name}</p>
               </div>
               <div>
-                <p className="text-sm text-gray-600">Email</p>
+                <p className="text-sm text-gray-600">{t('email')}</p>
                 <p className="text-lg font-semibold">{user?.email}</p>
               </div>
               {user?.phone && (
                 <div>
-                  <p className="text-sm text-gray-600">Phone</p>
+                  <p className="text-sm text-gray-600">{t('phone')}</p>
                   <p className="text-lg font-semibold">{user.phone}</p>
                 </div>
               )}
               {user?.address && (
                 <div>
-                  <p className="text-sm text-gray-600">Address</p>
+                  <p className="text-sm text-gray-600">{t('address')}</p>
                   <p className="text-lg font-semibold">
                     {user.address.street && `${user.address.street}, `}
                     {user.address.city && `${user.address.city}, `}

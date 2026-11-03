@@ -75,6 +75,8 @@ const upload = multer({
 router.get('/dashboard', hasPermission('viewDashboard'), async (req, res, next) => {
   try {
     const totalUsers = await User.countDocuments({ role: 'user' });
+    const totalStaff = await User.countDocuments({ role: { $in: ['admin', 'moderator', 'delivery'] } });
+    const totalAccounts = totalUsers + totalStaff;
     const totalProducts = await Product.countDocuments();
     const totalOrders = await Order.countDocuments();
     const totalMessages = await Message.countDocuments();
@@ -171,6 +173,8 @@ router.get('/dashboard', hasPermission('viewDashboard'), async (req, res, next) 
     
     res.json({
       totalUsers,
+      totalStaff,
+      totalAccounts,
       totalProducts,
       totalOrders,
       totalRevenue,
@@ -354,7 +358,7 @@ router.post('/users', hasPermission('manageUsers'), async (req, res, next) => {
 // @route   GET /api/admin/users/:id
 // @desc    Get single user with order history
 // @access  Private/Admin
-router.get('/users/:id', async (req, res, next) => {
+router.get('/users/:id', hasPermission('manageUsers'), async (req, res, next) => {
   try {
     const user = await User.findById(req.params.id).select('-password');
     
@@ -384,10 +388,17 @@ router.put('/users/:id', hasPermission('manageUsers'), async (req, res, next) =>
     if (req.user.role !== 'admin' && req.body.role === 'admin') {
       return res.status(403).json({ message: 'Only admins can assign admin role' });
     }
+
+    const updates = { ...req.body };
+    delete updates.password;
+    delete updates.googleId;
+    delete updates.facebookId;
+    delete updates._id;
+    delete updates.email;
     
     const user = await User.findByIdAndUpdate(
       req.params.id,
-      req.body,
+      updates,
       { new: true, runValidators: true }
     ).select('-password');
     
@@ -404,8 +415,12 @@ router.put('/users/:id', hasPermission('manageUsers'), async (req, res, next) =>
 // @route   DELETE /api/admin/users/:id
 // @desc    Delete user
 // @access  Private/Admin
-router.delete('/users/:id', async (req, res, next) => {
+router.delete('/users/:id', hasPermission('manageUsers'), async (req, res, next) => {
   try {
+    if (req.user._id.toString() === req.params.id) {
+      return res.status(400).json({ message: 'You cannot delete your own account' });
+    }
+
     const user = await User.findByIdAndDelete(req.params.id);
     
     if (!user) {

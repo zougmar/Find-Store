@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect } from 'react'
 import api from '../utils/api'
 import { useAuth } from './AuthContext'
 import toast from 'react-hot-toast'
+import { translate } from './LanguageContext'
 
 const FavoritesContext = createContext()
 
@@ -52,7 +53,7 @@ export const FavoritesProvider = ({ children }) => {
 
   const toggleFavorite = async (productId) => {
     if (!user) {
-      toast.error('Please login to add favorites')
+      toast.error(translate('ar', 'loginFavorites'))
       return false
     }
 
@@ -71,16 +72,16 @@ export const FavoritesProvider = ({ children }) => {
           const id = fav.product?._id || fav.product || fav.productId
           return id?.toString() !== productIdStr
         }))
-        toast.success('Removed from favorites')
+        toast.success(translate('ar', 'removedFavorites'))
         return false
       } else {
         await api.post(`/favorites/${productId}`)
         setFavoriteIds(prev => new Set(prev).add(productIdStr))
-        toast.success('Added to favorites')
+        toast.success(translate('ar', 'addedFavorites'))
         return true
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to update favorite')
+      toast.error(error.response?.data?.message || translate('ar', 'error'))
       return null
     }
   }

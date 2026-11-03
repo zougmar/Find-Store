@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react'
+import { createContext, useContext } from 'react'
 
 const LanguageContext = createContext()
 
@@ -443,6 +443,65 @@ const translations = {
     phoneNumber: 'رقم الهاتف',
     streetAddress: 'عنوان الشارع',
     city: 'المدينة',
+    validPhone: 'أدخل رقم هاتف مغربي صحيح',
+    orderFailed: 'تعذر إرسال الطلب. حاول مرة أخرى.',
+    fillAllRequired: 'يرجى ملء جميع الحقول المطلوبة',
+    noCategories: 'لا توجد فئات',
+    cartEmptyHint: 'أضف المنتجات التي تعجبك وستظهر هنا.',
+    itemsOne: 'منتج',
+    itemsMany: 'منتجات',
+    noImage: 'لا توجد صورة',
+    contactHours: 'الإثنين – الجمعة: 9 صباحاً – 6 مساءً',
+    contactCity: 'الدار البيضاء، المغرب',
+    contactDistrict: 'الرحمة، المغرب',
+    morocco: 'المغرب',
+    pageErrorTitle: 'حدث خطأ',
+    pageErrorText: 'تعذر عرض هذه الصفحة. يمكنك العودة إلى المتجر والمحاولة مرة أخرى.',
+    backToStore: 'العودة إلى المتجر',
+    orderFollowUp: 'سنتواصل معك قريباً لتأكيد الطلب وترتيب التوصيل.',
+    productNotFound: 'المنتج غير موجود',
+    categoriesFailed: 'تعذر تحميل الفئات',
+    serverUnreachable: 'تعذر الاتصال بالخادم',
+    cartEmptyToast: 'السلة فارغة',
+    fillCard: 'يرجى إدخال بيانات البطاقة',
+    invalidCard: 'أدخل رقم بطاقة صحيح',
+    fillDelivery: 'يرجى إدخال معلومات التوصيل',
+    invalidPhone: 'أدخل رقم هاتف صحيح',
+    orderPlacedShort: 'تم تقديم الطلب بنجاح',
+    fillGuestFields: 'يرجى إدخال الاسم ورقم الهاتف والمدينة والعنوان',
+    close: 'إغلاق',
+    openMenu: 'فتح القائمة',
+    closeMenu: 'إغلاق القائمة',
+    search: 'بحث',
+    decreaseQty: 'إنقاص الكمية',
+    increaseQty: 'زيادة الكمية',
+    whatsappContact: 'تواصل معنا عبر واتساب',
+    loginFavorites: 'يرجى تسجيل الدخول لإضافة المفضلة',
+    removedFavorites: 'تمت الإزالة من المفضلة',
+    addedFavorites: 'تمت الإضافة إلى المفضلة',
+    registrationSuccess: 'تم إنشاء الحساب بنجاح',
+    googleSuccess: 'تم تسجيل الدخول عبر جوجل',
+    facebookSuccess: 'تم تسجيل الدخول عبر فيسبوك',
+    profileFetchFailed: 'تعذر تحميل الملف الشخصي',
+    invalidImage: 'اختر صورة بصيغة JPEG أو PNG أو GIF أو WebP',
+    imageTooLarge: 'يجب أن يكون حجم الصورة أقل من 5 ميغابايت',
+    profileUpdateFailed: 'تعذر تحديث الملف الشخصي',
+    enterFullName: 'أدخل الاسم الكامل',
+    enterPhone: 'أدخل رقم الهاتف',
+    enterStreet: 'أدخل العنوان',
+    enterCity: 'أدخل المدينة',
+    enterState: 'أدخل الجهة',
+    enterZip: 'أدخل الرمز البريدي',
+    enterCountry: 'أدخل الدولة',
+    orderDetails: 'تفاصيل الطلب',
+    submitOrder: 'تأكيد الطلب',
+    orderPlacedSuccess: 'تم تقديم الطلب بنجاح',
+    placeOrderFailed: 'تعذر إرسال الطلب. حاول مرة أخرى.',
+    reviewFailed: 'تعذر إرسال التقييم',
+    productsFetchFailed: 'تعذر تحميل المنتجات',
+    uploadFailed: 'تعذر رفع الصورة',
+    facebookFailed: 'تعذر تسجيل الدخول عبر فيسبوك',
+    emailPermission: 'يلزم السماح بالوصول إلى البريد الإلكتروني',
     stateProvince: 'الولاية/المحافظة',
     zipPostalCode: 'الرمز البريدي',
     country: 'الدولة',
@@ -575,6 +634,8 @@ const translations = {
     comingSoon: 'قريباً!',
     paymentComingSoonText: 'نعمل بجد لتقديم تجربة دفع سلسة لك. ستكون وظيفة الدفع متاحة قريباً.',
     // Footer
+    support: 'الدعم',
+    company: 'الشركة',
     helpCenter: 'مركز المساعدة',
     browseProducts: 'تصفح المنتجات',
     aboutUs: 'من نحن',
@@ -928,40 +989,16 @@ const translations = {
   }
 }
 
+export const translate = (language, key) => translations[language]?.[key] || translations.ar[key] || key
+
 export const LanguageProvider = ({ children }) => {
-  const [language, setLanguage] = useState(() => {
-    const saved = localStorage.getItem('language')
-    return saved || 'en'
-  })
-
-  useEffect(() => {
-    localStorage.setItem('language', language)
-    // Update document direction for RTL languages
-    if (language === 'ar') {
-      document.documentElement.setAttribute('dir', 'rtl')
-      document.documentElement.setAttribute('lang', 'ar')
-      document.body.setAttribute('dir', 'rtl')
-    } else {
-      document.documentElement.setAttribute('dir', 'ltr')
-      document.documentElement.setAttribute('lang', language)
-      document.body.setAttribute('dir', 'ltr')
-    }
-  }, [language])
-
-  const t = (key) => {
-    return translations[language]?.[key] || key
-  }
-
-  const changeLanguage = (lang) => {
-    setLanguage(lang)
-  }
-
+  const language = 'ar'
+  const t = (key) => translate(language, key)
   const value = {
     language,
-    changeLanguage,
+    changeLanguage: () => {},
     t,
-    // RTL only for Arabic, LTR for French and English
-    isRTL: language === 'ar'
+    isRTL: true
   }
 
   return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>

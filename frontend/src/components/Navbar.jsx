@@ -1,9 +1,8 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useCart } from '../context/CartContext'
 import { useLanguage } from '../context/LanguageContext'
-import { USFlag, MoroccoFlag, FranceFlag } from './FlagIcons'
 import api from '../utils/api'
 import logoImage from '../images/logo.png'
 
@@ -18,18 +17,16 @@ const getImageUrl = (imagePath) => {
 const Navbar = () => {
   const { user, logout, isAdmin, fetchUser } = useAuth()
   const { getCartItemsCount } = useCart()
-  const { language, changeLanguage, t, isRTL } = useLanguage()
+  const { t, isRTL } = useLanguage()
   const navigate = useNavigate()
   const location = useLocation()
   const [categories, setCategories] = useState([])
   const [categorySubcategories, setCategorySubcategories] = useState({}) // { category: [subcategories] }
   const [showCategoriesMenu, setShowCategoriesMenu] = useState(false)
-  const [showLanguageMenu, setShowLanguageMenu] = useState(false)
   const [showMobileMenu, setShowMobileMenu] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState(t('category'))
   const [imageKey, setImageKey] = useState(0)
-  const languageMenuRef = useRef(null)
 
   useEffect(() => {
     fetchCategories()
@@ -165,16 +162,13 @@ const Navbar = () => {
       if (showCategoriesMenu && !event.target.closest('.category-dropdown-container')) {
         setShowCategoriesMenu(false)
       }
-      if (showLanguageMenu && languageMenuRef.current && !languageMenuRef.current.contains(event.target)) {
-        setShowLanguageMenu(false)
-      }
     }
 
     document.addEventListener('mousedown', handleClickOutside)
     return () => {
       document.removeEventListener('mousedown', handleClickOutside)
     }
-  }, [showCategoriesMenu, showLanguageMenu])
+  }, [showCategoriesMenu])
 
   return (
     <nav className={`bg-white border-b border-gray-100 sticky top-0 z-50 shadow-sm ${isRTL ? 'text-right' : 'text-left'}`} dir={isRTL ? 'rtl' : 'ltr'}>
@@ -193,7 +187,7 @@ const Navbar = () => {
           <button
             onClick={() => setShowMobileMenu(!showMobileMenu)}
             className="md:hidden p-2.5 rounded-xl hover:bg-gray-100 active:bg-gray-200 transition-colors touch-manipulation"
-            aria-label={showMobileMenu ? 'Close menu' : 'Open menu'}
+            aria-label={showMobileMenu ? t('closeMenu') : t('openMenu')}
             aria-expanded={showMobileMenu}
           >
             <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
@@ -263,7 +257,7 @@ const Navbar = () => {
                         )
                       })
                     ) : (
-                      <div className="px-4 py-2 text-sm text-gray-500">No categories available</div>
+                      <div className="px-4 py-2 text-sm text-gray-500">لا توجد فئات</div>
                     )}
                   </div>
                 )}
@@ -278,7 +272,7 @@ const Navbar = () => {
                   className={`flex-1 min-w-0 outline-none text-sm text-gray-900 placeholder-gray-400 bg-transparent ${isRTL ? 'text-right' : 'text-left'}`}
                   dir={isRTL ? 'rtl' : 'ltr'}
                 />
-                <button type="submit" className={`p-2 rounded-full hover:bg-gray-200 transition-colors flex-shrink-0 ${isRTL ? 'order-last' : ''}`} aria-label="Search">
+                <button type="submit" className={`p-2 rounded-full hover:bg-gray-200 transition-colors flex-shrink-0 ${isRTL ? 'order-last' : ''}`} aria-label={t('search')}>
                   <svg className="w-5 h-5 text-[#FF385C]" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
                   </svg>
@@ -289,82 +283,6 @@ const Navbar = () => {
 
           {/* Right Menu */}
           <div className={`flex items-center gap-2 sm:gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
-            {/* Language - always visible */}
-            <div className="relative" ref={languageMenuRef}>
-              <button
-                onClick={() => setShowLanguageMenu(!showLanguageMenu)}
-                className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-2 rounded-full hover:bg-gray-100 transition-colors border border-gray-200 hover:border-gray-300 touch-manipulation"
-                aria-label="Change language"
-              >
-                {language === 'en' ? (
-                  <USFlag className="w-4 h-4 sm:w-5 sm:h-5 rounded-sm shadow-sm" />
-                ) : language === 'ar' ? (
-                  <MoroccoFlag className="w-4 h-4 sm:w-5 sm:h-5 rounded-sm shadow-sm" />
-                ) : (
-                  <FranceFlag className="w-4 h-4 sm:w-5 sm:h-5 rounded-sm shadow-sm" />
-                )}
-                <span className="text-xs sm:text-sm font-semibold text-gray-700 uppercase hidden sm:inline">
-                  {language === 'en' ? 'EN' : language === 'ar' ? 'AR' : 'FR'}
-                </span>
-              </button>
-              
-              {showLanguageMenu && (
-                <div className={`absolute top-full ${isRTL ? 'left-0' : 'right-0'} mt-2 w-44 bg-white rounded-xl shadow-xl border border-gray-100 py-1.5 z-[100]`}>
-                  <button
-                    onClick={() => {
-                      changeLanguage('en')
-                      setShowLanguageMenu(false)
-                    }}
-                    className={`w-full ${isRTL ? 'text-right' : 'text-left'} px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors flex items-center gap-2 ${
-                      language === 'en' ? 'bg-gray-50 text-[#FF385C]' : ''
-                    }`}
-                  >
-                    <USFlag className="w-5 h-5 rounded-sm shadow-sm" />
-                    <span>{t('english')}</span>
-                    {language === 'en' && (
-                      <svg className={`w-4 h-4 ${isRTL ? 'mr-auto' : 'ml-auto'} text-[#FF385C]`} fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                      </svg>
-                    )}
-                  </button>
-                  <button
-                    onClick={() => {
-                      changeLanguage('ar')
-                      setShowLanguageMenu(false)
-                    }}
-                    className={`w-full ${isRTL ? 'text-right' : 'text-left'} px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors flex items-center gap-2 ${
-                      language === 'ar' ? 'bg-gray-50 text-[#FF385C]' : ''
-                    }`}
-                  >
-                    <MoroccoFlag className="w-5 h-5 rounded-sm shadow-sm" />
-                    <span>{t('arabic')}</span>
-                    {language === 'ar' && (
-                      <svg className={`w-4 h-4 ${isRTL ? 'mr-auto' : 'ml-auto'} text-[#FF385C]`} fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                      </svg>
-                    )}
-                  </button>
-                  <button
-                    onClick={() => {
-                      changeLanguage('fr')
-                      setShowLanguageMenu(false)
-                    }}
-                    className={`w-full ${isRTL ? 'text-right' : 'text-left'} px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors flex items-center gap-2 ${
-                      language === 'fr' ? 'bg-gray-50 text-[#FF385C]' : ''
-                    }`}
-                  >
-                    <FranceFlag className="w-5 h-5 rounded-sm shadow-sm" />
-                    <span>{t('french')}</span>
-                    {language === 'fr' && (
-                      <svg className={`w-4 h-4 ${isRTL ? 'mr-auto' : 'ml-auto'} text-[#FF385C]`} fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                      </svg>
-                    )}
-                  </button>
-                </div>
-              )}
-            </div>
-
             {/* Categories dropdown - only in search bar (desktop) and slide menu (mobile) */}
             <div className="hidden relative category-dropdown-container">
               <button
@@ -439,7 +357,7 @@ const Navbar = () => {
                 <Link
                   to="/cart"
                   className="relative p-1.5 sm:p-2 rounded-full hover:bg-gray-100 active:bg-gray-200 transition-colors"
-                  aria-label="Shopping cart"
+                  aria-label={t('cart')}
                 >
                   <svg className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
@@ -581,7 +499,7 @@ const Navbar = () => {
           } ${showMobileMenu ? 'translate-x-0' : isRTL ? 'translate-x-full' : '-translate-x-full'}`}
           role="dialog"
           aria-modal="true"
-          aria-label="Menu"
+          aria-label={t('openMenu')}
         >
           <div className={`flex flex-col h-full ${isRTL ? 'text-right' : 'text-left'}`} dir={isRTL ? 'rtl' : 'ltr'}>
             {/* Mobile menu header */}
@@ -590,7 +508,7 @@ const Navbar = () => {
               <button
                 onClick={() => setShowMobileMenu(false)}
                 className="p-2.5 rounded-xl hover:bg-gray-100 transition-colors"
-                aria-label="Close menu"
+                aria-label={t('closeMenu')}
               >
                 <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

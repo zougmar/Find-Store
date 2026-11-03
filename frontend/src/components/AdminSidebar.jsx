@@ -1,11 +1,13 @@
 import { Link, useLocation } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
+import { useAdminI18n } from '../context/AdminLanguageContext'
 import logoAdminImage from '../images/logoadmin.png'
 
 const AdminSidebar = ({ isOpen = true, onClose }) => {
   const location = useLocation()
   const { user } = useAuth()
+  const { t } = useAdminI18n()
   const [imageKey, setImageKey] = useState(0)
 
   // Listen for user updates to refresh image
@@ -19,7 +21,7 @@ const AdminSidebar = ({ isOpen = true, onClose }) => {
 
   const menuItems = [
     {
-      name: 'Dashboard',
+      name: t('nav.dashboard'),
       path: '/admin',
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -28,7 +30,7 @@ const AdminSidebar = ({ isOpen = true, onClose }) => {
       )
     },
     {
-      name: 'Orders',
+      name: t('nav.orders'),
       path: '/admin/orders',
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -37,7 +39,7 @@ const AdminSidebar = ({ isOpen = true, onClose }) => {
       )
     },
     {
-      name: 'Users',
+      name: t('nav.users'),
       path: '/admin/users',
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -46,7 +48,7 @@ const AdminSidebar = ({ isOpen = true, onClose }) => {
       )
     },
     {
-      name: 'Products',
+      name: t('nav.products'),
       path: '/admin/products',
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -55,7 +57,7 @@ const AdminSidebar = ({ isOpen = true, onClose }) => {
       )
     },
     {
-      name: 'Messages',
+      name: t('nav.messages'),
       path: '/admin/messages',
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -64,7 +66,7 @@ const AdminSidebar = ({ isOpen = true, onClose }) => {
       )
     },
     {
-      name: 'Product Requests',
+      name: t('nav.requests'),
       path: '/admin/product-inquiries',
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -73,7 +75,7 @@ const AdminSidebar = ({ isOpen = true, onClose }) => {
       )
     },
     {
-      name: 'Settings',
+      name: t('nav.settings'),
       path: '/admin/pages',
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -92,8 +94,8 @@ const AdminSidebar = ({ isOpen = true, onClose }) => {
   }
 
   return (
-    <div className={`bg-gradient-to-b from-[#1e293b] to-[#0f172a] text-white w-44 min-h-screen fixed left-0 top-0 flex flex-col z-50 transform transition-transform duration-300 ease-in-out lg:translate-x-0 shadow-2xl ${
-      isOpen ? 'translate-x-0' : '-translate-x-full'
+    <div className={`bg-gradient-to-b from-[#1e293b] to-[#0f172a] text-white w-44 min-h-screen fixed inset-y-0 start-0 flex flex-col z-50 transform transition-transform duration-300 ease-in-out lg:translate-x-0 shadow-2xl ${
+      isOpen ? 'translate-x-0' : 'ltr:-translate-x-full rtl:translate-x-full'
     }`}>
       {/* Logo Header */}
       <div className="p-6 border-b border-gray-700/50 flex justify-center items-center relative bg-[#1e293b]/50">
@@ -109,7 +111,7 @@ const AdminSidebar = ({ isOpen = true, onClose }) => {
           </div>
           <div className="text-center">
             <p className="text-sm font-bold text-white">Find Store</p>
-            <p className="text-xs text-gray-400 font-medium">Control Panel</p>
+            <p className="text-xs text-gray-400 font-medium">{t('nav.controlPanel')}</p>
           </div>
         </div>
         <button
@@ -127,7 +129,7 @@ const AdminSidebar = ({ isOpen = true, onClose }) => {
       <div className="p-4 flex-1 flex flex-col overflow-y-auto">
         <nav className="space-y-2">
           <div className="px-2 py-2 mb-2">
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Main Menu</p>
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">{t('nav.mainMenu')}</p>
           </div>
           {menuItems.map((item) => (
             <Link

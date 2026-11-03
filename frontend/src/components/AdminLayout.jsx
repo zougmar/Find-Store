@@ -1,23 +1,28 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
+import { useAdminI18n } from '../context/AdminLanguageContext'
 import AdminSidebar from './AdminSidebar'
+import LanguageSwitcher from './LanguageSwitcher'
 
 const AdminLayout = ({ children, title }) => {
   const { logout, user } = useAuth()
+  const { t, language } = useAdminI18n()
+  const dateLocale = language === 'ar' ? 'ar-MA' : language === 'fr' ? 'fr-FR' : 'en-US'
   const location = useLocation()
   const navigate = useNavigate()
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   const getPageTitle = () => {
     if (title) return title
-    if (location.pathname === '/admin') return 'Dashboard'
-    if (location.pathname === '/admin/users') return 'User Management'
-    if (location.pathname === '/admin/products') return 'Product Management'
-    if (location.pathname === '/admin/orders') return 'Order Management'
-    if (location.pathname === '/admin/pages') return 'Page Settings'
-    if (location.pathname === '/admin/messages') return 'Messages'
-    return 'Admin Panel'
+    if (location.pathname === '/admin') return t('page.dashboard')
+    if (location.pathname === '/admin/users') return t('page.users')
+    if (location.pathname === '/admin/products') return t('page.products')
+    if (location.pathname === '/admin/orders') return t('page.orders')
+    if (location.pathname === '/admin/pages') return t('page.settings')
+    if (location.pathname === '/admin/messages') return t('page.messages')
+    if (location.pathname === '/admin/product-inquiries') return t('page.inquiries')
+    return t('nav.controlPanel')
   }
 
   const isDashboard = location.pathname === '/admin' || location.pathname === '/admin/'
@@ -34,7 +39,7 @@ const AdminLayout = ({ children, title }) => {
       
       <AdminSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       
-      <div className="flex-1 lg:ml-44 flex flex-col">
+      <div className="flex-1 lg:ms-44 flex flex-col min-w-0">
         {/* Top Bar - cPanel Style */}
         <div className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-30">
           <div className="px-4 md:px-6 lg:px-8 py-3 md:py-4">
@@ -65,13 +70,14 @@ const AdminLayout = ({ children, title }) => {
                   <div>
                     <h1 className="text-xl md:text-2xl font-bold text-gray-900">{getPageTitle()}</h1>
                     <p className="text-xs text-gray-500 mt-0.5 hidden sm:block">
-                      {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                      {new Date().toLocaleDateString(dateLocale, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                     </p>
                   </div>
                 </div>
               </div>
               
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <LanguageSwitcher />
                 <Link
                   to="/"
                   className="hidden sm:flex items-center gap-2 px-4 py-2 text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-all duration-200 border border-gray-200 text-sm font-medium"
@@ -79,14 +85,14 @@ const AdminLayout = ({ children, title }) => {
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                   </svg>
-                  View Store
+                  {t('header.viewStore')}
                 </Link>
                 
                 {/* User Profile Dropdown */}
                 <div className="flex items-center gap-3 pl-3 border-l border-gray-200">
                   <div className="hidden sm:flex flex-col items-end">
                     <span className="text-sm font-semibold text-gray-900">{user?.name || 'Admin'}</span>
-                    <span className="text-xs text-gray-500">Administrator</span>
+                    <span className="text-xs text-gray-500">{t('header.administrator')}</span>
                   </div>
                   {user?.image ? (
                     <img
@@ -108,7 +114,7 @@ const AdminLayout = ({ children, title }) => {
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                     </svg>
-                    <span className="hidden sm:inline">Logout</span>
+                    <span className="hidden sm:inline">{t('header.logout')}</span>
                   </button>
                 </div>
               </div>

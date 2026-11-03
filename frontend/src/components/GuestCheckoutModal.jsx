@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext'
 import { useLanguage } from '../context/LanguageContext'
 import api from '../utils/api'
 import toast from 'react-hot-toast'
+import { isValidMoroccanPhone } from '../utils/phone'
 
 const GuestCheckoutModal = () => {
   const {
@@ -44,16 +45,16 @@ const GuestCheckoutModal = () => {
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!form.customerName?.trim() || !form.customerPhone?.trim() || !form.city?.trim() || !form.address?.trim()) {
-      toast.error('Please fill in all fields: name, phone, city, and address')
+      toast.error(t('fillGuestFields'))
       return
     }
-    if (form.customerPhone.replace(/\D/g, '').length < 8) {
-      toast.error('Please enter a valid phone number')
+    if (!isValidMoroccanPhone(form.customerPhone)) {
+      toast.error(t('validPhone'))
       return
     }
     const itemsToOrder = Array.isArray(cartItems) ? cartItems : []
     if (itemsToOrder.length === 0) {
-      toast.error('Your cart is empty')
+      toast.error(t('cartEmptyToast'))
       return
     }
 
@@ -73,7 +74,7 @@ const GuestCheckoutModal = () => {
       setOrderId(res.data._id)
       clearCart()
       setOrderSuccess(true)
-      toast.success('Order placed successfully! We will contact you soon.', {
+      toast.success(t('orderFollowUp'), {
         icon: '✅',
         duration: 4000,
         style: {
@@ -87,7 +88,7 @@ const GuestCheckoutModal = () => {
         }
       })
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to place order. Please try again.')
+      toast.error(err.response?.data?.message || t('placeOrderFailed'))
       setSubmitting(false)
     }
   }
@@ -111,14 +112,14 @@ const GuestCheckoutModal = () => {
           <>
             <div className="sticky top-0 z-10 bg-white/95 backdrop-blur border-b border-gray-100 px-6 py-4 flex items-center justify-between rounded-t-2xl shadow-sm">
               <h2 className="text-xl font-bold text-gray-900 tracking-tight">
-                {tr('orderDetails', 'Order details')}
+                {tr('orderDetails', 'تفاصيل الطلب')}
               </h2>
               <button
                 type="button"
                 onClick={handleClose}
                 disabled={submitting}
                 className="p-2.5 rounded-xl text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-all disabled:opacity-50"
-                aria-label="Close"
+                aria-label={t('close')}
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -136,7 +137,7 @@ const GuestCheckoutModal = () => {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="sm:col-span-2">
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        {tr('fullName', 'Full name')} <span className="text-red-500">*</span>
+                        {tr('fullName', 'الاسم الكامل')} <span className="text-red-500">*</span>
                       </label>
                       <div className="relative">
                         <span className={`absolute ${iconPos} top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none`}>
@@ -156,7 +157,7 @@ const GuestCheckoutModal = () => {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        {tr('phone', 'Phone number')} <span className="text-red-500">*</span>
+                        {tr('phoneNumber', 'رقم الهاتف')} <span className="text-red-500">*</span>
                       </label>
                       <div className="relative">
                         <span className={`absolute ${iconPos} top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none`}>
@@ -177,7 +178,7 @@ const GuestCheckoutModal = () => {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        {tr('city', 'City')} <span className="text-red-500">*</span>
+                        {tr('city', 'المدينة')} <span className="text-red-500">*</span>
                       </label>
                       <div className="relative">
                         <span className={`absolute ${iconPos} top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none`}>
@@ -197,7 +198,7 @@ const GuestCheckoutModal = () => {
                     </div>
                     <div className="sm:col-span-2">
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        {tr('address', 'Address')} <span className="text-red-500">*</span>
+                        {tr('address', 'العنوان')} <span className="text-red-500">*</span>
                       </label>
                       <div className="relative">
                         <span className={`absolute ${iconPos} top-4 text-gray-400 pointer-events-none`}>
@@ -225,7 +226,7 @@ const GuestCheckoutModal = () => {
                     disabled={submitting}
                     className="flex-1 py-3.5 px-5 rounded-xl font-semibold border border-gray-200 text-gray-700 bg-white hover:bg-gray-50 transition-all disabled:opacity-50 shadow-sm"
                   >
-                    {tr('continueShopping', 'Continue shopping')}
+                    {tr('continueShopping', 'متابعة التسوق')}
                   </button>
                   <button
                     type="submit"
@@ -238,10 +239,10 @@ const GuestCheckoutModal = () => {
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                         </svg>
-                        {tr('placingOrder', 'Placing order...')}
+                        {tr('placingOrder', 'جاري تقديم الطلب...')}
                       </>
                     ) : (
-                      <span>{tr('submitOrder', 'Place order')}</span>
+                      <span>{tr('submitOrder', 'تأكيد الطلب')}</span>
                     )}
                   </button>
                 </div>
@@ -255,8 +256,8 @@ const GuestCheckoutModal = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <h3 className="text-2xl font-bold text-gray-900 mb-2">{tr('orderPlacedSuccess', 'Order placed successfully!')}</h3>
-            <p className="text-gray-600 mb-4 max-w-sm mx-auto">We will contact you shortly to confirm and arrange delivery.</p>
+            <h3 className="text-2xl font-bold text-gray-900 mb-2">{tr('orderPlacedSuccess', 'تم تقديم الطلب بنجاح')}</h3>
+            <p className="text-gray-600 mb-4 max-w-sm mx-auto">{tr('orderFollowUp', 'سنتواصل معك قريباً لتأكيد الطلب وترتيب التوصيل.')}</p>
             {orderId && (
               <p className="text-sm font-mono text-gray-500 bg-gray-100 px-4 py-2 rounded-lg inline-block mb-6">#{orderId.slice(-8).toUpperCase()}</p>
             )}
@@ -265,7 +266,7 @@ const GuestCheckoutModal = () => {
               onClick={() => { navigate('/'); handleClose(); }}
               className="w-full py-3.5 px-5 rounded-xl font-semibold bg-[#FF385C] hover:bg-[#E61E4D] text-white shadow-lg hover:shadow-xl transition-all"
             >
-              {tr('continueShopping', 'Continue shopping')}
+              {tr('continueShopping', 'متابعة التسوق')}
             </button>
           </div>
         )}

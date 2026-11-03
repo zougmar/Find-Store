@@ -1,10 +1,45 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import AdminLayout from '../../components/AdminLayout'
 import api from '../../utils/api'
 import toast from 'react-hot-toast'
 import { formatCurrency } from '../../utils/currency'
+import useAutoRefresh from '../../hooks/useAutoRefresh'
+import { notifyAdminChange } from '../../utils/adminSync'
+import { useAdminI18n } from '../../context/AdminLanguageContext'
+
+const emptyProductForm = () => ({
+  name: '',
+  description: '',
+  headline: '',
+  slug: '',
+  price: '',
+  discountPercentage: '',
+  category: '',
+  subcategory: '',
+  stock: '',
+  images: [],
+  features: [],
+  benefitsText: '',
+  specificationsText: '',
+  faqsText: '',
+  deliveryNote: '',
+  supportNote: ''
+})
+
+const linesToList = (value) => String(value || '').split('\n').map((line) => line.trim()).filter(Boolean)
+
+const linesToPairs = (value, leftKey, rightKey) => (
+  linesToList(value).map((line) => {
+    const [left, ...rest] = line.split('|')
+    return {
+      [leftKey]: (left || '').trim(),
+      [rightKey]: rest.join('|').trim()
+    }
+  }).filter((item) => item[leftKey] && item[rightKey])
+)
 
 const AdminProducts = () => {
+  const { t } = useAdminI18n()
   const [products, setProducts] = useState([])
   const [productsWithFavorites, setProductsWithFavorites] = useState([])
   const [loading, setLoading] = useState(true)
@@ -13,27 +48,30 @@ const AdminProducts = () => {
   const [categoryFilter, setCategoryFilter] = useState('all')
   const [stockFilter, setStockFilter] = useState('all')
   const [editingProduct, setEditingProduct] = useState(null)
-  const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    price: '',
-    discountPercentage: '',
-    category: '',
-    subcategory: '',
-    stock: '',
-    images: [],
-    features: []
-  })
+  const [formData, setFormData] = useState(emptyProductForm)
   const [uploadingImages, setUploadingImages] = useState(false)
   const [categories, setCategories] = useState([])
   const [subcategories, setSubcategories] = useState([])
   const [availableSubcategories, setAvailableSubcategories] = useState([])
 
+  const fetchProducts = useCallback(async ({ silent = false } = {}) => {
+    try {
+      const res = await api.get('/products')
+      setProducts(res.data)
+    } catch (error) {
+      if (!silent) toast.error(t('products.fetchFailed'))
+    } finally {
+      setLoading(false)
+    }
+  }, [t])
+
   useEffect(() => {
     fetchProducts()
     fetchFavoritesData()
     fetchCategories()
-  }, [])
+  }, [fetchProducts])
+
+  useAutoRefresh(() => fetchProducts({ silent: true }), { scopes: ['products', 'all'] })
 
   useEffect(() => {
     if (formData.category) {
@@ -42,17 +80,6 @@ const AdminProducts = () => {
       setAvailableSubcategories([])
     }
   }, [formData.category])
-
-  const fetchProducts = async () => {
-    try {
-      const res = await api.get('/products')
-      setProducts(res.data)
-    } catch (error) {
-      toast.error('Failed to fetch products')
-    } finally {
-      setLoading(false)
-    }
-  }
 
   const fetchFavoritesData = async () => {
     try {
@@ -97,36 +124,34 @@ const AdminProducts = () => {
         price: Number(formData.price),
         discountPercentage: formData.discountPercentage ? Number(formData.discountPercentage) : 0,
         stock: Number(formData.stock),
-        images: formData.images.filter(img => img && img.trim()), // Remove empty images
-        features: formData.features.filter(feature => feature && feature.trim()) // Remove empty features
+        images: formData.images.filter(img => img && img.trim()),
+        features: formData.features.filter(feature => feature && feature.trim()),
+        benefits: linesToList(formData.benefitsText),
+        specifications: linesToPairs(formData.specificationsText, 'label', 'value'),
+        faqs: linesToPairs(formData.faqsText, 'question', 'answer')
       }
+      delete productData.benefitsText
+      delete productData.specificationsText
+      delete productData.faqsText
+      if (!String(productData.slug || '').trim()) delete productData.slug
 
       if (editingProduct) {
         await api.put(`/products/${editingProduct._id}`, productData)
-        toast.success('Product updated successfully!')
+        toast.success(t('products.saved'))
       } else {
         await api.post('/products', productData)
-        toast.success('Product created successfully!')
+        toast.success(t('products.saved'))
       }
 
       setShowModal(false)
       setEditingProduct(null)
-      setFormData({
-        name: '',
-        description: '',
-        price: '',
-        discountPercentage: '',
-        category: '',
-        subcategory: '',
-        stock: '',
-        images: [],
-        features: []
-      })
+      setFormData(emptyProductForm())
+      notifyAdminChange('products')
       fetchProducts()
       fetchFavoritesData()
     } catch (error) {
       console.error('Save product error:', error)
-      toast.error(error.response?.data?.message || 'Failed to save product')
+      toast.error(error.response?.data?.message || t('products.saveFailed'))
     }
   }
 
@@ -135,15 +160,23 @@ const AdminProducts = () => {
     const images = product.images || []
     const features = product.features || []
     setFormData({
+      ...emptyProductForm(),
       name: product.name,
       description: product.description,
+      headline: product.headline || '',
+      slug: product.slug || '',
       price: product.price,
       discountPercentage: product.discountPercentage || '',
       category: product.category || '',
       subcategory: product.subcategory || '',
       stock: product.stock,
       images: images,
-      features: features
+      features: features,
+      benefitsText: (product.benefits || []).join('\n'),
+      specificationsText: (product.specifications || []).map((item) => `${item.label} | ${item.value}`).join('\n'),
+      faqsText: (product.faqs || []).map((item) => `${item.question} | ${item.answer}`).join('\n'),
+      deliveryNote: product.deliveryNote || '',
+      supportNote: product.supportNote || ''
     })
     setShowModal(true)
   }
@@ -255,14 +288,16 @@ const AdminProducts = () => {
   }
 
   const handleDelete = async (productId) => {
-    if (!window.confirm('Are you sure you want to delete this product?')) {
+    if (!window.confirm(t('products.confirmDelete'))) {
       return
     }
 
     try {
       await api.delete(`/products/${productId}`)
-      toast.success('Product deleted successfully')
-      fetchProducts()
+      toast.success(t('products.deleted'))
+      setProducts((current) => current.filter((product) => product._id !== productId))
+      notifyAdminChange('products')
+      fetchProducts({ silent: true })
     } catch (error) {
       toast.error('Failed to delete product')
     }
@@ -303,7 +338,7 @@ const AdminProducts = () => {
       <AdminLayout>
         <div className="flex flex-col justify-center items-center min-h-[60vh]">
           <div className="animate-spin rounded-full h-16 w-16 border-4 border-gray-200 border-t-[#FF385C] mb-4"></div>
-          <p className="text-gray-600 font-medium">Loading products...</p>
+          <p className="text-gray-600 font-medium">{t('products.loading')}</p>
         </div>
       </AdminLayout>
     )
@@ -315,8 +350,8 @@ const AdminProducts = () => {
         {/* Page Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Product Management</h1>
-            <p className="text-gray-600 mt-1">Manage your product catalog</p>
+            <h1 className="text-3xl font-bold text-gray-900">{t('products.title')}</h1>
+            <p className="text-gray-600 mt-1">{t('products.subtitle')}</p>
           </div>
           <button
             onClick={() => {
@@ -340,7 +375,7 @@ const AdminProducts = () => {
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
               </svg>
-              <span>Add New Product</span>
+              <span>{t('products.add')}</span>
             </div>
           </button>
         </div>
@@ -350,7 +385,7 @@ const AdminProducts = () => {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             {/* Search Bar */}
             <div className="md:col-span-2">
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Search Products</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">{t('products.search')}</label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -379,13 +414,13 @@ const AdminProducts = () => {
 
             {/* Category Filter */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Category</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">{t('products.category')}</label>
               <select
                 value={categoryFilter}
                 onChange={(e) => setCategoryFilter(e.target.value)}
                 className="block w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
               >
-                <option value="all">All Categories</option>
+                <option value="all">{t('products.allCategories')}</option>
                 {uniqueCategories.map(category => (
                   <option key={category} value={category}>{category}</option>
                 ))}
@@ -394,16 +429,16 @@ const AdminProducts = () => {
 
             {/* Stock Filter */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Stock Status</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">{t('products.stockStatus')}</label>
               <select
                 value={stockFilter}
                 onChange={(e) => setStockFilter(e.target.value)}
                 className="block w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
               >
-                <option value="all">All Stock</option>
-                <option value="in-stock">In Stock</option>
-                <option value="low-stock">Low Stock (≤10)</option>
-                <option value="out-of-stock">Out of Stock</option>
+                <option value="all">{t('products.allStock')}</option>
+                <option value="in-stock">{t('products.inStock')}</option>
+                <option value="low-stock">{t('products.lowStock')}</option>
+                <option value="out-of-stock">{t('products.outOfStock')}</option>
               </select>
             </div>
           </div>
@@ -433,7 +468,7 @@ const AdminProducts = () => {
 
         <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
           <div className="px-6 py-4 bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900">All Products</h2>
+            <h2 className="text-lg font-semibold text-gray-900">{t('products.all')}</h2>
             <p className="text-sm text-gray-600 mt-1">{filteredProducts.length} products</p>
           </div>
           <div className="overflow-x-auto">
@@ -481,7 +516,7 @@ const AdminProducts = () => {
                           {products.length === 0 ? 'No products found' : 'No products match your filters'}
                         </p>
                         {products.length > 0 && (
-                          <p className="text-xs text-gray-400 mt-1">Try adjusting your search or filter criteria</p>
+                          <p className="text-xs text-gray-400 mt-1">{t('products.emptyHint')}</p>
                         )}
                       </div>
                     </td>
@@ -498,7 +533,7 @@ const AdminProducts = () => {
                           />
                         ) : (
                           <div className="h-14 w-14 bg-gradient-to-br from-gray-200 to-gray-300 rounded-lg flex items-center justify-center border border-gray-200">
-                            <span className="text-gray-400 text-xs font-medium">No Image</span>
+                            <span className="text-gray-400 text-xs font-medium">{t('products.noImage')}</span>
                           </div>
                         )}
                       </td>
@@ -758,7 +793,7 @@ const AdminProducts = () => {
                         disabled:opacity-50"
                     />
                     {uploadingImages && (
-                      <p className="text-sm text-[#FF385C] mt-2 font-medium">Uploading files...</p>
+                      <p className="text-sm text-[#FF385C] mt-2 font-medium">{t('products.uploading')}</p>
                     )}
                     <p className="text-xs text-gray-500 mt-2">
                       You can select multiple files. Max 10MB per image, 100MB per video.
@@ -802,7 +837,7 @@ const AdminProducts = () => {
                   <div className="mt-4">
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Image Previews ({formData.images.length})
-                      <span className="text-xs text-gray-500 ml-2">First image will be shown as primary</span>
+                      <span className="text-xs text-gray-500 ms-2">{t('products.primaryImage')}</span>
                     </label>
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 md:gap-4">
                       {formData.images.map((image, index) => (
@@ -969,13 +1004,83 @@ const AdminProducts = () => {
                     </div>
                   )}
                 </div>
+
+                <div className="mt-8 grid gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">{t('products.headline')}</label>
+                    <input
+                      type="text"
+                      value={formData.headline}
+                      onChange={(e) => setFormData({ ...formData, headline: e.target.value })}
+                      placeholder="Short promise shown under the product name"
+                      className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF385C]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">{t('products.slug')}</label>
+                    <input
+                      type="text"
+                      value={formData.slug}
+                      onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
+                      placeholder="vacu-flask"
+                      className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF385C]"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">{t('products.slugHint')}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">{t('products.benefits')}</label>
+                    <textarea
+                      rows="3"
+                      value={formData.benefitsText}
+                      onChange={(e) => setFormData({ ...formData, benefitsText: e.target.value })}
+                      className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF385C]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">{t('products.specs')}</label>
+                    <textarea
+                      rows="3"
+                      value={formData.specificationsText}
+                      onChange={(e) => setFormData({ ...formData, specificationsText: e.target.value })}
+                      placeholder="Capacity | 500 ml"
+                      className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF385C]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">{t('products.faq')}</label>
+                    <textarea
+                      rows="3"
+                      value={formData.faqsText}
+                      onChange={(e) => setFormData({ ...formData, faqsText: e.target.value })}
+                      className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF385C]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">{t('products.deliveryNote')}</label>
+                    <textarea
+                      rows="2"
+                      value={formData.deliveryNote}
+                      onChange={(e) => setFormData({ ...formData, deliveryNote: e.target.value })}
+                      className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF385C]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">{t('products.supportNote')}</label>
+                    <textarea
+                      rows="2"
+                      value={formData.supportNote}
+                      onChange={(e) => setFormData({ ...formData, supportNote: e.target.value })}
+                      className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF385C]"
+                    />
+                  </div>
+                </div>
               </div>
                 <div className="flex flex-col sm:flex-row gap-3 pt-6 border-t border-gray-200">
                   <button
                     type="submit"
                     className="flex-1 bg-[#FF385C] hover:bg-[#E61E4D] text-white px-6 py-3 rounded-lg font-semibold transition-all shadow-lg hover:shadow-xl"
                   >
-                    {editingProduct ? 'Update Product' : 'Create Product'}
+                    {editingProduct ? t('products.update') : t('products.create')}
                   </button>
                   <button
                     type="button"

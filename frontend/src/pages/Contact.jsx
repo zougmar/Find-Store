@@ -36,7 +36,7 @@ const Contact = () => {
       })
     } catch (error) {
       console.error('Error sending message:', error)
-      toast.error(error.response?.data?.message || 'Failed to send message. Please try again.')
+      toast.error(error.response?.data?.message || t('error'))
     } finally {
       setLoading(false)
     }
@@ -77,7 +77,7 @@ const Contact = () => {
                     </svg>
                   </div>
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-1">Email</h3>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-1">{t('email')}</h3>
                     <p className="text-gray-600">support@findstore.com</p>
                     <p className="text-gray-600">o.zouglah03@gmail.com</p>
                   </div>
@@ -90,9 +90,9 @@ const Contact = () => {
                     </svg>
                   </div>
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-1">Phone</h3>
-                    <p className="text-gray-600">+212 707625535</p>
-                    <p className="text-gray-600">Mon-Fri: 9am - 6pm EST</p>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-1">{t('phone')}</h3>
+                    <p className="text-gray-600" dir="ltr">+212 707625535</p>
+                    <p className="text-gray-600">{t('contactHours')}</p>
                   </div>
                 </div>
 
@@ -104,10 +104,10 @@ const Contact = () => {
                     </svg>
                   </div>
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-1">Address</h3>
-                    <p className="text-gray-600">Csablanca, Morocco</p>
-                    <p className="text-gray-600">Errahma, Morocco</p>
-                    <p className="text-gray-600">Morocco</p>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-1">{t('address')}</h3>
+                    <p className="text-gray-600">{t('contactCity')}</p>
+                    <p className="text-gray-600">{t('contactDistrict')}</p>
+                    <p className="text-gray-600">{t('morocco')}</p>
                   </div>
                 </div>
               </div>

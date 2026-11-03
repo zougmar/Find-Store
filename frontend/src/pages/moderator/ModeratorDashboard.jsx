@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import api from '../../utils/api'
 import toast from 'react-hot-toast'
 import ModeratorLayout from '../../components/ModeratorLayout'
+import { useAdminI18n } from '../../context/AdminLanguageContext'
 
 const ModeratorDashboard = () => {
   const [loading, setLoading] = useState(true)
@@ -14,6 +15,7 @@ const ModeratorDashboard = () => {
     pendingOrders: 0
   })
   const navigate = useNavigate()
+  const { t } = useAdminI18n()
 
   useEffect(() => {
     const token = localStorage.getItem('moderator_token')
@@ -144,7 +146,7 @@ const ModeratorDashboard = () => {
         <div className="bg-white rounded-xl shadow-md p-6 border border-gray-200 mb-8">
           <div className="flex items-center gap-3 mb-6">
             <div className="w-1 h-8 bg-gradient-to-b from-indigo-600 to-indigo-700 rounded-full"></div>
-            <h2 className="text-xl font-bold text-gray-900">Quick Actions</h2>
+            <h2 className="text-xl font-bold text-gray-900">{t('mod.quick')}</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Link
@@ -157,8 +159,8 @@ const ModeratorDashboard = () => {
                 </svg>
               </div>
               <div>
-                <h3 className="font-bold text-gray-900 group-hover:text-indigo-700 mb-1">View All Orders</h3>
-                <p className="text-sm text-gray-600">Verify and manage all orders</p>
+                <h3 className="font-bold text-gray-900 group-hover:text-indigo-700 mb-1">{t('mod.viewAll')}</h3>
+                <p className="text-sm text-gray-600">{t('mod.viewAllHint')}</p>
               </div>
             </Link>
 
@@ -172,8 +174,8 @@ const ModeratorDashboard = () => {
                 </svg>
               </div>
               <div>
-                <h3 className="font-bold text-gray-900 group-hover:text-yellow-700 mb-1">New Orders</h3>
-                <p className="text-sm text-gray-600">Review and verify new orders</p>
+                <h3 className="font-bold text-gray-900 group-hover:text-yellow-700 mb-1">{t('mod.newOrders')}</h3>
+                <p className="text-sm text-gray-600">{t('mod.newOrdersHint')}</p>
               </div>
             </Link>
           </div>

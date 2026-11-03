@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect } from 'react'
 import axios from 'axios'
 import toast from 'react-hot-toast'
+import { translateAdmin } from '../i18n'
 
 const AuthContext = createContext()
 
@@ -46,10 +47,12 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem('token', res.data.token)
       axios.defaults.headers.common['Authorization'] = `Bearer ${res.data.token}`
       setUser(res.data)
-      toast.success('Login successful!')
+      const workspace = /^\/(admin|moderator|delivery)/.test(window.location.pathname)
+      const lang = localStorage.getItem('findstore-workspace-lang') || 'en'
+      toast.success(workspace ? translateAdmin(lang, 'auth.loginSuccess') : 'تم تسجيل الدخول بنجاح')
       return res.data
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Login failed')
+      toast.error(error.response?.data?.message || 'تعذر تسجيل الدخول')
       throw error
     }
   }
@@ -66,7 +69,7 @@ export const AuthProvider = ({ children }) => {
       axios.defaults.headers.common['Authorization'] = `Bearer ${res.data.token}`
       setUser(res.data)
       await fetchUser() // Fetch full user data after registration
-      toast.success('Registration successful!', {
+      toast.success('تم إنشاء الحساب بنجاح', {
         icon: '✅',
         duration: 3000,
         style: {
@@ -81,7 +84,7 @@ export const AuthProvider = ({ children }) => {
       })
       return res.data
     } catch (error) {
-      const errorMessage = error.response?.data?.message || error.response?.data?.errors?.[0]?.msg || 'Registration failed. Please try again.'
+      const errorMessage = error.response?.data?.message || error.response?.data?.errors?.[0]?.msg || 'تعذر إنشاء الحساب. حاول مرة أخرى.'
       toast.error(errorMessage)
       throw error
     }
@@ -99,7 +102,7 @@ export const AuthProvider = ({ children }) => {
       axios.defaults.headers.common['Authorization'] = `Bearer ${res.data.token}`
       setUser(res.data)
       await fetchUser()
-      toast.success('Signed in with Google successfully!', {
+      toast.success('تم تسجيل الدخول عبر جوجل', {
         icon: '✅',
         duration: 3000,
         style: {
@@ -132,7 +135,7 @@ export const AuthProvider = ({ children }) => {
       axios.defaults.headers.common['Authorization'] = `Bearer ${res.data.token}`
       setUser(res.data)
       await fetchUser()
-      toast.success('Signed in with Facebook successfully!', {
+      toast.success('تم تسجيل الدخول عبر فيسبوك', {
         icon: '✅',
         duration: 3000,
         style: {
@@ -147,7 +150,7 @@ export const AuthProvider = ({ children }) => {
       })
       return res.data
     } catch (error) {
-      const errorMessage = error.response?.data?.message || 'Facebook sign in failed. Please try again.'
+      const errorMessage = error.response?.data?.message || 'تعذر تسجيل الدخول عبر فيسبوك'
       toast.error(errorMessage)
       throw error
     }
@@ -157,7 +160,9 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('token')
     delete axios.defaults.headers.common['Authorization']
     setUser(null)
-    toast.success('Logged out successfully')
+    const workspace = /^\/(admin|moderator|delivery)/.test(window.location.pathname)
+    const lang = localStorage.getItem('findstore-workspace-lang') || 'en'
+    toast.success(workspace ? translateAdmin(lang, 'auth.loggedOut') : 'تم تسجيل الخروج')
   }
 
   const value = {
@@ -168,6 +173,7 @@ export const AuthProvider = ({ children }) => {
     registerWithGoogle,
     registerWithFacebook,
     logout,
+    updateUser: (partial) => setUser((current) => (current ? { ...current, ...partial } : current)),
     fetchUser,
     isAdmin: user?.role === 'admin'
   }

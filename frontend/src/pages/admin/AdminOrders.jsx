@@ -1,4 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
+import useAutoRefresh from '../../hooks/useAutoRefresh'
+import { useAdminI18n } from '../../context/AdminLanguageContext'
 import AdminLayout from '../../components/AdminLayout'
 import api from '../../utils/api'
 import toast from 'react-hot-toast'
@@ -19,6 +21,7 @@ const copyToClipboard = async (text, successMessage = 'Copied to clipboard!') =>
 }
 
 const AdminOrders = () => {
+  const { t } = useAdminI18n()
   const [orders, setOrders] = useState([])
   const [requests, setRequests] = useState([])
   const [deliveryMen, setDeliveryMen] = useState([])
@@ -42,27 +45,29 @@ const AdminOrders = () => {
     { value: 'cancelled', label: 'Cancelled' }
   ]
 
+  const fetchOrders = useCallback(async ({ silent = false } = {}) => {
+    try {
+      const res = await api.get('/admin/orders')
+      setOrders(res.data)
+    } catch (error) {
+      if (!silent) toast.error(t('orders.fetchFailed'))
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
   useEffect(() => {
     fetchOrders()
     fetchDeliveryMen()
-  }, [])
+  }, [fetchOrders])
+
+  useAutoRefresh(() => fetchOrders({ silent: true }), { scopes: ['orders', 'all'] })
 
   useEffect(() => {
     if (activeTab === 'buyNow') {
       fetchRequests()
     }
   }, [activeTab])
-
-  const fetchOrders = async () => {
-    try {
-      const res = await api.get('/admin/orders')
-      setOrders(res.data)
-    } catch (error) {
-      toast.error('Failed to fetch orders')
-    } finally {
-      setLoading(false)
-    }
-  }
 
   const fetchDeliveryMen = async () => {
     try {
@@ -490,7 +495,7 @@ const AdminOrders = () => {
       <AdminLayout>
         <div className="flex flex-col justify-center items-center min-h-[60vh]">
           <div className="animate-spin rounded-full h-16 w-16 border-4 border-gray-200 border-t-[#FF385C] mb-4"></div>
-          <p className="text-gray-600 font-medium">Loading orders...</p>
+          <p className="text-gray-600 font-medium">{t('orders.loading')}</p>
         </div>
       </AdminLayout>
     )
@@ -503,8 +508,8 @@ const AdminOrders = () => {
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900 mb-1">Order Management</h1>
-              <p className="text-sm text-gray-600">Manage cart orders and buy now requests</p>
+              <h1 className="text-2xl font-bold text-gray-900 mb-1">{t('orders.title')}</h1>
+              <p className="text-sm text-gray-600">{t('orders.subtitle')}</p>
             </div>
             <div className="flex items-center gap-3">
               <div className="flex rounded-lg border border-gray-200 p-1 bg-gray-50">
@@ -571,7 +576,7 @@ const AdminOrders = () => {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
                   </svg>
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-1">No buy now requests</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-1">{t('orders.noRequests')}</h3>
                 <p className="text-gray-500 text-sm">
                   {requestStatusFilter !== 'all' || requestSearchQuery ? 'Try changing filters or search.' : 'Requests will appear when customers use "Buy now" on a product.'}
                 </p>
@@ -657,7 +662,7 @@ const AdminOrders = () => {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             {/* Search Bar */}
             <div className="md:col-span-2">
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Search Orders</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">{t('orders.search')}</label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -686,32 +691,32 @@ const AdminOrders = () => {
 
             {/* Order Status Filter */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Order Status</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">{t('orders.status')}</label>
               <select
                 value={orderStatusFilter}
                 onChange={(e) => setOrderStatusFilter(e.target.value)}
                 className="block w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
               >
-                <option value="all">All Statuses</option>
-                <option value="pending">Pending</option>
-                <option value="processing">Processing</option>
-                <option value="shipped">Shipped</option>
-                <option value="delivered">Delivered</option>
-                <option value="cancelled">Cancelled</option>
+                <option value="all">{t('orders.allStatuses')}</option>
+                <option value="pending">{t('orders.pending')}</option>
+                <option value="processing">{t('orders.processing')}</option>
+                <option value="shipped">{t('orders.shipped')}</option>
+                <option value="delivered">{t('orders.delivered')}</option>
+                <option value="cancelled">{t('orders.cancelled')}</option>
               </select>
             </div>
 
             {/* Payment Status Filter */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Payment Status</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">{t('orders.payment')}</label>
               <select
                 value={paymentStatusFilter}
                 onChange={(e) => setPaymentStatusFilter(e.target.value)}
                 className="block w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
               >
-                <option value="all">All Payments</option>
-                <option value="paid">Paid</option>
-                <option value="pending">Pending</option>
+                <option value="all">{t('orders.allPayments')}</option>
+                <option value="paid">{t('orders.paid')}</option>
+                <option value="pending">{t('orders.pending')}</option>
               </select>
             </div>
           </div>
@@ -769,7 +774,7 @@ const AdminOrders = () => {
           {/* Table Header */}
           <div className="px-6 py-4 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <h2 className="text-lg font-semibold text-gray-900">Orders</h2>
+              <h2 className="text-lg font-semibold text-gray-900">{t('orders.list')}</h2>
               {selectedOrders.size > 0 && (
                 <div className="flex items-center gap-2 px-3 py-1 bg-blue-50 border border-blue-200 rounded-lg">
                   <span className="text-sm font-medium text-blue-700">
@@ -887,7 +892,7 @@ const AdminOrders = () => {
                               <div>
                                 <p className="text-sm font-semibold text-gray-900">
                                   {order.user?.name || order.paymentDetails?.customerName || 'N/A'}
-                                  {!order.user && <span className="ml-1.5 text-xs font-normal text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded">Guest</span>}
+                                  {!order.user && <span className="ms-1.5 text-xs font-normal text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded">{t('orders.guest')}</span>}
                                 </p>
                                 <p className="text-xs text-gray-500">{order.user?.email || order.paymentDetails?.customerEmail || order.paymentDetails?.customerPhone || ''}</p>
                                 {!order.user && order.paymentDetails?.city && (
@@ -968,7 +973,7 @@ const AdminOrders = () => {
                                   <div className="p-4 bg-white rounded-lg border border-gray-200 shadow-sm">
                                     <div className="flex items-center justify-between">
                                       <div>
-                                        <p className="text-xs text-gray-600 mb-1">Order ID</p>
+                                        <p className="text-xs text-gray-600 mb-1">{t('orders.orderId')}</p>
                                         <p className="font-mono font-semibold text-gray-900">#{order._id.slice(-8)}</p>
           </div>
                   <button
@@ -983,7 +988,7 @@ const AdminOrders = () => {
                 </div>
                   </div>
                                   <div className="p-4 bg-white rounded-lg border border-gray-200 shadow-sm">
-                    <p className="text-xs text-gray-600 mb-1">Customer</p>
+                    <p className="text-xs text-gray-600 mb-1">{t('orders.customer')}</p>
                                     <div className="flex items-center gap-2">
                                       {order.user?.image && (
                                         <img 
@@ -1002,11 +1007,11 @@ const AdminOrders = () => {
                                     </div>
                   </div>
                                   <div className="p-4 bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg border border-orange-200 shadow-sm">
-                    <p className="text-xs text-orange-700 mb-1">Total Amount</p>
+                    <p className="text-xs text-orange-700 mb-1">{t('orders.totalAmount')}</p>
                                     <p className="font-bold text-2xl text-orange-900">{formatCurrency(order.totalAmount)}</p>
                   </div>
                                   <div className="p-4 bg-white rounded-lg border border-gray-200 shadow-sm">
-                    <p className="text-xs text-gray-600 mb-1">Order Date</p>
+                    <p className="text-xs text-gray-600 mb-1">{t('orders.orderDate')}</p>
                                     <p className="font-semibold text-gray-900 text-sm">
                                       {new Date(order.createdAt).toLocaleString('en-US', { 
                         year: 'numeric', 
@@ -1020,7 +1025,7 @@ const AdminOrders = () => {
                                 </div>
                                 {/* Customer Information Section */}
                                 <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
-                                  <h3 className="font-semibold text-gray-900 mb-4 text-lg">Customer Information</h3>
+                                  <h3 className="font-semibold text-gray-900 mb-4 text-lg">{t('orders.customerInfo')}</h3>
                                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     {/* User Profile */}
                                     <div className="p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg border border-blue-200">
@@ -1252,7 +1257,7 @@ const AdminOrders = () => {
 
                                 {/* Order Items */}
                                 <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
-                                  <h3 className="font-semibold text-gray-900 mb-4 text-lg">Order Items</h3>
+                                  <h3 className="font-semibold text-gray-900 mb-4 text-lg">{t('orders.items')}</h3>
                                   <div className="space-y-3">
                                     {order.items?.map((item, index) => (
                                       <div key={index} className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
@@ -1466,7 +1471,7 @@ const AdminOrders = () => {
                                     </button>
                                   </div>
                                   
-                                  <h3 className="font-semibold text-gray-900 mb-4">Update Status</h3>
+                                  <h3 className="font-semibold text-gray-900 mb-4">{t('orders.updateStatus')}</h3>
                                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -1477,11 +1482,11 @@ const AdminOrders = () => {
                                         onChange={(e) => handleUpdateStatus(order._id, e.target.value, order.paymentStatus)}
                       className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF385C] focus:border-[#FF385C] transition-all"
                     >
-                      <option value="pending">Pending</option>
-                      <option value="processing">Processing</option>
-                      <option value="shipped">Shipped</option>
-                      <option value="delivered">Delivered</option>
-                      <option value="cancelled">Cancelled</option>
+                      <option value="pending">{t('orders.pending')}</option>
+                      <option value="processing">{t('orders.processing')}</option>
+                      <option value="shipped">{t('orders.shipped')}</option>
+                      <option value="delivered">{t('orders.delivered')}</option>
+                      <option value="cancelled">{t('orders.cancelled')}</option>
                     </select>
                 </div>
                   <div>
@@ -1493,9 +1498,9 @@ const AdminOrders = () => {
                                         onChange={(e) => handleUpdateStatus(order._id, order.orderStatus, e.target.value)}
                       className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF385C] focus:border-[#FF385C] transition-all"
                     >
-                      <option value="pending">Pending</option>
-                      <option value="paid">Paid</option>
-                      <option value="failed">Failed</option>
+                      <option value="pending">{t('orders.pending')}</option>
+                      <option value="paid">{t('orders.paid')}</option>
+                      <option value="failed">{t('orders.failed')}</option>
                     </select>
                 </div>
                                     <div className="md:col-span-2">
@@ -1507,7 +1512,7 @@ const AdminOrders = () => {
                                         onChange={(e) => handleUpdateStatus(order._id, order.orderStatus, order.paymentStatus, e.target.value || null)}
                       className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF385C] focus:border-[#FF385C] transition-all"
                     >
-                      <option value="">None (Unassigned)</option>
+                      <option value="">{t('orders.unassigned')}</option>
                       {deliveryMen.map((deliveryMan) => (
                         <option key={deliveryMan._id} value={deliveryMan._id}>
                           {deliveryMan.name} {deliveryMan.phone ? `(${deliveryMan.phone})` : ''}
@@ -1554,7 +1559,7 @@ const AdminOrders = () => {
                                         Payment Information
                                       </h4>
                                       <div className="text-sm text-gray-700 space-y-1">
-                                        <p><span className="font-medium">Method:</span> <span className="capitalize">{order.paymentMethod || 'card'}</span></p>
+                                        <p><span className="font-medium">{t('orders.method')}:</span> <span className="capitalize">{order.paymentMethod || 'card'}</span></p>
                                         <p><span className="font-medium">Status:</span> <span className={`capitalize ${
                                           order.paymentStatus === 'paid' ? 'text-green-600' :
                                           order.paymentStatus === 'failed' ? 'text-red-600' :
@@ -1583,12 +1588,12 @@ const AdminOrders = () => {
                                         {order.internalNotes ? (
                                           <p className="whitespace-pre-wrap bg-white p-3 rounded border border-indigo-200">{order.internalNotes}</p>
                                         ) : (
-                                          <p className="text-gray-500 italic">No internal notes</p>
+                                          <p className="text-gray-500 italic">{t('orders.noNotes')}</p>
                                         )}
                                       </div>
                                       {order.changeHistory && order.changeHistory.length > 0 && (
                                         <div className="mt-4 pt-4 border-t border-indigo-200">
-                                          <h5 className="text-xs font-semibold text-gray-700 mb-2">Recent Changes:</h5>
+                                          <h5 className="text-xs font-semibold text-gray-700 mb-2">{t('orders.recentChanges')}</h5>
                                           <div className="space-y-2">
                                             {order.changeHistory.slice(-3).reverse().map((change, idx) => (
                                               <div key={idx} className="text-xs bg-white p-2 rounded border border-indigo-100">

@@ -5,6 +5,7 @@ const User = require('../models/User');
 const Order = require('../models/Order');
 const ProductInquiry = require('../models/ProductInquiry');
 const { protect } = require('../middleware/auth');
+const { updatePreferredLanguage } = require('../utils/language');
 
 const router = express.Router();
 
@@ -102,12 +103,15 @@ router.post('/login', [
       role: user.role,
       permissions: user.permissions || {},
       image: user.image || '',
+      preferredLanguage: user.preferredLanguage || 'en',
       token: generateToken(user._id)
     });
   } catch (error) {
     next(error);
   }
 });
+
+router.put('/language', protect, isModerator, updatePreferredLanguage);
 
 // @route   GET /api/moderator/orders
 // @desc    Get all orders (moderator can view all orders)

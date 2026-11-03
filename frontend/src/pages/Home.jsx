@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { useLanguage } from '../context/LanguageContext'
 import api from '../utils/api'
 import ProductCard from '../components/ProductCard'
+import { productPath } from '../utils/product'
 import ProductCardSkeleton from '../components/ProductCardSkeleton'
 import Footer from '../components/Footer'
 import Chatbot from '../components/Chatbot'
@@ -112,8 +113,8 @@ const Home = () => {
     }
   }
 
-  const fetchAllProducts = async () => {
-    setLoading(true)
+  const fetchAllProducts = async (silent = false) => {
+    if (!silent) setLoading(true)
     try {
       const res = await api.get('/products?sortBy=newest')
       const allProducts = Array.isArray(res.data) ? res.data : []
@@ -130,12 +131,22 @@ const Home = () => {
       
       setProductsByCategory(grouped)
     } catch (error) {
-      toast.error('Failed to fetch products')
+      if (!silent) toast.error('تعذر تحميل المنتجات')
       console.error('Error fetching products:', error)
     } finally {
-      setLoading(false)
+      if (!silent) setLoading(false)
     }
   }
+
+  useEffect(() => {
+    const refreshVisible = () => {
+      if (document.visibilityState !== 'visible') return
+      fetchAllProducts(true)
+      fetchGalleryProducts()
+    }
+    document.addEventListener('visibilitychange', refreshVisible)
+    return () => document.removeEventListener('visibilitychange', refreshVisible)
+  }, [])
 
   const handleWhatsApp = () => {
     // WhatsApp phone number - same as in ProductDetail
@@ -303,13 +314,15 @@ const Home = () => {
               {galleryProducts.map((product, index) => (
                 <Link
                   key={`gallery-1-${product._id}`}
-                  to={`/product/${product._id}`}
+                  to={productPath(product)}
                   className="flex-shrink-0 group"
                 >
                   <div className="relative w-32 h-32 sm:w-48 sm:h-48 md:w-64 md:h-64 lg:w-80 lg:h-80 rounded-lg sm:rounded-xl md:rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-shadow duration-300">
                     <img
                       src={product.images[0]}
                       alt={product.name}
+                      loading="lazy"
+                      decoding="async"
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
@@ -329,13 +342,15 @@ const Home = () => {
               {galleryProducts.map((product, index) => (
                 <Link
                   key={`gallery-2-${product._id}`}
-                  to={`/product/${product._id}`}
+                  to={productPath(product)}
                   className="flex-shrink-0 group"
                 >
                   <div className="relative w-32 h-32 sm:w-48 sm:h-48 md:w-64 md:h-64 lg:w-80 lg:h-80 rounded-lg sm:rounded-xl md:rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-shadow duration-300">
                     <img
                       src={product.images[0]}
                       alt={product.name}
+                      loading="lazy"
+                      decoding="async"
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
@@ -476,7 +491,7 @@ const Home = () => {
       <button
         onClick={handleWhatsApp}
         className="fixed bottom-6 left-6 z-50 w-14 h-14 sm:w-16 sm:h-16 bg-[#25D366] hover:bg-[#20BA5A] text-white rounded-full shadow-2xl hover:shadow-[#25D366]/50 transition-all duration-300 flex items-center justify-center group hover:scale-110 active:scale-95"
-        aria-label="Contact us on WhatsApp"
+        aria-label={t('whatsappContact')}
       >
         {/* WhatsApp Icon */}
         <svg 

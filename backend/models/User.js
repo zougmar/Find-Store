@@ -40,6 +40,11 @@ const userSchema = new mongoose.Schema({
     enum: ['user', 'admin', 'moderator', 'delivery'],
     default: 'user'
   },
+  preferredLanguage: {
+    type: String,
+    enum: ['ar', 'fr', 'en'],
+    default: 'en'
+  },
   permissions: {
     viewDashboard: { type: Boolean, default: false },
     manageProducts: { type: Boolean, default: false },

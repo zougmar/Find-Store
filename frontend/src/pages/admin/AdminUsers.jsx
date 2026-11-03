@@ -1,12 +1,30 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
+import { useLocation } from 'react-router-dom'
 import AdminLayout from '../../components/AdminLayout'
 import api from '../../utils/api'
 import toast from 'react-hot-toast'
 import { formatCurrency } from '../../utils/currency'
+import useAutoRefresh from '../../hooks/useAutoRefresh'
+import { notifyAdminChange } from '../../utils/adminSync'
+import { useAdminI18n } from '../../context/AdminLanguageContext'
+
+const emptyPermissions = {
+  viewDashboard: false,
+  manageProducts: false,
+  manageOrders: false,
+  manageProductInquiries: false,
+  manageUsers: false,
+  managePages: false,
+  manageMessages: false,
+  manageSettings: false
+}
 
 const AdminUsers = () => {
+  const location = useLocation()
+  const { t } = useAdminI18n()
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
   const [selectedUser, setSelectedUser] = useState(null)
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
@@ -18,55 +36,48 @@ const AdminUsers = () => {
     password: '',
     phone: '',
     role: 'moderator',
-    permissions: {
-      viewDashboard: false,
-      manageProducts: false,
-      manageOrders: false,
-      manageProductInquiries: false,
-      manageUsers: false,
-      managePages: false,
-      manageMessages: false,
-      manageSettings: false
-    }
+    permissions: { ...emptyPermissions }
   })
   const [showPermissionsModal, setShowPermissionsModal] = useState(false)
   const [editingUser, setEditingUser] = useState(null)
   const [updating, setUpdating] = useState(false)
 
-  useEffect(() => {
-    fetchUsers()
-  }, [])
-
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async ({ silent = false } = {}) => {
+    if (silent) setRefreshing(true)
     try {
-      const res = await api.get('/admin/users')
-      // Also fetch admin and moderator users
-      const allUsersRes = await api.get('/admin/users/all')
-      setUsers(allUsersRes.data || res.data)
+      const res = await api.get('/admin/users/all')
+      setUsers(Array.isArray(res.data) ? res.data : [])
     } catch (error) {
-      // Fallback to regular users if all users endpoint doesn't exist
-      try {
-        const res = await api.get('/admin/users')
-        setUsers(res.data)
-      } catch (err) {
-      toast.error('Failed to fetch users')
-      }
+      if (!silent) toast.error(t('users.fetchFailed'))
     } finally {
       setLoading(false)
+      setRefreshing(false)
     }
-  }
+  }, [t])
+
+  useEffect(() => {
+    setLoading(true)
+    fetchUsers()
+  }, [location.pathname, fetchUsers])
+
+  useAutoRefresh(() => fetchUsers({ silent: true }), { scopes: ['users', 'all'] })
 
   const handleDeleteUser = async (userId) => {
-    if (!window.confirm('Are you sure you want to delete this user?')) {
+    if (!window.confirm(t('users.confirmDelete'))) {
       return
     }
 
+    const previous = users
+    setUsers((current) => current.filter((user) => user._id !== userId))
+    if (selectedUser?._id === userId) setSelectedUser(null)
+
     try {
       await api.delete(`/admin/users/${userId}`)
-      toast.success('User deleted successfully')
-      fetchUsers()
+      toast.success(t('users.deleted'))
+      notifyAdminChange('users')
     } catch (error) {
-      toast.error('Failed to delete user')
+      setUsers(previous)
+      toast.error(error.response?.data?.message || t('users.deleteFailed'))
     }
   }
 
@@ -95,7 +106,14 @@ const AdminUsers = () => {
     setCreating(true)
     try {
       const res = await api.post('/admin/users', formData)
-      toast.success('User created successfully!')
+      const created = {
+        ...res.data,
+        totalOrders: 0,
+        totalSpent: 0,
+        orderHistory: []
+      }
+      setUsers((current) => [created, ...current.filter((user) => user._id !== created._id)])
+      toast.success(t('users.created'))
       setShowCreateModal(false)
       setFormData({ 
         name: '', 
@@ -103,17 +121,9 @@ const AdminUsers = () => {
         password: '', 
         phone: '',
         role: 'moderator',
-        permissions: {
-          viewDashboard: false,
-          manageProducts: false,
-          manageOrders: false,
-          manageUsers: false,
-          managePages: false,
-          manageMessages: false,
-          manageSettings: false
-        }
+        permissions: { ...emptyPermissions }
       })
-      fetchUsers() // Refresh users list
+      notifyAdminChange('users')
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to create admin user')
     } finally {
@@ -166,14 +176,20 @@ const AdminUsers = () => {
 
     setUpdating(true)
     try {
-      await api.put(`/admin/users/${editingUser._id}`, {
+      const res = await api.put(`/admin/users/${editingUser._id}`, {
         role: formData.role,
         permissions: formData.permissions
       })
+      setUsers((current) => current.map((user) => (
+        user._id === res.data._id ? { ...user, ...res.data } : user
+      )))
+      if (selectedUser?._id === res.data._id) {
+        setSelectedUser((current) => ({ ...current, ...res.data }))
+      }
       toast.success('User permissions updated successfully!')
       setShowPermissionsModal(false)
       setEditingUser(null)
-      fetchUsers()
+      notifyAdminChange('users')
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to update permissions')
     } finally {
@@ -198,7 +214,7 @@ const AdminUsers = () => {
       <AdminLayout>
         <div className="flex flex-col justify-center items-center min-h-[60vh]">
           <div className="animate-spin rounded-full h-16 w-16 border-4 border-gray-200 border-t-[#FF385C] mb-4"></div>
-          <p className="text-gray-600 font-medium">Loading users...</p>
+          <p className="text-gray-600 font-medium">{t('users.loading')}</p>
         </div>
       </AdminLayout>
     )
@@ -210,8 +226,11 @@ const AdminUsers = () => {
         {/* Page Header */}
         <div className="mb-6 flex items-center justify-between">
           <div>
-          <h1 className="text-3xl font-bold text-gray-900">User Management</h1>
-          <p className="text-gray-600 mt-1">Manage all registered users and their accounts</p>
+          <h1 className="text-3xl font-bold text-gray-900">{t('users.title')}</h1>
+          <p className="text-gray-600 mt-1">
+            {users.length} · {t('users.subtitle')}
+            {refreshing ? ` · ${t('users.updating')}` : ''}
+          </p>
           </div>
           <button
             onClick={() => setShowCreateModal(true)}
@@ -220,7 +239,7 @@ const AdminUsers = () => {
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
             </svg>
-            Create User
+            {t('users.create')}
           </button>
         </div>
 
@@ -229,7 +248,7 @@ const AdminUsers = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Search Bar */}
             <div className="md:col-span-2">
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Search Users</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">{t('users.search')}</label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -258,17 +277,17 @@ const AdminUsers = () => {
 
             {/* Role Filter */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Filter by Role</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">{t('users.role')}</label>
               <select
                 value={roleFilter}
                 onChange={(e) => setRoleFilter(e.target.value)}
                 className="block w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
               >
-                <option value="all">All Roles</option>
-                <option value="user">Users</option>
-                <option value="moderator">Moderators</option>
-                <option value="admin">Admins</option>
-                <option value="delivery">Delivery Men</option>
+                <option value="all">{t('users.allRoles')}</option>
+                <option value="user">{t('users.users')}</option>
+                <option value="moderator">{t('users.moderators')}</option>
+                <option value="admin">{t('users.admins')}</option>
+                <option value="delivery">{t('users.deliveryMen')}</option>
               </select>
             </div>
           </div>
@@ -300,7 +319,7 @@ const AdminUsers = () => {
           <div className="lg:col-span-2">
             <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
               <div className="px-6 py-4 bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
-                <h2 className="text-lg font-semibold text-gray-900">All Users</h2>
+                <h2 className="text-lg font-semibold text-gray-900">{t('users.title')}</h2>
                 <p className="text-sm text-gray-600 mt-1">{filteredUsers.length} users</p>
               </div>
               <div className="overflow-x-auto">
@@ -336,7 +355,7 @@ const AdminUsers = () => {
                               {users.length === 0 ? 'No users found' : 'No users match your filters'}
                             </p>
                             {users.length > 0 && (
-                              <p className="text-xs text-gray-400 mt-1">Try adjusting your search or filter criteria</p>
+                              <p className="text-xs text-gray-400 mt-1">{t('users.emptyHint')}</p>
                             )}
                           </div>
                         </td>
@@ -410,7 +429,7 @@ const AdminUsers = () => {
             {selectedUser ? (
               <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 sticky top-6">
                 <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-xl font-bold text-gray-900">User Details</h2>
+                  <h2 className="text-xl font-bold text-gray-900">{t('users.details')}</h2>
                   <button
                     onClick={() => setSelectedUser(null)}
                     className="text-gray-400 hover:text-gray-600 transition-colors"
@@ -441,21 +460,21 @@ const AdminUsers = () => {
 
                 <div className="space-y-4 mb-6">
                   <div className="p-4 bg-gray-50 rounded-lg">
-                    <p className="text-xs text-gray-600 mb-1">Email Address</p>
+                    <p className="text-xs text-gray-600 mb-1">{t('users.emailAddress')}</p>
                     <p className="font-semibold text-gray-900">{selectedUser.email}</p>
                   </div>
                   {selectedUser.phone && (
                     <div className="p-4 bg-gray-50 rounded-lg">
-                      <p className="text-xs text-gray-600 mb-1">Phone Number</p>
+                      <p className="text-xs text-gray-600 mb-1">{t('users.phoneNumber')}</p>
                       <p className="font-semibold text-gray-900">{selectedUser.phone}</p>
                     </div>
                   )}
                   <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                    <p className="text-xs text-blue-700 mb-1">Total Orders</p>
+                    <p className="text-xs text-blue-700 mb-1">{t('users.totalOrders')}</p>
                     <p className="font-bold text-xl text-blue-900">{selectedUser.orders?.length || 0}</p>
                   </div>
                   <div className="p-4 bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg border border-orange-200">
-                    <p className="text-xs text-orange-700 mb-1">Total Spent</p>
+                    <p className="text-xs text-orange-700 mb-1">{t('users.totalSpent')}</p>
                     <p className="font-bold text-xl text-orange-900">
                       {formatCurrency(selectedUser.orders?.reduce((sum, order) => sum + order.totalAmount, 0) || 0)}
                     </p>
@@ -501,7 +520,7 @@ const AdminUsers = () => {
                 <svg className="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                 </svg>
-                <p className="text-gray-500 font-medium">Select a user to view details</p>
+                <p className="text-gray-500 font-medium">{t('users.selectUser')}</p>
               </div>
             )}
           </div>
@@ -513,7 +532,7 @@ const AdminUsers = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6 border-b border-gray-200 flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-gray-900">Create User</h2>
+              <h2 className="text-2xl font-bold text-gray-900">{t('users.createTitle')}</h2>
               <button
                 onClick={() => {
                   setShowCreateModal(false)
@@ -572,7 +591,7 @@ const AdminUsers = () => {
                   className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF385C] focus:border-[#FF385C] transition-all"
                   placeholder="Enter password (min 6 characters)"
                 />
-                <p className="text-xs text-gray-500 mt-1">Password must be at least 6 characters long</p>
+                <p className="text-xs text-gray-500 mt-1">{t('users.passwordHint')}</p>
               </div>
 
               <div>
@@ -599,10 +618,10 @@ const AdminUsers = () => {
                   onChange={handleInputChange}
                   className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF385C] focus:border-[#FF385C] transition-all"
                 >
-                  <option value="user">User</option>
-                  <option value="moderator">Moderator</option>
-                  <option value="admin">Admin (Full Access)</option>
-                  <option value="delivery">Delivery Man</option>
+                  <option value="user">{t('users.roleUser')}</option>
+                  <option value="moderator">{t('users.roleModerator')}</option>
+                  <option value="admin">{t('users.roleAdmin')}</option>
+                  <option value="delivery">{t('users.roleDelivery')}</option>
                 </select>
                 <p className="text-xs text-gray-500 mt-1">
                   {formData.role === 'delivery' 
@@ -716,10 +735,10 @@ const AdminUsers = () => {
                   onChange={handleInputChange}
                   className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF385C] focus:border-[#FF385C] transition-all"
                 >
-                  <option value="user">User</option>
-                  <option value="moderator">Moderator</option>
-                  <option value="admin">Admin (Full Access)</option>
-                  <option value="delivery">Delivery Man</option>
+                  <option value="user">{t('users.roleUser')}</option>
+                  <option value="moderator">{t('users.roleModerator')}</option>
+                  <option value="admin">{t('users.roleAdmin')}</option>
+                  <option value="delivery">{t('users.roleDelivery')}</option>
                 </select>
                 <p className="text-xs text-gray-500 mt-1">
                   {formData.role === 'delivery' 

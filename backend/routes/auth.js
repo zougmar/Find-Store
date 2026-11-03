@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
 const User = require('../models/User');
 const { protect } = require('../middleware/auth');
+const { updatePreferredLanguage } = require('../utils/language');
 
 const router = express.Router();
 
@@ -92,12 +93,18 @@ router.post('/login', [
       email: user.email,
       role: user.role,
       image: user.image || '',
+      preferredLanguage: user.preferredLanguage || 'en',
       token: generateToken(user._id)
     });
   } catch (error) {
     next(error);
   }
 });
+
+// @route   PUT /api/auth/language
+// @desc    Save the signed-in user's dashboard language
+// @access  Private
+router.put('/language', protect, updatePreferredLanguage);
 
 // @route   POST /api/auth/google
 // @desc    Register/Login with Google

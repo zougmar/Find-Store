@@ -5,6 +5,7 @@ import { useLanguage } from '../context/LanguageContext'
 import api from '../utils/api'
 import toast from 'react-hot-toast'
 import { formatCurrency } from '../utils/currency'
+import { isValidMoroccanPhone } from '../utils/phone'
 
 const BuyNowModal = () => {
   const { buyNowProduct, closeBuyNow, getFinalPrice } = useCart()
@@ -43,8 +44,8 @@ const BuyNowModal = () => {
       toast.error(t('fillAllRequired') || 'Please fill in all required fields: name, phone, city, and address')
       return
     }
-    if (form.customerPhone.replace(/\D/g, '').length < 8) {
-      toast.error(t('validPhone') || 'Please enter a valid phone number')
+    if (!isValidMoroccanPhone(form.customerPhone)) {
+      toast.error(t('validPhone') || 'Please enter a valid Moroccan phone number')
       return
     }
     if (!buyNowProduct?.product) return
@@ -101,7 +102,7 @@ const BuyNowModal = () => {
                 onClick={handleClose}
                 disabled={submitting}
                 className="p-2 rounded-lg text-white/90 hover:text-white hover:bg-white/20 transition-all disabled:opacity-50"
-                aria-label="Close"
+                aria-label={t('close')}
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
